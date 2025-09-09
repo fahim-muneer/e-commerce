@@ -1,0 +1,158 @@
+{% extends "adminbase.html" %}
+{% block title %} products {% endblock title %}
+
+{% block heading %} Products {% endblock heading %}
+
+{% block context %}
+<!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            
+            
+
+            <!-- Main Content -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                <div class="max-w-7xl mx-auto">
+                    <!-- Page Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex-1">
+                            <h1 class="text-2xl font-bold text-gray-800">Products</h1>
+                            <p class="text-gray-500 text-sm mt-1">Here's what's happening on your store today. See the statistics at once.</p>
+                        </div>
+                         <a href=" {% url 'product_add' %} "> <button class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200" >
+                          ADD PRODUCT 
+                        </button></a>
+                    </div>
+
+                    <!-- Product Table Component -->
+                    <div class="bg-white rounded-lg shadow-xl p-6">
+                        <!-- Top Filters and Search Section -->
+                        <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+                            <div class="w-full sm:w-1/3">
+                                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category By</label>
+                                <div class="relative">
+                                    <select id="category" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 pl-3 pr-10 text-sm">
+                                        
+                                        {% for i in products%}
+                                        <option> {{ i.category }} </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="relative w-full sm:w-1/3">
+                                <input type="text" placeholder="Search here..." class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pl-10 pr-4 py-2 text-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.145l4.145 4.145a.5.5 0 01-.707.707l-4.145-4.145A7 7 0 012 9z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <!-- Table Container -->
+                        <div class="overflow-x-auto rounded-md border border-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PRODUCT</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CATEGORY</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PRICE</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">BLOCK</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">STOCK</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ACTION</th>
+                                    </tr>
+                                </thead>
+                                
+                                <tbody class="bg-white divide-y divide-gray-200">
+
+                                    {% for product_list in products %}
+                                    <!-- Product Row -->
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ product_list.name }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{product_list.category}}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <div class="text-gray-900 line-through">₹ {{ product_list.old_price }} </div>
+                                            <div class="text-blue-600 font-semibold">₹ {{ product_list.price }} </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="inline-flex items-center rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold text-gray-800">
+                                                {{ product_list.block }}
+                                                <button type="button" class="ml-1 -mr-0.5 h-3 w-3 rounded-full text-gray-500 hover:text-gray-600">
+                                                    <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path d="M10 3a1 1 0 011 1v6a1 1 0 01-2 0V4a1 1 0 011-1z" />
+                                                        <path d="M10 11a1 1 0 100-2 1 1 0 000 2z" />
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{product_list.stock}}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <a href="{% url 'product_update' pk=product_list.pk %}" class="text-gray-500 hover:text-blue-600 px-1">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+                                            <a href="{% url 'product_detail' pk=product_list.pk %}" class="text-gray-500 hover:text-blue-600 px-1">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'product_delete' pk=product_list.pk %}" class="text-gray-500 hover:text-red-600 px-1">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                     {% endfor %}
+                                </tbody>
+                               
+                            </table>
+                        </div>
+                </form>
+
+                        <!-- Pagination Section -->
+                        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6 rounded-b-md">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-700">Rows per page:</span>
+                                <div class="relative">
+                                    <select class="block w-20 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 pl-3 pr-8 text-sm">
+                                        <option>10</option>
+                                        <option>25</option>
+                                        <option>50</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm text-gray-700">1-10 of 10</span>
+                                <div class="flex space-x-1">
+                                    <a href="#" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 010 1.06L9.06 10l3.73 3.71a.75.75 0 11-1.06 1.06L7.47 10.53a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                    <a href="#" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M8.21 5.23a.75.75 0 010 1.06L11.94 10l-3.73 3.71a.75.75 0 111.06 1.06l4.25-4.25a.75.75 0 010-1.06L9.27 5.21a.75.75 0 01-1.06 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+
+
+{% endblock context %}
