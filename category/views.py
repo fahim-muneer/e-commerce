@@ -21,7 +21,7 @@ class CategoryAdd(View):
     
     
     def post(self , request):
-        form = CategoryForm(request.POST)
+        form = CategoryForm(request.POST,request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request,'The category was successfully added.')
@@ -33,7 +33,7 @@ class CategoryAdd(View):
 
 class UpdateCategory(UpdateView):
     model=CategoryPage
-    fields = ['name']
+    fields = ['name','image']
     template_name = 'category/update_category.html'
     success_url=reverse_lazy('category_list')
     

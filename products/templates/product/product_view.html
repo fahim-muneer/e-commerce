@@ -58,7 +58,8 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PRODUCT</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">IMAGE</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAME</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CATEGORY</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PRICE</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">BLOCK</th>
@@ -72,6 +73,9 @@
                                     {% for product_list in products %}
                                     <!-- Product Row -->
                                     <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                 <img src="{{product_list.image1.url}}" alt="{{product_list.name}}" class="w-6 h-6 mr-3">
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ product_list.name }}
                                         </td>
@@ -101,7 +105,7 @@
                                             <a href="{% url 'product_update' pk=product_list.pk %}" class="text-gray-500 hover:text-blue-600 px-1">
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                             </a>
-                                            <a href="{% url 'product_detail' pk=product_list.pk %}" class="text-gray-500 hover:text-blue-600 px-1">
+                                            <a href="{% url 'product_details' pk=product_list.pk %}" class="text-gray-500 hover:text-blue-600 px-1">
                                                 <i class="fa-solid fa-eye"></i>
                                             </a>
                                             <a href="{% url 'product_delete' pk=product_list.pk %}" class="text-gray-500 hover:text-red-600 px-1">

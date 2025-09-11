@@ -23,8 +23,8 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('admin/',include('custom_admin.urls')),
     path('category/',include('category.urls')),
-    # path('customer',include('customer.urls')),
-    # path('home',include('home.urls')),
-    path('products',include('products.urls')),
+    path('customer/',include('customer.urls')),
+    path('home/',include('home.urls')),
+    path('products/',include('products.urls')),
     
 ] + static (settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

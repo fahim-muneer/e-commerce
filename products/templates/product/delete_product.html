@@ -1,4 +1,4 @@
-{% extends "custom_admin/base_category.html" %}
+{% extends "base_category.html" %}
 
 
 {% block context %}
@@ -10,7 +10,7 @@
          <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
             <h2 class="text-2xl font-bold text-gray-800"> Delete Product</h2>
             <button class="text-gray-400 hover:text-gray-600">
-                 <a href=" {% url 'product_view' %} "><i class="fa-solid fa-times text-xl"></i> </a>
+                 <a href=" {% url 'product_list' %} "><i class="fa-solid fa-times text-xl"></i> </a>
             </button>
          </div>
 

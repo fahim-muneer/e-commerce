@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% load static %}
+{% load socialaccount %}
+
+
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="bg-white p-8 rounded-md shadow-md w-full max-w-sm border border-blue-400">
+        <!-- Your existing code here -->
+         <div class="text-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Login to your account</h2>
+</div>
+
+
+    <form method="post" action="{% url 'login' %}" class="space-y-4">
+    {% csrf_token %}
+    
+        <div>        
+            <label for="{{ form.email.id_for_label }}" class="sr-only">Email Id</label>
+            {{ form.email }}
+              {{ form.email.errors }}
+        </div> 
+
+    <div class="relative">
+        <div>        
+            <label for="{{ form.password.id_for_label }}" class="sr-only">Password</label>
+            {{ form.password }}
+              {{ form.password.errors }}
+        </div> 
+        <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+        </span>
+    </div>
+
+    <a href="{% url 'forgot_password' %}" class="block text-right text-sm text-gray-600 hover:underline">Forgot Password?</a>
+
+    <button type="submit" class="w-full py-2 bg-red-500 text-white rounded-md font-semibold hover:bg-red-600 transition">LOGIN</button>
+</form>
+
+<div class="mt-6 text-center text-sm">
+    <p>Not Registered? <a href="{% url 'signup'  %}" class="text-blue-500 font-semibold hover:underline">Sign Up</a></p>
+    <p class="my-4 text-gray-500">Or continue with social account</p>
+</div>
+
+<a href="{% provider_login_url 'google' %}" 
+   class="w-full py-2 border border-gray-300 rounded-md flex items-center justify-center space-x-2 hover:bg-gray-50 transition">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 48 48" fill="currentColor">
+        <path d="M44.5 20H24v8.5h11.8C34.8 33.7 31.5 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.6 0 6.9 1.5 9.3 3.8l6.3-6.3C32.9 5.8 28.6 4 24 4c-11 0-20 9-20 20s9 20 20 20c11 0 19.5-8.5 19.5-20V20z"/>
+    </svg>
+    <span class="font-semibold text-gray-700">LOGIN WITH GOOGLE</span>
+</a>
+
+
+
+    </div>
+</div>
+
+
+
+{% endblock content %}

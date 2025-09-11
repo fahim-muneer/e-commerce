@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% load static %}
+{% load socialaccount %}
+
+
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="bg-white p-8 rounded-md shadow-md w-full max-w-sm border border-blue-400">
+        <!-- Your existing code here -->
+         <div class="text-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Register With a New Account</h2>
+</div>
+
+
+
+   {% if form.errors %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <strong class="font-bold">Oops!</strong>
+        <span class="block sm:inline">Please correct the following errors.</span>
+        <ul class="mt-2 list-disc list-inside">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form class="space-y-4" method="post">
+        {% csrf_token %}
+
+        <div>        
+            <label for="{{ form.full_name.id_for_label }}" class="sr-only">Full Name</label>
+            {{ form.full_name }}
+        </div>
+        
+        <div>        
+            <label for="{{ form.email.id_for_label }}" class="sr-only">Email Id</label>
+            {{ form.email }}
+        </div> 
+
+        <div class="relative">
+            <label for="{{ form.password.id_for_label }}" class="sr-only">Password</label>
+            {{ form.password }}
+        </div>
+
+        <div class="relative">
+            <label for="{{ form.confirm_password.id_for_label }}" class="sr-only">Confirm Password</label>
+            {{ form.confirm_password }}
+        </div>
+        
+        <button type="submit" class="w-full py-2 bg-red-500 text-white rounded-md font-semibold hover:bg-red-600 transition">SIGN UP</button>
+    </form>
+
+    <div class="mt-6 text-center text-sm">
+        <p class="my-4 text-gray-500">Already have an account? <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Log In</a></p>
+    </div>
+</div>
+</div>
+
+
+
+{% endblock content %}

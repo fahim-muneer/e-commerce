@@ -1,0 +1,10 @@
+    <!-- CATEGORY ICONS -->
+    <div class="flex justify-center bg-gray-50 py-6 space-x-4">
+  <!-- Category Item -->
+   {% for items in category %}
+  <div class="bg-white shadow-sm border border-gray-200 rounded-md p-6 flex flex-col items-center hover:shadow-md cursor-pointer transition">
+<img src="{{ items.image.url }}" alt="{{ items.name }}" class="w-12 h-12 mb-2">
+    <p class="text-sm font-medium"> {{items.name}} </p>
+  </div>
+   {% endfor %}
+</div>

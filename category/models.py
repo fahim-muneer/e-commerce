@@ -2,6 +2,7 @@ from django.db import models
 
 # Create your models here.
 class CategoryPage(models.Model):
+    image=models.ImageField(upload_to='CategoryPage/')
     name = models.CharField(max_length=300,blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
