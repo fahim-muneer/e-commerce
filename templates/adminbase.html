@@ -95,7 +95,6 @@
                             <i class="fas fa-sliders-h w-5 h-5"></i>
                             <span>Home Slides</span>
                         </span>
-                        <i class="fas fa-chevron-down w-4 h-4 text-gray-400"></i>
                     </a>
                     <!-- Dropdown Content (add logic with JS to toggle visibility) -->
                 </li>
@@ -105,34 +104,30 @@
                             <i class="fas fa-th-large w-5 h-5"></i>
                             <span>Category</span>
                         </span>
-                        <i class="fas fa-chevron-down w-4 h-4 text-gray-400"></i>
                     </a>
                 </li>
                 <li class="relative">
-                    <a href="#" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                    <a href="{% url 'product_list' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <span class="flex items-center gap-3">
                             <i class="fas fa-box w-5 h-5"></i>
                             <span>Products</span>
                         </span>
-                        <i class="fas fa-chevron-down w-4 h-4 text-gray-400"></i>
                     </a>
                 </li>
                 <li class="relative">
-                    <a href="#" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                    <a href="{% url  'user_panel' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <span class="flex items-center gap-3">
                             <i class="fas fa-users w-5 h-5"></i>
                             <span>Users</span>
                         </span>
-                        <i class="fas fa-chevron-down w-4 h-4 text-gray-400"></i>
                     </a>
                 </li>
                 <li class="relative">
-                    <a href="#" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                    <a href="{% url 'order_list' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <span class="flex items-center gap-3">
                             <i class="fas fa-shopping-cart w-5 h-5"></i>
                             <span>Orders</span>
                         </span>
-                        <i class="fas fa-chevron-down w-4 h-4 text-gray-400"></i>
                     </a>
                 </li>
                 <li class="relative">
@@ -141,7 +136,6 @@
                             <i class="fas fa-bullhorn w-5 h-5"></i>
                             <span>Banners</span>
                         </span>
-                        <i class="fas fa-chevron-down w-4 h-4 text-gray-400"></i>
                     </a>
                 </li>
                 <!-- Coupon and Logout are separate -->
@@ -172,7 +166,7 @@
                     <i class="fas fa-bars text-xl"></i>
                 </button>
                 <div class="flex flex-col">
-                    <h2 class="text-xl font-bold text-gray-800">Welcome, Fahim Muneer</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Welcome, {{request.user.full_name}}</h2>
                     <p class="text-sm text-gray-500">Here's what's happening on your store today. See the statistics at once.</p>
                 </div>
             </div>

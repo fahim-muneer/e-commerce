@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6"> 
+       <!-- User Profile Sidebar -->
+    {% include "user_profile_side_bar.html" %}
+
+    <!-- Main Content Area -->
+    <main class="md:col-span-3 bg-white p-6 rounded-xl shadow-lg">
+        <!-- Header with Stats -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start mb-6 gap-6 md:gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">My Orders</h1>
+                    <p class="text-gray-500 text-sm mt-1">
+                        You have <span class="font-bold text-gray-700">{{ total_orders }}</span> total orders
+                    </p>
+                </div>
+                
+               
+            </div>
+
+            
+        </div>
+
+        <!-- Orders List -->
+        {% if orders %}
+            {% for order in orders %}
+            <div class="border border-gray-200 rounded-xl mb-4 overflow-hidden hover:shadow-md transition duration-200">
+                <!-- Order Header -->
+                <div class="bg-white p-4 cursor-pointer" onclick="toggleOrderDetails({{ order.id }})">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm items-center">
+                        <div class="flex flex-col">
+                            <span class="text-gray-500">ORDER ID</span>
+                            <a href="{% url 'order_details' pk=order.pk %}" 
+                               class="text-blue-600 hover:underline font-medium">
+                                #{{ order.id }}
+                            </a>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-gray-500">DATE</span>
+                            <span class="font-medium">{{ order.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-gray-500">STATUS</span>
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                {% if order.order_status == order.DELIVERED %}bg-green-100 text-green-800
+                                {% elif order.order_status == order.CANCELLED %}bg-red-100 text-red-800
+                                {% elif order.order_status == order.SHIPPED %}bg-blue-100 text-blue-800
+                                {% else %}bg-yellow-100 text-yellow-800
+                                {% endif %}">
+                                {{ order.get_order_status_display }}
+                            </span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-gray-500">ITEMS</span>
+                            <span class="font-medium">{{ order.items.count}} item{{ order.items.count|pluralize }}</span>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-gray-500">TOTAL</span>
+                            <span class="font-bold text-lg">₹{{ order.total_amount|floatformat:2 }}</span>
+                        </div>
+                        
+                        <div class="flex justify-end items-center">
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2">
+                                <a href="{% url 'user_order_details' pk=order.pk %}" 
+                                   class="px-3 py-1 bg-blue-600 text-white text-xs rounded-full hover:bg-blue-700">
+                                    View Details
+                                </a>
+                                
+                                {% if order.order_status == order.DELIVERED %}
+                                <button onclick="reorder({{ order.id }})" 
+                                        class="px-3 py-1 bg-green-600 text-white text-xs rounded-full hover:bg-green-700">
+                                    Reorder
+                                </button>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Dropdown Arrow -->
+                            <svg id="arrow-{{ order.id }}" class="w-5 h-5 text-gray-500 ml-2 transition-transform" 
+                                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collapsible Order Items -->
+                <div id="details-{{ order.id }}" class="bg-gray-50 border-t border-gray-200 hidden">
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-700 mb-3">Order Items</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for item in order.items.all %}
+                                    <tr>
+                                        <td class="px-4 py-3">
+                                            <div class="font-medium text-gray-900">{{ item.product.name|truncatechars:50 }}</div>
+                                            
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {% if item.product.image1 %}
+                                            <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}" 
+                                                 class="h-12 w-12 rounded-lg object-cover">
+                                            {% else %}
+                                            <div class="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                <span class="text-gray-400 text-xs">No Image</span>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 font-medium">{{ item.quantity }}</td>
+                                        <td class="px-4 py-3">₹{{ item.product.price }}</td>
+                                        <td class="px-4 py-3 font-semibold">₹{{ item.total_price }}</td>
+
+                                    <td class="px-4 py-3 font-semibold">
+                                         <div class="flex justify-end items-center">
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2">
+                                <a href="{% url 'user_order_details' pk=order.pk %}" 
+                                   class="px-3 py-1 bg-red-600 text-white text-xs rounded-full hover:bg-blue-700">
+                                    Remove
+                                </a>
+                                
+                                {% if order.order_status == order.DELIVERED %}
+                                <button onclick="reorder({{ order.id }})" 
+                                        class="px-3 py-1 bg-green-600 text-white text-xs rounded-full hover:bg-green-700">
+                                    Reorder
+                                </button>
+                                {% endif %}
+                            </div>
+                            
+                        </div></td>
+                                    </tr>
+                                    {% endfor %}
+
+                                    
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+           
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <div class="flex justify-center mt-8">
+                    <nav class="flex items-center space-x-1">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md">
+                                <span class="sr-only">First</span>
+                                <
+                            </a>
+
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="px-3 py-2 text-sm text-white bg-blue-600 border border-blue-600 rounded-md">{{ num }}</span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-md">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md">
+                                <span class="sr-only">Next</span>
+                               >
+                            </a>
+
+                        {% endif %}
+                    </nav>
+                </div>
+
+                <!-- Page Info -->
+                <div class="text-center mt-4 text-sm text-gray-500">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} orders
+                </div>
+                {% endif %}
+
+                
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">No orders found</h3>
+             
+                <div class="mt-6">
+      
+                        <a href="{% url 'products:product_list' %}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                            Start Shopping
+                        </a>
+                    
+                </div>
+            </div>
+        {% endif %}
+    </main>
+</div>
+
+<!-- JavaScript for interactions -->
+<script>
+    function toggleOrderDetails(orderId) {
+        const details = document.getElementById(`details-${orderId}`);
+        const arrow = document.getElementById(`arrow-${orderId}`);
+        
+        if (details.classList.contains('hidden')) {
+            details.classList.remove('hidden');
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            details.classList.add('hidden');
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function reorder(orderId) {
+        if (confirm('Add all items from this order to your cart?')) {
+            // Include CSRF token in the fetch request
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch(`/orders/${orderId}/reorder/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Items added to cart successfully!');
+                    window.location.href = '/cart/';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+    }
+
+    // Auto-submit form on filter change
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusSelect = document.querySelector('select[name="status"]');
+        const dateRangeSelect = document.querySelector('select[name="date_range"]');
+        
+        if (statusSelect) {
+            statusSelect.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+        
+        if (dateRangeSelect) {
+            dateRangeSelect.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+    });
+</script>
+{% endblock %}

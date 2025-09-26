@@ -1,0 +1,107 @@
+{% extends "adminbase.html" %}
+
+{% block title %} Varients {% endblock title %}
+{% block heading %} Varients {% endblock heading %}
+
+{% block context %}
+<body class="bg-gray-50 p-4 sm:p-8">
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
+        <!-- Page Header -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Varient List</h1>
+
+            <!-- Right side (Button above Search Bar) -->
+            <div class="flex flex-col items-end space-y-3">
+                <!-- Add Category Button -->
+                <a href="{% url 'add_varient' %}">
+                    <button class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200">
+                        ADD VARIENT
+                    </button>
+                </a>
+
+                <!-- Search bar -->
+                <div class="flex items-center space-x-2 w-full sm:w-60 md:w-72">
+                    <!-- Search form -->
+                    <form method="get" action="{% url 'varient_list' %}" class="relative flex-1">
+                        <input type="text" id="searchInput" name="q" value="{{ request.GET.q }}" 
+                               placeholder="Search categories..." 
+                               class="block w-full rounded-md border-gray-300 shadow-sm 
+                                      focus:border-blue-500 focus:ring-blue-500 pl-10 pr-4 py-2 text-sm">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.145l4.145 4.145a.5.5 0 01-.707.707l-4.145-4.145A7 7 0 012 9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </form>
+
+                    <!-- Clear button -->
+                    <a href="{% url 'varient_list' %}" id="clearSearch" 
+                       class="px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600 transition-colors duration-200 
+                              {% if not request.GET.q %}opacity-50 cursor-not-allowed{% endif %}" 
+                       {% comment %} {% if not request.GET.q %}onclick="return false;"{% endif %}> {% endcomment %} 
+                    >Clear
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="overflow-x-auto rounded-md border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No.</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CATEGORY NAME</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for i in varient %}
+                    <!-- Category Row -->
+                    <tr class="category-row">
+                        <td  class="px-6 py-4 whitespace-nowrap" >{{ forloop.counter|add:category.start_index|add:"-1" }}</td>
+
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 category-name">
+                            {{i.name}}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="{% url 'update_varient' pk=i.pk %}" class="text-gray-500 hover:text-blue-600 px-2 py-1 rounded hover:bg-blue-50 transition-colors duration-200" title="Edit Category">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <a href="{% url 'delete_varient' pk=i.pk %}" class="text-gray-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors duration-200" title="Delete Category" onclick="return confirm('Are you sure you want to delete this category?')">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No varient found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    <!-- Pagination -->
+            <div class="flex justify-center space-x-2 mt-8">
+                {% if user.has_previous %}
+                <a href="?page={{ varient.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+                {% endif %}
+
+                {% for i in varient.paginator.page_range %}
+                <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">{{ i }}</a>
+                {% endfor %}
+
+                {% if user.has_next %}
+                <a href="?page={{ varient.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+                {% endif %}
+            </div>
+
+           
+        </div>
+    </div>
+
+</body>
+
+
+{% endblock context %}

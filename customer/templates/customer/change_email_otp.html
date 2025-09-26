@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+{% load socialaccount %}
+{% block content %}
+
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md text-center">
+    
+    <!-- Logo -->
+    <div class="flex justify-center mb-4">
+      <img src="{% static 'images/otp-logo.jpg' %}" alt="OTP Shield" class="w-16 h-16"/>
+    </div>
+
+    <!-- Heading -->
+    <h2 class="text-xl font-semibold text-gray-800">Verify OTP</h2>
+    <p class="text-gray-600 text-sm mt-1">OTP sent to</p>
+    <p class="text-red-500 font-medium text-sm mb-4">{{ request.session.email }}</p>
+
+    <!-- Countdown -->
+    <div class="container mx-auto">
+      <p class="text-center text-gray-600 mb-4">
+        <span id="timer" data-resend-url="{% url 'resend_otp' %}">02:00</span>
+      </p>
+
+      <!-- Message area -->
+      <p id="message-area" class="text-red-500 mt-2"></p>
+    </div>
+
+    <!-- OTP Form -->
+    <form method="POST" class="space-y-6">
+      {% csrf_token %}
+      
+      <!-- OTP Input Boxes -->
+      <div class="flex space-x-2 justify-center">
+        {% for i in "123456" %}
+          <input type="text" maxlength="1"
+            class="otp-box w-12 h-12 border rounded-lg text-center text-xl 
+                   focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        {% endfor %}
+      </div>
+
+      <!-- Hidden field (JS fills this) -->
+      <input type="hidden" name="otp_code" id="otp_code" />
+
+      <!-- Submit button -->
+      <button type="submit"
+        class="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600">
+        Verify OTP
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script>
+  // Countdown Timer
+  let timeLeft = 120; // 2 minutes
+  const timerElement = document.getElementById("timer");
+  const resendUrl = timerElement.getAttribute("data-resend-url");
+
+  const timer = setInterval(() => {
+    let minutes = Math.floor(timeLeft / 60);
+    let seconds = timeLeft % 60;
+    timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      timerElement.innerHTML = `<a href="${resendUrl}" class="text-blue-500 hover:underline">Resend OTP</a>`;
+      const verifyButton = document.querySelector('button[type="submit"]');
+      if (verifyButton) {
+        verifyButton.disabled = true;
+        verifyButton.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+      document.getElementById('message-area').textContent = "Your OTP has expired. Please request a new one.";
+    }
+    timeLeft--;
+  }, 1000);
+
+  // OTP Input Handling
+  const otpBoxes = document.querySelectorAll(".otp-box");
+  const otpHidden = document.getElementById("otp_code");
+  const form = document.querySelector("form");
+
+  otpBoxes.forEach((box, idx) => {
+    box.addEventListener("input", () => {
+      if (box.value && idx < otpBoxes.length - 1) otpBoxes[idx + 1].focus();
+      otpHidden.value = Array.from(otpBoxes).map(b => b.value).join("");
+    });
+  });
+
+  form.addEventListener("submit", function (e) {
+    let otpValue = Array.from(otpBoxes).map(input => input.value).join("");
+    otpHidden.value = otpValue;
+    if (otpValue.length < otpBoxes.length) {
+      e.preventDefault();
+      alert("Please enter complete OTP!");
+    }
+  });
+</script>
+
+{% endblock content %}
+
+
+
+
+

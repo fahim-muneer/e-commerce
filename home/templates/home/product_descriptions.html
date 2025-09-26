@@ -1,0 +1,60 @@
+<div class="space-y-6">
+    <h3 class="text-3xl font-bold text-gray-900">{{object.name}}</h3>
+    <div class="space-y-2 text-gray-600">
+        <p class="flex items-center space-x-2"><i class="fa-solid fa-tag text-blue-500"></i><span><b>Brand:</b> GANT</span></p>
+        <p class="flex items-center space-x-2"><i class="fa-solid fa-star text-yellow-400"></i><span class="ml-2 text-sm">(13) Review</span></p>
+        <p class="flex items-center space-x-2"><i class="fa-solid fa-calendar-alt text-blue-500"></i><span><b>Published:</b> {{object.created_at}}</span></p>
+    </div>
+    <div class="flex items-center space-x-2">
+        {% if object.old_price %}
+            <span class="text-gray-400 line-through text-sm">₹{{object.old_price}}</span>
+        {% endif %}
+        <span class="text-red-500 font-semibold text-lg">₹{{object.price}}</span>
+        {% if object.old_price %}
+            {% widthratio object.old_price object.price 100 as discount_percent %}
+            {% if discount_percent > 100 %}
+                <span class="text-green-500 text-sm font-medium">
+                    {{ discount_percent|floatformat:0|add:"-100" }}% OFF
+                </span>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <h4 class="text-xl font-bold text-gray-800">Product Description</h4>
+    <p class="text-gray-600 leading-relaxed">
+        {{object.description}}
+    </p>
+
+
+        
+        <!-- Fixed Add to Cart Form -->
+        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+            {% csrf_token %}
+            <div class="flex items-center space-x-4">
+                <span class="text-sm font-semibold text-gray-800">Quantity:</span>
+                <input type="hidden" name="product_id" value="{{object.pk}}">
+                <input type="number" name="quantity" value="1" min="1" max="99" 
+                       class="w-20 px-2 py-1 rounded-md border border-gray-300 text-center">
+            </div>
+            
+            {% if user.is_authenticated %}
+                <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                    ADD TO CART
+                </button>
+            {% else %}
+                <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
+                    LOGIN TO ADD TO CART
+                </a>
+            {% endif %}
+        </form>
+
+        <div class="flex items-center space-x-4 text-gray-600">
+            <button class="flex items-center space-x-2 hover:text-blue-500">
+                <i class="fa-regular fa-heart"></i><span>Add to Wishlist</span>
+            </button>
+            <button class="flex items-center space-x-2 hover:text-blue-500">
+                <i class="fa-solid fa-balance-scale"></i><span>Add to Compare</span>
+            </button>
+        </div>
+    </div>
+</div>

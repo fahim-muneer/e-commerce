@@ -1,7 +1,16 @@
 from django import forms
 from .models import Register
-from .models import AddressType, UserAddress
+from .models import AddressType, UserAddress , Customer
 from django.contrib.auth.forms import SetPasswordForm
+from allauth.socialaccount.forms import SignupForm
+
+
+
+class CustomSocialSignupForm(SignupForm):
+    def save(self, request):
+        user = super().save(request)
+        Customer.objects.get_or_create(user=user)   #pylint: disable=no-member
+        return user
 
 
 class SignUpForm(forms.ModelForm):
@@ -89,7 +98,7 @@ class AddressTypeForm(forms.ModelForm):
 class UserAddressForm(forms.ModelForm):
     class Meta:
         model = UserAddress
-        fields = ['user', 'mobile', 'second_mob', 'address', 'city', 'state', 'pin', 'country', 'address_type', 'is_default']
+        fields = [ 'mobile', 'second_mob', 'address', 'city', 'state', 'pin', 'country', 'address_type', 'is_default']
         widgets = {
             'user': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
@@ -102,9 +111,10 @@ class UserAddressForm(forms.ModelForm):
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                 'placeholder': 'Second Mobile Number'
             }),
-            'address': forms.TextInput(attrs={
+            'address': forms.Textarea(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
-                'placeholder': 'Address'
+                'placeholder': 'Enter your full address',
+                'rows': 3,   
             }),
             'city': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
@@ -129,3 +139,35 @@ class UserAddressForm(forms.ModelForm):
                 'class': 'form-checkbox h-5 w-5 text-blue-600',
             }),
         }
+        
+class UserProfileForm(forms.ModelForm):
+    
+    
+    class Meta:
+        model = Customer
+        fields = ['profile_picture']
+        widgets = {
+            'profile_picture': forms.FileInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            }),
+        }
+class UpdateEmailForm(forms.ModelForm):
+    
+    class Meta:
+            model=Register
+            fields=['full_name','email']
+            widgets = {
+                    'full_name': forms.TextInput(attrs={
+                        'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                        'placeholder': 'Full Name'
+                    }),
+                    'email': forms.EmailInput(attrs={
+                        'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                        'placeholder': 'Email ID'
+                    }),
+                }
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if Register.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("This email is already registered.")
+        return email

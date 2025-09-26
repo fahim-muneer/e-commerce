@@ -1,10 +1,24 @@
-    <!-- CATEGORY ICONS -->
-    <div class="flex justify-center bg-gray-50 py-6 space-x-4">
-  <!-- Category Item -->
-   {% for items in category %}
-  <div class="bg-white shadow-sm border border-gray-200 rounded-md p-6 flex flex-col items-center hover:shadow-md cursor-pointer transition">
-<img src="{{ items.image.url }}" alt="{{ items.name }}" class="w-12 h-12 mb-2">
-    <p class="text-sm font-medium"> {{items.name}} </p>
+<!-- CATEGORY ICONS -->
+<div class="bg-gray-50 py-6">
+  <!-- Title -->
+  <h2 class="text-center text-lg font-semibold mb-6">SHOP BY CATEGORIES</h2>
+
+  <!-- Categories -->
+  <div class="flex justify-center flex-wrap gap-6">
+    {% for items in category %}
+      <form method="get" action="{% url 'home' %}">
+        <input type="hidden" name="category" value="{{ items.name }}">
+        <button 
+          type="submit" 
+          class="bg-white shadow-sm border border-gray-200 rounded-md p-6 
+                 flex flex-col items-center hover:shadow-md cursor-pointer transition"
+        >
+          <img src="{{ items.image.url }}" alt="{{ items.name }}" class="w-12 h-12 mb-2">
+          <p class="text-sm font-medium">{{ items.name }}</p>
+        </button>
+      </form>
+    {% endfor %}
   </div>
-   {% endfor %}
 </div>
+
+

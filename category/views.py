@@ -5,12 +5,22 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from .forms import CategoryForm
 from category.models import CategoryPage
-
+from django.core.paginator import Paginator
 
 class Category(View):
     def get(self , request):
-       category = CategoryPage.objects.all() #pylint: disable=no-member
-       return render(request ,'category/category_view.html',{'category':category})
+        search = request.GET.get("q")
+        if search:
+            category=CategoryPage.objects.filter(name__icontains=search)   # pylint: disable=no-member
+        else:
+            category = CategoryPage.objects.all() #pylint: disable=no-member
+        page = 1
+        if request.GET:
+            page = request.GET.get('page', 1)
+
+        user_paginator = Paginator(category, 5)
+        category = user_paginator.get_page(page)
+        return render(request ,'category/category_view.html',{'category':category})
 
 
 

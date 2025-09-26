@@ -1,111 +1,134 @@
 {% load static %}
-{% load chunks %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Furniture</title>
+  {% block wishlist %}
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock wishlist %}
 </head>
 <body class="bg-gray-50">
-
-
-  <!--promotional banner-->
-
-<div class="bg-gray-100 py-2 text-sm">
-  <div class="container mx-auto flex items-center justify-between px-4">
-    <p>Get up to 50% off new season styles, limited time only</p>
-    <div class="flex space-x-4">
-      <a href="#" class="text-gray-600 hover:text-gray-900">Help Center</a>
-      <a href="#" class="text-gray-600 hover:text-gray-900">Order Tracking</a>
+{% block reason %}
+  <!-- Promotional banner -->
+  <div class="bg-gray-100 py-2 text-sm">
+    <div class="container mx-auto flex items-center justify-between px-4">
+      <p>Get up to 50% off new season styles, limited time only</p>
+      <div class="flex space-x-4">
+        <a href="#" class="text-gray-600 hover:text-gray-900">Help Center</a>
+        <a href="#" class="text-gray-600 hover:text-gray-900">Order Tracking</a>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- Nav Bar -->
-<div class="border-b border-gray-200 py-4">
-  <div class="container mx-auto flex items-center justify-between px-4">
-    <div class="w-20">
-      <img src="{%static 'images/icons/banu furniture.png'%}" alt="Logo" />
-    </div>
+  <div class="border-b border-gray-200 py-4">
+    <div class="container mx-auto flex items-center justify-between px-4">
+      <div class="w-20">
+        <img src="{% static 'icons/banu.png' %}" alt="Banu Logo" />
+      </div>
+<form method="get" action="{% url 'home' %}" class="flex-1 px-6">
+  <div class="relative flex w-[800px] mx-auto items-center rounded-md border border-gray-300 bg-gray-100 px-4 py-2">
+    <input 
+      type="text" 
+      name="search" 
+      value="{{ request.GET.search }}" 
+      placeholder="Search for products..." 
+      class="w-full bg-transparent text-sm focus:outline-none" 
+    />
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  </div>
+</form>
 
-    <div class="relative flex w-1/2 items-center rounded-md border border-gray-300 bg-gray-100 px-4 py-2">
-      <input type="text" placeholder="Search for products..." class="w-full bg-transparent text-sm focus:outline-none" />
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    </div>
+      {% if user.is_authenticated %}
+      <div class="text-right text-sm">
+        <p class="font-medium">{{ request.user.full_name }}</p>
+        <p class="text-gray-600">{{ request.user.email }}</p>
+      </div>
+      {% endif %}
 
-    <div class="flex items-center space-x-6">
-      <div class="flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-        <div class="text-sm">
-          {% block email %}
-          
-          {% endblock email %}
-          
+      <div class="flex items-center space-x-6">
+        <!-- User Profile -->
+        <div class="flex items-center space-x-2">
+          {% if user.is_authenticated %}
+            <a href="{% url 'user_profile' %}" class="flex items-center space-x-2 hover:text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </a>
+          {% else %}
+            <a href="{% url 'login' %}" class="flex items-center space-x-2 hover:text-blue-600">
+               <svg xmlns="http://www.w3.org/2000/svg" 
+                    class="h-8 w-8 text-green-600 hover:text-green-800 transition-colors" 
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M7 16l-4-4m0 0l4-4m-4 4h14m-6-4v1a2 2 0 012 2v6a2 2 0 01-2 2h-4a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" />
+                </svg>
+            </a>
+          {% endif %}
         </div>
-      </div>
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-        <span class="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">1</span>
-      </div>
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.183 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        <span class="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">0</span>
+
+        <!-- Shopping Cart -->
+                 {% if user.is_authenticated %}
+
+        <div class="relative">
+          <a href="{% url 'cart' %}" class="hover:text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.183 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </a>
+          {% comment %} <span class="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">0</span> {% endcomment %}
+        </div>
+        {% endif %} 
+
+        <!-- Logout Button -->
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}" class="text-sm text-red-600 hover:text-red-800">
+              <svg xmlns="http://www.w3.org/2000/svg" 
+                  class="h-8 w-8 text-red-600 hover:text-red-800 transition-colors" 
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" />
+              </svg>
+            </a>
+        {% endif %}
       </div>
     </div>
   </div>
-</div>
-
-
-
-
-
 
   <!-- Banner under Nav -->
   <div class="py-4">
-  <div class="container mx-auto flex items-center justify-between px-4">
-    <div class="flex items-center space-x-2 text-sm font-semibold">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-      <span>SHOP BY CATEGORIES</span>
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-      </svg>
-    </div>
+    <div class="container mx-auto flex items-center justify-between px-4">
+      <div class="flex items-center space-x-2 text-sm font-semibold">
+        
 
-    <div class="flex space-x-6 text-sm font-semibold">
-      <a href="{% url 'index' %}" class="hover:text-gray-600">Home</a>
-      <a href="{% url 'home' %}" class="hover:text-gray-600">Shop</a>
-      <a href="#" class="hover:text-gray-600">About Us</a>
-      <a href="#" class="hover:text-gray-600">Contact</a>
-    </div>
 
-    <div class="flex items-center space-x-2 text-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-      <span>Free International Delivery</span>
+
+
+      </div>
+
+      <div class="flex space-x-6 text-sm font-semibold">
+        <a href="{% url 'index' %}" class="hover:text-gray-600">Home</a>
+        <a href="{% url 'home' %}" class="hover:text-gray-600">Shop</a>
+        <a href="#" class="hover:text-gray-600">About Us</a>
+        <a href="#" class="hover:text-gray-600">Contact</a>
+      </div>
+
+      <div class="flex items-center space-x-2 text-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+        <span>Free International Delivery</span>
+      </div>
     </div>
   </div>
-</div>
 
- 
-{% block content %}
-
-{% endblock content %}
-
-
-
+  {% block content %}
+  {% endblock content %}
 
   <!-- Feature Icons -->
   <div class="bg-white py-8">
@@ -138,92 +161,95 @@
     </div>
   </div>
 
-
   <!-- Footer -->
-<footer class="bg-white border-t mt-10">
-  <div class="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
+  <footer class="bg-white border-t mt-10">
+    <div class="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
 
-    <!-- Contact Us -->
-    <div>
-      <h3 class="font-semibold text-lg mb-4">Contact us</h3>
-      <p class="text-gray-600">Classyshop - Mega Super Store</p>
-      <p class="text-gray-600">507-Union Trade Centre France</p>
-      <p class="text-gray-600 mt-2">sales@yourcompany.com</p>
-      <p class="text-red-500 font-bold mt-2">(+91) 9876-543-210</p>
+      <!-- Contact Us -->
+      <div>
+        <h3 class="font-semibold text-lg mb-4">Contact us</h3>
+        <p class="text-gray-600">Classyshop - Mega Super Store</p>
+        <p class="text-gray-600">507-Union Trade Centre France</p>
+        <p class="text-gray-600 mt-2">sales@yourcompany.com</p>
+        <p class="text-red-500 font-bold mt-2">(+91) 9876-543-210</p>
 
-      <div class="flex items-center mt-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m0-4h10a2 2 0 012 2v4H5V6a2 2 0 012-2z" />
-        </svg>
-        <span class="text-gray-700">Online Chat<br>Get Expert Help</span>
+        <div class="flex items-center mt-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m0-4h10a2 2 0 012 2v4H5V6a2 2 0 012-2z" />
+          </svg>
+          <span class="text-gray-700">Online Chat<br>Get Expert Help</span>
+        </div>
+      </div>
+
+      <!-- Products -->
+      <div>
+        <h3 class="font-semibold text-lg mb-4">Products</h3>
+        <ul class="space-y-2 text-gray-600">
+          <li><a href="#" class="hover:text-red-500">Prices drop</a></li>
+          <li><a href="#" class="hover:text-red-500">New products</a></li>
+          <li><a href="#" class="hover:text-red-500">Best sales</a></li>
+          <li><a href="#" class="hover:text-red-500">Contact us</a></li>
+          <li><a href="#" class="hover:text-red-500">Sitemap</a></li>
+          <li><a href="#" class="hover:text-red-500">Stores</a></li>
+        </ul>
+      </div>
+
+      <!-- Our Company -->
+      <div>
+        <h3 class="font-semibold text-lg mb-4">Our company</h3>
+        <ul class="space-y-2 text-gray-600">
+          <li><a href="#" class="hover:text-red-500">Delivery</a></li>
+          <li><a href="#" class="hover:text-red-500">Legal Notice</a></li>
+          <li><a href="#" class="hover:text-red-500">Terms and conditions of use</a></li>
+          <li><a href="#" class="hover:text-red-500">About us</a></li>
+          <li><a href="#" class="hover:text-red-500">Secure payment</a></li>
+          <li><a href="#" class="hover:text-red-500">Login</a></li>
+        </ul>
+      </div>
+
+      <!-- Newsletter -->
+      <div>
+        <h3 class="font-semibold text-lg mb-4">Subscribe to newsletter</h3>
+        <p class="text-gray-600 mb-4">Subscribe to our latest newsletter to get news about special discounts.</p>
+        <form method="post" action="">
+          {% csrf_token %}
+          <input type="email" name="email" placeholder="Your Email Address" required
+            class="w-full border rounded-md px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-red-500">
+          <button type="submit" class="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600">SUBSCRIBE</button>
+        </form>
+        <label class="flex items-center mt-4 text-gray-600 text-sm">
+          <input type="checkbox" class="mr-2" required>
+          I agree to the terms and conditions and the privacy policy
+        </label>
       </div>
     </div>
 
-    <!-- Products -->
-    <div>
-      <h3 class="font-semibold text-lg mb-4">Products</h3>
-      <ul class="space-y-2 text-gray-600">
-        <li><a href="#" class="hover:text-red-500">Prices drop</a></li>
-        <li><a href="#" class="hover:text-red-500">New products</a></li>
-        <li><a href="#" class="hover:text-red-500">Best sales</a></li>
-        <li><a href="#" class="hover:text-red-500">Contact us</a></li>
-        <li><a href="#" class="hover:text-red-500">Sitemap</a></li>
-        <li><a href="#" class="hover:text-red-500">Stores</a></li>
-      </ul>
-    </div>
+    <!-- Bottom Bar -->
+    <div class="border-t py-4">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+        <!-- Social Icons -->
+        <div class="flex space-x-4 mb-4 md:mb-0">
+          <a href="#" class="hover:opacity-80">
+            <img src="{% static 'images/icons/facebook.png' %}" alt="Facebook" class="w-6 h-6">
+          </a>
+          <a href="#" class="hover:opacity-80">
+            <img src="{% static 'images/icons/youtube.png' %}" alt="YouTube" class="w-6 h-6">
+          </a>
+          <a href="#" class="hover:opacity-80">
+            <img src="{% static 'images/icons/insta.png' %}" alt="Instagram" class="w-6 h-6">
+          </a>
+        </div>
 
-    <!-- Our Company -->
-    <div>
-      <h3 class="font-semibold text-lg mb-4">Our company</h3>
-      <ul class="space-y-2 text-gray-600">
-        <li><a href="#" class="hover:text-red-500">Delivery</a></li>
-        <li><a href="#" class="hover:text-red-500">Legal Notice</a></li>
-        <li><a href="#" class="hover:text-red-500">Terms and conditions of use</a></li>
-        <li><a href="#" class="hover:text-red-500">About us</a></li>
-        <li><a href="#" class="hover:text-red-500">Secure payment</a></li>
-        <li><a href="#" class="hover:text-red-500">Login</a></li>
-      </ul>
-    </div>
+        <!-- Copyright -->
+        <p class="text-gray-500 text-sm">© 2024 - Ecommerce Template</p>
 
-    <!-- Newsletter -->
-    <div>
-      <h3 class="font-semibold text-lg mb-4">Subscribe to newsletter</h3>
-      <p class="text-gray-600 mb-4">Subscribe to our latest newsletter to get news about special discounts.</p>
-      <input type="email" placeholder="Your Email Address"
-        class="w-full border rounded-md px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-red-500">
-      <button class="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600">SUBSCRIBE</button>
-      <label class="flex items-center mt-4 text-gray-600 text-sm">
-        <input type="checkbox" class="mr-2">
-        I agree to the terms and conditions and the privacy policy
-      </label>
-    </div>
-  </div>
-
-  <!-- Bottom Bar -->
-  <div class="border-t py-4">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
-      <!-- Social Icons -->
-      <div class="flex space-x-4 mb-4 md:mb-0">
-        <a href="#"><img src="{%static 'images/icons/facebook.png'%}" alt="Facebook" class="w-6 h-6"></a>
-        <a href="#"><img src="{%static 'images/icons/youtube.png'%}" alt="YouTube" class="w-6 h-6"></a>
-        <a href="#"><img src="{%static 'images/icons/insta.png'%}" alt="Instagram" class="w-6 h-6"></a>
-      </div>
-
-      <!-- Copyright -->
-      <p class="text-gray-500 text-sm">© 2024 - Ecommerce Template</p>
-
-      <!-- Payment Icons -->
-      <div class="flex space-x-2">
-        {% comment %} <img src="cb-icon.png" alt="CB" class="h-6"> {% endcomment %}
-        
-        
-        
-       
+        <!-- Payment Icons -->
+        <div class="flex space-x-2">
+          <!-- Add payment method icons here if needed -->
+        </div>
       </div>
     </div>
-  </div>
-</footer>
-
-
+  </footer>
+{% endblock reason %}
 </body>
 </html>

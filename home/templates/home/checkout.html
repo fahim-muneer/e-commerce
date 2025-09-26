@@ -1,0 +1,162 @@
+
+{% extends "base.html" %}
+{% load static %}
+{% load chunks %}
+
+{% block content %} 
+<body class="bg-gray-100 p-6">
+    <!-- Display Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+         <!-- Display Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        <!-- Left Side: Address and Coupon -->
+        <div class="space-y-6">
+            <!-- Select Delivery Address -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Select Delivery Address</h2>
+                    <a href="{% url 'add_order_address' %}" class="text-blue-600 hover:underline text-sm font-semibold">+ADD NEW ADDRESS</a>
+                </div>
+                
+                <form method="post" action="{% url 'checkout' %}" id="checkout-form">
+                    {% csrf_token %}
+                    {% if addresses %}
+                        {% for address in addresses %}
+                        <!-- Existing Address Card -->
+                        <div class="bg-red-50 border border-red-200 p-6 rounded-lg relative mb-4">
+                            <div class="absolute top-2 left-2 flex items-center space-x-2">
+                                <input type="radio" name="address" id="address_{{ address.id }}" value="{{ address.id }}" class="h-4 w-4 text-red-600 focus:ring-red-500" {% if forloop.first %}checked{% endif %}>
+                            </div>
+                            <div class="mt-8">
+                                <p class="font-semibold text-gray-800">{{ address.user.user.username }}</p>
+                                <p class="text-sm text-gray-600">{{ address.address }}</p>
+                                <p class="text-sm text-gray-600">{{ address.city }}, {{ address.state }} {{ address.pin }}</p>
+                                <p class="text-sm text-gray-600">{{ address.mobile }}</p>
+                            </div>
+                            <a href="{% url 'edit_order_address' pk=address.id %}" class="absolute top-2 right-2 text-blue-600 hover:underline cursor-pointer text-sm font-semibold">EDIT</a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                            <p class="text-yellow-800">No delivery addresses found. Please add an address to continue.</p>
+                        </div>
+                    {% endif %}
+            </div>
+
+            <!-- Apply Coupon -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Apply Coupon</h2>
+                <div class="relative">
+                    <input type="text" name="coupon_code" placeholder="Coupon Code" class="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-red-50">
+                    <button type="button" class="absolute inset-y-0 right-0 px-4 py-2 bg-red-500 text-white rounded-r-md font-semibold text-sm">Apply</button>
+                </div>
+                <a href="#" class="block text-right text-sm text-gray-600 hover:underline mt-2">View Coupons</a>
+            </div>
+        </div>
+
+        <!-- Right Side: Your Order -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Your Order</h2>
+            <div class="space-y-4">
+                <!-- Order Products -->
+                {% if cart_items %}
+                    {% for cart_item in cart_items %}
+                    <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                        <div class="flex items-center space-x-4">
+                            {% if cart_item.product %}
+                                <img src="{{ cart_item.product.image1.url }}" alt="{{ cart_item.product.name }}" class="w-16 h-16 object-cover rounded-md">
+                                <div>
+                                    <p class="font-semibold text-gray-800">{{ cart_item.product.name }}</p>
+                                    <p class="text-sm text-gray-600">Qty: {{ cart_item.quantity }}</p>
+                                </div>
+                            {% else %}
+                                <div class="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center">
+                                    <i class="fa-solid fa-image text-gray-400"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">Product Unavailable</p>
+                                    <p class="text-sm text-gray-600">Qty: {{ cart_item.quantity }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <p class="font-semibold text-gray-800">
+                            {% if cart_item.product.price %}
+                                ₹{{ cart_item.item_total }}
+                            {% else %}
+                                ₹0
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">No items in your cart.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="border-t border-gray-200 pt-4 mt-4">
+                <div class="flex justify-between items-center text-lg font-bold text-gray-800 mb-4">
+                    <p>Subtotal</p>
+                    <p>₹{{ total_items|default:0 }}</p>
+                </div>
+                
+                <!-- Payment Buttons -->
+                {% if addresses %}
+                    <input type="hidden" name="payment_method" id="payment_method" value="cod">
+                    
+                    <button type="button" onclick="submitOrder('razorpay')" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>RAZORPAY</span>
+                    </button>
+                    
+                    <button type="button" onclick="submitOrder('cod')" class="w-full mt-2 py-3 bg-gray-800 text-white font-semibold rounded-md shadow-md hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-truck"></i>
+                        <span>CASH ON DELIVERY</span>
+                    </button>
+                    
+                    <button type="button" onclick="submitOrder('wallet')" class="w-full mt-2 py-3 bg-gray-800 text-white font-semibold rounded-md shadow-md hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>PAY WITH WALLET</span>
+                    </button>
+                {% else %}
+                    <button disabled class="w-full py-3 bg-gray-400 text-white font-semibold rounded-md cursor-not-allowed">
+                        Add Address to Continue
+                    </button>
+                {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function submitOrder(paymentMethod) {
+            // Check if address is selected
+            const selectedAddress = document.querySelector('input[name="address"]:checked');
+            if (!selectedAddress) {
+                alert('Please select a delivery address.');
+                return;
+            }
+            
+            // Set payment method
+            document.getElementById('payment_method').value = paymentMethod;
+            
+            // Submit the form
+            document.getElementById('checkout-form').submit();
+        }
+    </script>
+</body>
+{% endblock content %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Order #{{ order.id }} Details{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-5"> 
+    {% include "user_profile_side_bar.html" %}
+
+    <main class="md:col-span-3 bg-white p-6 rounde d-xl shadow-lg flex flex-col justify-between">
+
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-200 mb-6">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Order ID: #{{ order.id }}</h1>
+                <p class="text-xs text-gray-500 mt-2">
+                    Order date: <span class="font-medium">{{ order.created_at|date:"M d, Y" }}</span>
+                    <span class="mx-2">•</span>
+                    Estimated delivery: 
+                    <span class="font-medium text-green-600">
+                        {{ order.estimated_delivery|date:"M d, Y" }}
+                    </span>
+                </p>
+            </div>
+            <a href="{% url 'download_pdf' uid=order.id %}"class="flex items-center gap-1 mt-4 sm:mt-0 px-4 py-2 text-sm bg-gray-100 rounded-full text-gray-700 font-medium hover:bg-gray-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Invoice</span>
+            </a>
+        </div>
+
+        <div class="flex justify-between items-center mb-6 text-xs text-gray-500">
+            <div class="text-center w-1/4">
+                {% if order.order_status is 4  %}
+                <span class="text-red-600 font-bold">{{ order.get_order_status_display }}</span>
+                {% else %}
+                <span class="text-green-600 font-bold">{{ order.get_order_status_display }}</span>
+
+                <p class="mt-1">{{ order.created_at|date:"M d, Y" }}</p>
+                {% endif %}
+            </div>
+            <div class="text-center w-1/4">
+                <span class="text-green-600 font-bold">Shipped</span>
+                <p class="mt-1">--</p>
+            </div>
+            <div class="text-center w-1/4">
+                <span class="text-green-600 font-bold">Out For Delivery</span>
+                <p class="mt-1">--</p>
+            </div>
+            <div class="text-center w-1/4">
+                <span class="font-semibold text-gray-700">Delivered</span>
+                <p class="mt-1">Expected by {{ order.estimated_delivery|date:"M d, Y" }}</p>
+            </div>
+        </div>
+
+        {% for item in order.items.all %}
+        <div class="flex items-center gap-4 py-4 border-b border-gray-200">
+            {% if item.product.image1 %}
+            <img src="{{ item.product.image1.url }}" alt="{{ item.product.name }}" class="w-20 h-20 rounded-lg object-cover">
+            {% else %}
+            <div class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                <span class="text-gray-400 text-xs">No Image</span>
+            </div>
+            {% endif %}
+            <div class="flex-1">
+                <h3 class="text-lg font-medium text-gray-800">{{ item.product.name }}</h3>
+                <div class="text-sm font-semibold text-gray-600 mt-1">
+                    ₹{{ item.product.price|floatformat:2 }}
+                </div>
+            </div>
+            <div class="text-sm text-gray-500">
+                Qty: {{ item.quantity }}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+            <div>
+                <h4 class="font-bold text-lg text-gray-800 mb-3">Payment</h4>
+                <div class="tex-sm text-green-600">
+                <p>{{ order.get_payment_method_display }}</p>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold text-lg text-gray-800 mb-3">Delivery</h4>
+                <div class="text-sm text-gray-600">
+
+                    <p class="font-bold">{{request.uer.full_name }}</p>
+                    <p>{{ order.delivery_address.mobile }}</p>
+                    <p>{{ order.delivery_address.second_mob }}</p>
+                    <p>{{ order.delivery_address.c }}</p>
+                    <p>{{ order.delivery_address.city }}</p>
+
+                    <p>{{ order.delivery_address.street }}</p>
+                    <p>{{ order.delivery_address.pin }}</p>
+
+
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 border-t border-gray-200 pt-6">
+            <h4 class="font-bold text-lg text-gray-800 mb-3">Order Summary</h4>
+            <div class="space-y-2 text-sm text-gray-600">
+                <div class="flex justify-between">
+                    <span>Discount</span>
+                    <span class="font-semibold text-gray-800">₹{{ order.discount|default:"0.00" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Delivery</span>
+                    <span class="font-semibold text-gray-800">₹{{ order.delivery_charge|default:"0.00" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Tax</span>
+                    <span class="font-semibold text-gray-800">₹{{ order.tax|default:"0.00" }}</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center font-bold text-lg text-gray-800 border-t border-gray-300 mt-4 pt-4">
+                <span>Total</span>
+                <span>₹{{ order.total_amount|floatformat:2 }}</span>
+            </div>
+        </div>
+            <div class="mt-6 mr-10 flex justify-start">
+                {% if order.order_status is not 4 %}
+        <form method="post" action="{% url 'return_reason' uid=order.id %}">
+            {% csrf_token %}
+            <button type="submit"
+                class="px-6 py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                CANCEL ORDER
+            </button>
+               
+        </form>
+        {% else %}
+         <a  href="{% url 'home' %}"
+                class="px-6 py-3 bg-green-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                BACK TO PURCHASE
+            </a>
+            {% endif %}
+
+     </main>
+
+
+
+
+
+
+    </div>
+
+
+
+
+</div>
+{% endblock content %}

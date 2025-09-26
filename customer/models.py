@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from datetime import timedelta
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+
 
 
 
@@ -77,10 +79,13 @@ class AddressType(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return str(self.name)
 
 
 class UserAddress(models.Model):
-    user = models.ForeignKey(Register, on_delete=models.CASCADE)
+    user = models.ForeignKey(Register, on_delete=models.CASCADE,related_name='user_address')
     mobile = models.CharField(max_length=20)
     second_mob = models.CharField(max_length=20, blank=True)
     address = models.CharField(max_length=500)
@@ -92,4 +97,14 @@ class UserAddress(models.Model):
     is_default = models.BooleanField(default=False)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-  
+
+
+class Customer(models.Model):
+    profile_picture=models.ImageField(upload_to='customer/', null=True)
+    user=models.OneToOneField(Register, on_delete=models.CASCADE,related_name='cusomer_profile')
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return str(self.user.full_name)  #pylint: disable=no-member
+    

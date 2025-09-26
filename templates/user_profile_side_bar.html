@@ -1,0 +1,50 @@
+ <aside class="md:col-span-1 bg-white p-6 rounded-lg shadow-md h-full">
+    <div class="flex flex-col items-center text-center mb-6">
+        <div class="relative w-24 h-24 mb-2">
+            <!-- This div makes the image a perfect circle and acts as the positioning context -->
+            <div class="w-full h-full rounded-full overflow-hidden">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.full_name }}" class="w-full h-full object-cover">
+                {% else %}
+                    <img src="https://placehold.co/100x100/cccccc/666666?text=No+Image" alt="Profile Picture" class="w-full h-full object-cover">
+                {% endif %}
+            </div>
+            
+            <!-- Pencil Icon is now outside the image, positioned relative to the parent container -->
+            <a href="{% url 'edit_profile_picture' %}">
+                <button class="absolute bottom-0 right-0 p-2 bg-gray-200 text-gray-600 hover:bg-gray-300 rounded-full transition-colors duration-200 shadow-sm cursor-pointer transform translate-x-1/4 translate-y-1/4">
+                    <i class="fa-solid fa-pencil text-xs"></i>
+                </button>
+            </a>
+        </div>
+         <h3 class="text-lg font-semibold text-gray-800">{{profile.user.full_name}}</h3>
+        <p class="text-sm text-gray-500">{{profile.user.email}}</p>
+    </div>
+
+            <nav class="space-y-2">
+                <a href="{% url 'user_profile' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fa-solid fa-user-circle"></i>
+                    <span>My Profile</span>
+                </a>
+                <a href="{% url 'user_address' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fa-solid fa-map-marker-alt"></i>
+                    <span>Address</span>
+                </a>
+                <a href="{% url 'wish_list' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fa-solid fa-heart"></i>
+                    <span>My List</span>
+                </a>
+                <a href="{% url 'user_order_list' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fa-solid fa-box"></i>
+                    <span>My Orders</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span>My Wallet</span>
+                </a>
+                <a href="{% url 'logout' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>

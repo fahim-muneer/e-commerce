@@ -54,10 +54,24 @@
         <div class="flex items-center space-x-2 mb-2">
           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
           <span class="text-red-500 font-semibold">₹{{ product.price }}</span>
+        
         </div>
-        <button class="w-full border border-red-500 text-red-500 py-1 text-sm rounded hover:bg-red-500 hover:text-white">
-          ADD TO CART
+        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ product.id }}">
+    <input type="hidden" name="quantity" value="1">
+
+    {% if user.is_authenticated %}
+        <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+            ADD TO CART
         </button>
+    {% else %}
+        <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
+            LOGIN TO ADD TO CART
+        </a>
+    {% endif %}
+</form>
+
       </div>
     </div>
   {% empty %}
@@ -158,9 +172,22 @@
           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
           <span class="text-red-500 font-semibold">₹{{ product.price }}</span>
         </div>
-        <button class="w-full border border-red-500 text-red-500 py-1 text-sm rounded hover:bg-red-500 hover:text-white">
-          ADD TO CART
+        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ product.id }}">
+    <input type="hidden" name="quantity" value="1">
+
+    {% if user.is_authenticated %}
+        <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+            ADD TO CART
         </button>
+    {% else %}
+        <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
+            LOGIN TO ADD TO CART
+        </a>
+    {% endif %}
+</form>
+
       </div>
     </div>
   {% empty %}
@@ -201,9 +228,22 @@
           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
           <span class="text-red-500 font-semibold">₹{{ product.price }}</span>
         </div>
-        <button class="w-full border border-red-500 text-red-500 py-1 text-sm rounded hover:bg-red-500 hover:text-white">
-          ADD TO CART
+        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ product.id }}">
+    <input type="hidden" name="quantity" value="1">
+
+    {% if user.is_authenticated %}
+        <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+            ADD TO CART
         </button>
+    {% else %}
+        <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
+            LOGIN TO ADD TO CART
+        </a>
+    {% endif %}
+</form>
+
       </div>
     </div>
   {% empty %}

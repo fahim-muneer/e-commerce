@@ -4,6 +4,11 @@ from django.views.generic.edit import UpdateView,DeleteView
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib import messages
 from .forms import AdminLoginForm
+from customer.models import Register
+from django.db.models import Count
+from orders.models import Cart,Orders,OrderItem
+from products.models import ProductPage
+from category.models import CategoryPage
 
 User = get_user_model()
 
@@ -52,4 +57,17 @@ def log_out(request):
 
 class DashBoard(View):
     def get(self, request):
-        return render(request, 'custom_admin/dashboard.html')
+        total_user=Register.objects.aggregate(total=Count("id"))['total']
+        total_orders=Orders.objects.aggregate(total=Count("id"))['total']          #pylint: disable=no-member
+        total_products=ProductPage.objects.aggregate(total=Count("id"))['total']  #pylint: disable=no-member
+        total_category=CategoryPage.objects.aggregate(total=Count("id"))['total']   #pylint: disable=no-member
+        
+        context={
+            'total_user': total_user,
+            'total_orders' : total_orders,
+            'total_products':total_products,
+            'total_category':total_category
+        }
+        
+        return render(request, 'custom_admin/dashboard.html',context)
+    

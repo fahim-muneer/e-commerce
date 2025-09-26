@@ -3,17 +3,49 @@ from django.views import View
 from django.views.generic import UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.core.paginator import Paginator
+from category.models import CategoryPage
 from .forms import ProductForm,ProductPage
+from wish_list.models import WishListItems
+from varients.models import Varients
 
 
 
 
 class ProductView(View):
     def get(self, request):
-        products =ProductPage.objects.all() # pylint: disable=no-member
+        filter = request.GET.get("category")
+        search= request.GET.get("q")
         
-        return render(request , 'product/product_view.html',{'products': products })
-    
+        
+        products =ProductPage.objects.all() # pylint: disable=no-member
+        wishlist_ids = []
+
+        if request.user.is_authenticated:
+            wishlist_ids = WishListItems.objects.filter(wish_list__user=request.user).values_list('products_id', flat=True) # pylint: disable=no-member
+        
+        if filter and filter != 'All Categories':
+            products = products.filter(category__name__icontains=filter)
+            
+        if search:
+            products=ProductPage.objects.filter(icontains=search)   # pylint: disable=no-member
+
+        
+        page = request.GET.get('page', 1)
+
+        product_paginator = Paginator(products, 40)
+        products = product_paginator.get_page(page)
+        
+        context={
+            'products': products,
+            'wishlist_ids':wishlist_ids,
+            'categories': CategoryPage.objects.all(),   # pylint: disable=no-member
+            'varient':Varients.objects.all()            # pylint: disable=no-member  
+        }
+        return render(request, 'product/product_view.html', context)  
+
+
+
 class ProductAdding(View):
     def get(self, request):
         context = {

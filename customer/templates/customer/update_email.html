@@ -1,0 +1,63 @@
+{% extends "base_category.html" %}
+{% block context %}
+
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
+        <!-- Header -->
+         <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800"> Update Profile</h2>
+          <button class="text-gray-400 hover:text-gray-600">
+                 <a href=" {% url 'user_profile' %} "><i class="fa-solid fa-times text-xl"></i> </a>
+            </button>
+        </div>
+
+
+
+        <!-- Form Layout -->
+        <form method="post" enctype="multipart/form-data"  class="space-y-6">
+            {% csrf_token %}
+                        <!-- Full Name Field -->
+            <div class="mb-4">
+                <label for="{{ form.full_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
+                </label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {{ form.full_name.errors }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Email Field -->
+            <div class="mb-4">
+                <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                </label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {{ form.email.errors }}
+                    </div>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">
+                    Note: Changing your email will require verification.
+                </p>
+            </div>
+            <!-- Publish Button -->
+            <div class="flex justify-end">
+                <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
+                    <span>UPDATE</span>
+                </button>
+            </div>
+        </form>
+
+
+
+    </div>
+
+</body>
+{% endblock context %}

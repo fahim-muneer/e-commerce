@@ -1,7 +1,13 @@
 from django.db import models
 from category.models import CategoryPage
+
+from varients.models import Varients
 # Create your models here.
 
+
+    
+    
+    
 class ProductPage(models.Model):
    
     image1=models.ImageField(upload_to='products/')
@@ -13,6 +19,7 @@ class ProductPage(models.Model):
     description=models.TextField(max_length=1000)
     price=models.IntegerField()
     category = models.ForeignKey(CategoryPage , on_delete=models.CASCADE)
+    varient=models.ForeignKey(Varients,on_delete=models.CASCADE)
     priority = models.IntegerField(default = 0)
     old_price=models.IntegerField()
     block = models.BooleanField()

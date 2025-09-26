@@ -23,45 +23,10 @@
                 </div>
 
                 <!-- Product Info -->
-                <div class="space-y-6">
-                    <h3 class="text-3xl font-bold text-gray-900"> {{object.name}} </h3>
-                    <div class="space-y-2 text-gray-600">
-                        <p class="flex items-center space-x-2"><i class="fa-solid fa-tag text-blue-500"></i><span><b>Brand:</b> GANT</span></p>
-                        <p class="flex items-center space-x-2"><i class="fa-solid fa-star text-yellow-400"></i><span class="ml-2 text-sm">(13) Review</span></p>
-                        <p class="flex items-center space-x-2"><i class="fa-solid fa-calendar-alt text-blue-500"></i><span><b>Published:</b> {{object.created_at}}</span></p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                         <span class="text-gray-400 line-through text-sm">₹{{object.old_price}}</span>
-                         <span class="text-red-500 font-semibold text-lg">₹{{object.price}}</span>
-                    </div>
-
-                    <h4 class="text-xl font-bold text-gray-800">Product Description</h4>
-                    <p class="text-gray-600 leading-relaxed">
-                            {{object.descriptions}}</p>
+                
                     
-                    <!-- Action Buttons and Details -->
-                    <div class="space-y-4">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-sm font-semibold text-gray-800">Color:</span>
-                            <div class="flex space-x-2">
-                                <div class="w-6 h-6 rounded-full bg-blue-500 border border-gray-300"></div>
-                                <div class="w-6 h-6 rounded-full bg-red-500 border border-gray-300"></div>
-                                <div class="w-6 h-6 rounded-full bg-green-500 border border-gray-300"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            <span class="text-sm font-semibold text-gray-800">{{object.stock}}:</span>
-                            <input type="number" value="1" min="1" class="w-20 px-2 py-1 rounded-md border border-gray-300 text-center">
-                        </div>
-                        <button class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
-                            ADD TO CART
-                        </button>
-                        <div class="flex items-center space-x-4 text-gray-600">
-                            <button class="flex items-center space-x-2 hover:text-blue-500"><i class="fa-regular fa-heart"></i><span>Add to Wishlist</span></button>
-                            <button class="flex items-center space-x-2 hover:text-blue-500"><i class="fa-solid fa-balance-scale"></i><span>Add to Compare</span></button>
-                        </div>
-                    </div>
-                </div>
+                    {% include "home/product_descriptions.html" %}
+                
             </div>
         </div>
 

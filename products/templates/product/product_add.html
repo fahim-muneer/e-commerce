@@ -68,6 +68,13 @@
                     {{ form.category }}
                     {{ form.category.errors }}
                 </div>
+
+                <div>     
+                    <label for="{{ form.varient.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Varients</label>
+                    {{ form.varient }}
+                    {{ form.varient.errors }}
+                </div>
+                
                 
                 <div>
                     <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Price</label>
@@ -162,7 +169,7 @@
             <div class="flex justify-end">
                 <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
-                    <span>PUBLISH AND VIEW</span>
+                    <span>UPDATE AND VIEW</span>
                 </button>
             </div>
         </form>
