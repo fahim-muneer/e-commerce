@@ -97,16 +97,16 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">IMAGE</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">NAME</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CATEGORY</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">PRICE</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">OLD PRICE</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">BLOCK</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">STOCK</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">VARIANTS</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ACTION</th>
                             </tr>
                         </thead>
                         
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="bg-white min-w-full divide-y divide-gray-200">
                             {% for product_list in products %}
-                            <!-- Product Row -->
+                            <!-- Product Row - All TDs must be inside this TR -->
                             <tr class="product-row">
                                 <td class="px-6 py-4 whitespace-nowrap">{{ forloop.counter|add:products.start_index|add:"-1" }}</td>
 
@@ -121,16 +121,23 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="text-gray-900 line-through">₹ {{ product_list.old_price }}</div>
-                                    <div class="text-blue-600 font-semibold">₹ {{ product_list.price }}</div>
+                                    {% comment %} <div class="text-blue-600 font-semibold">₹ {{ product_list.price }}</div> {% endcomment %}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <span class="inline-flex items-center rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold text-gray-800">
                                         {{ product_list.block }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% comment %} <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{product_list.stock}}
+                                </td> {% endcomment %}
+                                <!-- VARIANTS Column -->
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{% url 'add_product_variants' pid=product_list.pk %}" class="text-gray-500 hover:text-blue-600 px-2 py-1 rounded hover:bg-blue-50 transition-colors duration-200" title="Add Variants ">
+                                        <i class=" fa-solid fa-plus">Add</i>
+                                    </a>
                                 </td>
+                                <!-- ACTION Column (Moved here to be the final cell in the row) -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <a href="{% url 'product_update' pk=product_list.pk %}" class="text-gray-500 hover:text-blue-600 px-2 py-1 rounded hover:bg-blue-50 transition-colors duration-200" title="Edit Product">
                                         <i class="fa-solid fa-pen-to-square"></i>
@@ -138,14 +145,14 @@
                                     <a href="{% url 'product_details' pk=product_list.pk %}" class="text-gray-500 hover:text-green-600 px-2 py-1 rounded hover:bg-green-50 transition-colors duration-200" title="View Product">
                                         <i class="fa-solid fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'product_delete' pk=product_list.pk %}" class="text-gray-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors duration-200" title="Delete Product" onclick="return confirm('Are you sure you want to delete this product?')">
+                                    {% comment %} <a href="{% url 'product_delete' pk=product_list.pk %}" class="text-gray-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors duration-200" title="Delete Product" onclick="return confirm('Are you sure you want to delete this product?')">
                                         <i class="fa-solid fa-trash"></i>
-                                    </a>
+                                    </a> {% endcomment %}
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="8" class="px-6 py-4 text-center text-gray-500">No products found</td>
+                                <td colspan="9" class="px-6 py-4 text-center text-gray-500">No products found</td>
                             </tr>
                             {% endfor %}
                         </tbody>

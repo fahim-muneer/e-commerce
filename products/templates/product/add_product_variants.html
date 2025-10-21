@@ -1,0 +1,40 @@
+{% extends "adminbase.html" %}
+{% block title %}Add Variant{% endblock title %}
+
+{% block context %}
+<div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
+   
+    <div class="flex items-center justify-between ">
+        <h2 class="text-2xl font-bold text-gray-800">Add Variant to : <p class="text-red-500 bg-yellow-200  text-sm font-semibold rounded-lg">{{ product.name }}<p></h2>
+        <a href="{% url 'product_list' %}" class="text-gray-400 hover:text-gray-600">
+            <i class="fa-solid fa-times text-xl"></i>
+        </a>
+    </div>
+
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        
+        <div>
+            <label for="variant" class="block text-sm font-medium text-gray-700 mb-1">Select Variant</label>
+            <select name="variant" id="variant" class="w-full border-gray-300 rounded-md shadow-sm">
+                {% for v in variants %}
+                    <option value="{{ v.id }}">{{ v.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+            <input type="number" name="price" id="price" class="w-full border-gray-300 rounded-md shadow-sm" step="0.01">
+        </div>
+
+        <div>
+            <label for="stock" class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+            <input type="number" name="stock" id="stock" class="w-full border-gray-300 rounded-md shadow-sm">
+        </div>
+
+        <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add Variant</button>
+    </form>
+</div>
+{% endblock context %}

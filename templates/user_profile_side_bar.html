@@ -38,10 +38,18 @@
                     <i class="fa-solid fa-box"></i>
                     <span>My Orders</span>
                 </a>
-                <a href="#" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                <a href="{% url 'my_wallet' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
                     <i class="fa-solid fa-wallet"></i>
                     <span>My Wallet</span>
                 </a>
+
+                <a href="{% url 'refferal_dashboard' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+                    <i class="fa-solid fa-percent"></i>
+                    <span>My Refferal</span>
+                </a>
+
+
+
                 <a href="{% url 'logout' %}" class="flex items-center space-x-3 px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-200">
                     <i class="fa-solid fa-sign-out-alt"></i>
                     <span>Logout</span>

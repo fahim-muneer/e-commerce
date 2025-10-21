@@ -1,0 +1,179 @@
+{% extends "adminbase.html" %}
+
+{% block title %}Wallet Management{% endblock %}
+
+{% block context %}
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">Shop Wallet</h1>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- Total Wallets -->
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Wallets</p>
+                    <p class="text-3xl font-bold">{{ stats.total_wallets }}</p>
+                    <p class="text-xs mt-1">{{ stats.active_wallets }} active</p>
+                </div>
+                <i class="fa-solid fa-wallet text-4xl opacity-50"></i>
+            </div>
+        </div>
+
+        <!-- Total Balance -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Balance</p>
+                    <p class="text-3xl font-bold">₹{{ stats.total_balance }}</p>
+                </div>
+                <i class="fa-solid fa-money-bill-wave text-4xl opacity-50"></i>
+            </div>
+        </div>
+
+        <!-- Total Credits -->
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Credits</p>
+                    <p class="text-3xl font-bold">₹{{ stats.total_credits }}</p>
+                </div>
+                <i class="fa-solid fa-arrow-down text-4xl opacity-50"></i>
+            </div>
+        </div>
+
+        <!-- Total Debits -->
+        <div class="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Debits</p>
+                    <p class="text-3xl font-bold">₹{{ stats.total_debits }}</p>
+                </div>
+                <i class="fa-solid fa-arrow-up text-4xl opacity-50"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdrawal Requests Alert -->
+    {% if stats.pending_withdrawals > 0 %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <i class="fa-solid fa-exclamation-triangle text-yellow-600 text-xl mr-3"></i>
+                <div>
+                    <h3 class="font-semibold text-yellow-800">Pending Withdrawal Requests</h3>
+                    <p class="text-sm text-yellow-700">
+                        {{ stats.pending_withdrawals }} request(s) worth ₹{{ stats.pending_amount }} awaiting approval
+                    </p>
+                </div>
+            </div>
+            <a href="{% url 'admin_withdrawal_requests' %}" class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+                Review Now
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Top Wallets -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Top Wallets by Balance</h2>
+            <div class="space-y-3">
+                {% for wallet in top_wallets %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div>
+                        <p class="font-semibold text-gray-800">{{ wallet.user.full_name }}</p>
+                        <p class="text-sm text-gray-600">{{ wallet.user.email }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-green-600">₹{{ wallet.balance }}</p>
+                        {% comment %} <a href="{% url 'admin_wallet_detail' wallet.id %}" class="text-xs text-blue-600 hover:underline">
+                            View Details
+                        </a> {% endcomment %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">No wallets found</p>
+                {% endfor %}
+            </div>
+             <a href="{% url 'admin_wallet_list' %}" class="block text-center mt-4 text-blue-600 hover:underline">
+                View All Wallets →
+            </a> 
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Transactions History</h2>
+            <div class="space-y-3">
+                {% for transaction in recent_transactions %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ transaction.wallet.user.email }}
+                        </p>
+                        <p class="text-xs text-gray-600">{{ transaction.get_transaction_type_display }}</p>
+                        <p class="text-xs text-gray-500">{{ transaction.created_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold {% if transaction.is_credit %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if transaction.is_credit %}+{% else %}-{% endif %}₹{{ transaction.amount }}
+                        </p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">No transactions yet</p>
+                {% endfor %}
+            </div>
+            {% comment %} <a href="{% url 'admin_transaction_list' %}" class="block text-center mt-4 text-blue-600 hover:underline">
+                View All Transactions →
+            </a> {% endcomment %}
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {% comment %} {% url 'admin_wallet_list' %} {% endcomment %}
+        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-list text-2xl text-blue-600"></i>
+                <div>
+                    <p class="font-semibold text-gray-800">All Wallets</p>
+                    <p class="text-sm text-gray-600">Manage user wallets</p>
+                </div>
+            </div>
+        </a>
+  
+        <a href="{% url 'admin_withdrawal_requests' %}" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-hand-holding-dollar text-2xl text-yellow-600"></i>
+                <div>
+                    <p class="font-semibold text-gray-800">Withdrawals</p>
+                    <p class="text-sm text-gray-600">Process requests</p>
+                </div>
+            </div>
+        </a>
+{% comment %} {% url 'admin_transaction_list' %} {% endcomment %}
+        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-receipt text-2xl text-purple-600"></i>
+                <div>
+                    <p class="font-semibold text-gray-800">Transactions</p>
+                    <p class="text-sm text-gray-600">View all activity</p>
+                </div>
+            </div>
+        </a>
+        {% comment %} {% url 'admin_wallet_list' %}?balance=positive {% endcomment %}
+
+        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-filter text-2xl text-green-600"></i>
+                <div>
+                    <p class="font-semibold text-gray-800">Active Wallets</p>
+                    <p class="text-sm text-gray-600">With balance</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock context %}

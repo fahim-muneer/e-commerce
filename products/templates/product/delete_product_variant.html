@@ -1,0 +1,39 @@
+{% extends "base_category.html" %}
+
+
+{% block context %}
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
+        <!-- Header -->
+         <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800"> Delete Product Variant</h2>
+            <button class="text-gray-400 hover:text-gray-600">
+                 <a href=" {% url 'product_list' %} "><i class="fa-solid fa-times text-xl"></i> </a>
+            </button>
+         </div>
+
+        <!-- Form Layout -->
+        <form method="post" class="space-y-6">
+
+            {% csrf_token %}
+
+            <!-- Category Name -->
+            <div class="mb-4">
+                <p class="block text-sm font-medium text-gray-700 mb-1">Do you want to delete product variant :  {{ object.name }} ?</p>
+            </div>
+            
+            <!-- Publish Button -->
+            <div class="flex justify-end">
+                <button type= "submit" class="w-full md:w-auto px-6 py-3 bg-red-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 transition-colors duration-200 flex items-center justify-center space-x-2">
+                    
+                    <span>DELETE</span>
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+</body>
+{% endblock context %}

@@ -4,53 +4,52 @@
 
 {% block content %} 
 
-{% if messages  %}
-<div class="fixed top-4 right-4 z-50">
-    {% for message in messages %}
-      <div class="mb-2 px-4 py-2 rounded-lg shadow-md 
-                  {% if message.tags == 'success' %}
-                    bg-green-100 text-green-800 border border-green-300
-                  {% elif message.tags == 'error' %}
-                    bg-red-100 text-red-800 border border-red-300
-                  {% elif message.tags == 'warning' %}
-                    bg-yellow-100 text-yellow-800 border border-yellow-300
-                  {% else %}
-                    bg-blue-100 text-blue-800 border border-blue-300
-                  {% endif %}
-                  ">
-        {{ message }}
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
-
-<div class="max-w-7xl mx-auto grid grid-cols-1 mb-5 md:grid-cols-2 gap-6 p-6 bg-white rounded-lg shadow-xl">
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white rounded-lg shadow-xl mb-5">
 
     <div>
         <h2 class="text-xl font-bold text-gray-800 mb-6">Your Cart</h2>
+        
         <p class="text-sm text-gray-600 mb-6">
-            {% if cart_items %}
+            {% if cart.ordered_items.exists %}
                 There are {{ cart.total_items }} product{{ cart.total_items|pluralize }} in your cart
             {% else %}
                 Your cart is empty
             {% endif %}
         </p>
 
-        {% if cart_items %}
-            {% for cart_item in cart_items %}
+        {% if cart.ordered_items.exists %}
+            {% for cart_item in cart.ordered_items.all %}
             <!-- Cart Item -->
             <div class="flex items-center space-x-4 p-4 border-b border-gray-200">
                 {% if cart_item.product %}
-                    <img src="{{ cart_item.product.image1.url }}" alt="{{ cart_item.product.name }}" class="w-24 h-24 object-cover rounded-md">
+                    <!-- Product Image with Discount Badge -->
+                    <div class="relative">
+                        <img src="{{ cart_item.product.image1.url }}" alt="{{ cart_item.product.name }}" class="w-24 h-24 object-cover rounded-md">
+                        {% if cart_item.has_discount %}
+                        <span class="absolute top-0 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded-br-md font-bold">
+                            {{ cart_item.discount_percentage }}% OFF
+                        </span>
+                        {% endif %}
+                    </div>
+                    
                     <div class="flex-1">
                         <div class="flex items-start justify-between"> 
                             <div>
                                 <p class="text-sm text-gray-600">{{ cart_item.product.category.name }}</p>
-                                <h3 class="font-semibold text-gray-800">{{ cart_item.product.name }}</h3>
-                                <div class="flex items-center text-yellow-400 text-xs mt-1">
-                                    <span>★★★★☆</span>
-                                </div>
+                                <h3 class="font-semibold text-gray-800">
+                                    {{ cart_item.product.name }}
+                                    {% if cart_item.variant %}
+                                        <span class="text-sm text-blue-600">({{ cart_item.variant.variant.name }})</span>
+                                    {% endif %}
+                                </h3>
+                                
+                                {% if cart_item.has_discount %}
+                                <p class="text-xs text-green-600 font-semibold mt-1">
+                                    🎉 You save ₹{{ cart_item.savings|floatformat:2 }}
+                                </p>
+                                {% endif %}
                             </div>
+                            
                             <form method="post" action="{% url 'remove_from_cart' cart_item.id %}">
                                 {% csrf_token %}
                                 <button type="submit" class="text-gray-400 hover:text-red-500" onclick="return confirm('Remove this item from cart?')">
@@ -58,27 +57,46 @@
                                 </button>
                             </form>
                         </div>
+                        
                         <div class="mt-2 flex items-center space-x-2">
                             <span class="text-sm text-gray-600">Qty:</span>
-                            <form method="post" action="{% url 'update_cart_item' cart_item.id %}" class="inline">
-                                {% csrf_token %}
-                                <input type="number" name="quantity" value="{{ cart_item.quantity }}" min="1" max="99" class="w-16 px-2 py-1 rounded-md border border-gray-300 text-center text-sm" onchange="this.form.submit()">
-                            </form>
                             
-                            {% if cart_item.product.old_price %}
-                                <span class="text-gray-400 line-through text-sm">₹{{ cart_item.product.old_price }}</span>
-                            {% endif %}
-                            <span class="text-red-500 font-semibold text-sm">₹{{ cart_item.product.price }}</span>
+                            <!-- Quantity Controls -->
+                            <div class="flex items-center space-x-1">
+                                <button 
+                                    type="button" 
+                                    class="text-gray-600 hover:text-red-500 font-bold text-lg px-2"
+                                    onclick="changeQuantity({{ cart_item.id }}, -1)">-</button>
+                                
+                                <input 
+                                    type="number" 
+                                    id="qty-{{ cart_item.id }}"
+                                    data-item-id="{{ cart_item.id }}"
+                                    data-max="{% if cart_item.variant %}{{ cart_item.variant.stock }}{% else %}{{ cart_item.product.stock }}{% endif %}"
+                                    value="{{ cart_item.quantity }}" 
+                                    min="1" 
+                                    max="{% if cart_item.variant %}{{ cart_item.variant.stock }}{% else %}{{ cart_item.product.stock }}{% endif %}"
+                                    class="w-16 px-2 py-1 rounded-md border border-gray-300 text-center text-sm" 
+                                    onchange="updateQuantityManual({{ cart_item.id }})">
+                                
+                                <button 
+                                    type="button" 
+                                    class="text-gray-600 hover:text-green-500 font-bold text-lg px-2"
+                                    onclick="changeQuantity({{ cart_item.id }}, 1)">+</button>
+                            </div>
                             
-                            {% if cart_item.product.old_price %}
-                                {% widthratio cart_item.product.old_price|add:0|floatformat:0 cart_item.product.price|add:0|floatformat:0 100 as discount_percent %}
-                                {% if discount_percent < 100 %}
-                                    <span class="text-green-500 text-xs">{{ 100|add:discount_percent|floatformat:0 }}% OFF</span>
+                            <!-- Price Display with Discount -->
+                            <div class="flex items-center space-x-2">
+                                {% if cart_item.has_discount %}
+                                    <span class="text-gray-400 line-through text-sm">₹{{ cart_item.original_unit_price }}</span>
+                                    <span class="text-red-500 font-semibold text-sm">₹{{ cart_item.unit_price|floatformat:2 }}</span>
+                                {% else %}
+                                    <span class="text-red-500 font-semibold text-sm">₹{{ cart_item.unit_price|floatformat:2 }}</span>
                                 {% endif %}
-                            {% endif %}
+                            </div>
                             
-                            <span class="text-blue-600 font-semibold text-sm ml-4">
-                                Total: ₹{{ cart_item.total_price }}
+                            <span class="text-blue-600 font-semibold text-sm ml-4" id="item-total-{{ cart_item.id }}">
+                                Total: ₹{{ cart_item.item_total|floatformat:2 }}
                             </span>
                         </div>
                     </div>
@@ -121,13 +139,13 @@
     </div>
 
     <!-- Cart Totals Section -->
-    {% if cart_items %}
-    <div class="bg-gray-50 p-6 rounded-lg shadow-sm">
+    {% if cart.ordered_items.exists %}
+    <div class="bg-gray-50 p-6 rounded-lg shadow-sm" id="cart-totals-section">
         <h2 class="text-xl font-bold text-gray-800 mb-6">Cart Totals</h2>
         <div class="space-y-4">
             <div class="flex justify-between items-center text-gray-700">
-                <p>Subtotal ({{ cart.total_items }} item{{ cart.total_items|pluralize }})</p>
-                <p class="font-semibold">₹{{ cart.total_price }}</p>
+                <p>Subtotal (<span id="total-items-count">{{ cart.total_items }}</span> item{{ cart.total_items|pluralize }})</p>
+                <p class="font-semibold" id="subtotal-amount">₹{{ cart.total_price|floatformat:2 }}</p>
             </div>
             <div class="flex justify-between items-center text-gray-700">
                 <p>Shipping</p>
@@ -139,12 +157,9 @@
             </div>
             <div class="flex justify-between items-center text-xl font-bold text-gray-800 border-t border-gray-200 pt-4">
                 <p>Total</p>
-                <p>₹{{ cart.total_price }}</p>
+                <p id="total-amount">₹{{ cart.total_price|floatformat:2 }}</p>
             </div>
         </div>
-        
-        
-
 
         <a href="{% url 'checkout' %}" class="w-full mt-6 py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200 flex items-center justify-center space-x-2">
             <i class="fa-solid fa-shopping-bag"></i>
@@ -159,4 +174,84 @@
     {% endif %}
 </div>
 
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function changeQuantity(itemId, delta) {
+        const input = document.getElementById(`qty-${itemId}`);
+        const maxStock = parseInt(input.getAttribute('data-max'));
+        let newQty = parseInt(input.value) + delta;
+        
+        if (newQty < 1) newQty = 1;
+        if (newQty > maxStock) {
+            alert(`Maximum available stock is ${maxStock}`);
+            newQty = maxStock;
+        }
+        
+        input.value = newQty;
+        updateCart(itemId, newQty);
+    }
+
+    function updateQuantityManual(itemId) {
+        const input = document.getElementById(`qty-${itemId}`);
+        const maxStock = parseInt(input.getAttribute('data-max'));
+        let newQty = parseInt(input.value);
+        
+        if (isNaN(newQty) || newQty < 1) {
+            newQty = 1;
+            input.value = 1;
+        }
+        if (newQty > maxStock) {
+            alert(`Maximum available stock is ${maxStock}`);
+            newQty = maxStock;
+            input.value = maxStock;
+        }
+        
+        updateCart(itemId, newQty);
+    }
+
+    function updateCart(itemId, quantity) {
+        const url = `/update-cart-item/${itemId}/`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken,
+            },
+            body: `quantity=${quantity}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById(`item-total-${itemId}`).innerText = `Total: ₹${parseFloat(data.item_total).toFixed(2)}`;
+                document.getElementById('subtotal-amount').innerText = `₹${parseFloat(data.cart_total).toFixed(2)}`;
+                document.getElementById('total-amount').innerText = `₹${parseFloat(data.cart_total).toFixed(2)}`;
+                document.getElementById('total-items-count').innerText = data.total_items;
+                document.getElementById(`qty-${itemId}`).value = data.new_quantity;
+            } else {
+                alert(data.error || 'Failed to update quantity.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please refresh the page.');
+        });
+    }
+</script>
 {% endblock content %}

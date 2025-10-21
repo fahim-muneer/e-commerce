@@ -59,7 +59,7 @@
                     {% for i in varient %}
                     <!-- Category Row -->
                     <tr class="category-row">
-                        <td  class="px-6 py-4 whitespace-nowrap" >{{ forloop.counter|add:category.start_index|add:"-1" }}</td>
+                        <td  class="px-6 py-4 whitespace-nowrap" >{{ forloop.counter|add:varient.start_index|add:"-1" }}</td>
 
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 category-name">
                             {{i.name}}

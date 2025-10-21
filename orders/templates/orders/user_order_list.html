@@ -4,7 +4,7 @@
 {% block title %}My Orders{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6"> 
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-5"> 
        <!-- User Profile Sidebar -->
     {% include "user_profile_side_bar.html" %}
 
@@ -126,23 +126,30 @@
                                             {% endif %}
                                         </td>
                                         <td class="px-4 py-3 font-medium">{{ item.quantity }}</td>
-                                        <td class="px-4 py-3">₹{{ item.product.price }}</td>
+                                        <td class="px-4 py-3">₹{{ item.unit_price }}</td>
                                         <td class="px-4 py-3 font-semibold">₹{{ item.total_price }}</td>
 
                                     <td class="px-4 py-3 font-semibold">
                                          <div class="flex justify-end items-center">
                             <!-- Action Buttons -->
+                             {% if item.order_status == 1 or item.order_status == 2 %}
                             <div class="flex gap-2">
-                                <a href="{% url 'user_order_details' pk=order.pk %}" 
+                                <a href="{% url 'cancel_item' oid=order.id pid=item.id %}"
                                    class="px-3 py-1 bg-red-600 text-white text-xs rounded-full hover:bg-blue-700">
-                                    Remove
+                                    cancel
                                 </a>
-                                
-                                {% if order.order_status == order.DELIVERED %}
-                                <button onclick="reorder({{ order.id }})" 
+                            
+                                {% elif item.order_status is 3 %}
+                                <a   href="{% url 'return_item' order_id=order.id item_id=item.id %}"
                                         class="px-3 py-1 bg-green-600 text-white text-xs rounded-full hover:bg-green-700">
-                                    Reorder
-                                </button>
+                                    Return
+                                </a>
+                                {% else %}
+                                <p   
+                                        class="px-3 py-1 bg-green-600 text-white text-xs rounded-full hover:bg-green-700">
+                                    {{item.get_order_status_display}}
+                                </p>
+
                                 {% endif %}
                             </div>
                             
@@ -207,7 +214,7 @@
              
                 <div class="mt-6">
       
-                        <a href="{% url 'products:product_list' %}" 
+                        <a href="{% url 'home' %}" 
                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                             Start Shopping
                         </a>

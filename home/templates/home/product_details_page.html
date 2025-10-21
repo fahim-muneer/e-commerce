@@ -1,67 +1,257 @@
 {% extends "base.html" %}
-
 {% block content %}
 {% load static %}
-        <!-- Product Details Section -->
-        <div class="p-8 md:p-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Product Details</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Image Gallery -->
-                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                    <div class="flex md:flex-col space-x-4 md:space-x-0 md:space-y-4 overflow-x-auto md:overflow-y-auto">
-                        <!-- Thumbnails -->
-                        <img src="{{object.image2}}" class="thumbnail-image object-cover rounded-md border-2 border-blue-500 cursor-pointer">
-                        <img src="https:{{object.image3}}" class="thumbnail-image object-cover rounded-md cursor-pointer">
-                        <img src="{{object.image4}}" class="thumbnail-image object-cover rounded-md cursor-pointer">
-                        <img src="{{object.image5}}" class="thumbnail-image object-cover rounded-md cursor-pointer">
-                    </div>
-                    <!-- Main Image -->
-                    <div class="flex-1">
-                        <img src="{{object.image1.url}}" alt="Main Product" class="main-image object-cover rounded-md">
-                    </div>
-                </div>
+{% load widget_tweaks %}
 
-                <!-- Product Info -->
-                
-                    
-                    {% include "home/product_descriptions.html" %}
-                
-            </div>
+<div class="p-8 md:p-12">
+  <h2 class="text-2xl font-bold text-gray-800 mb-6">Product Details</h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Image Gallery -->
+    <div class="flex md:flex-row space-x-4">
+      <!-- Thumbnails -->
+      <div class="flex md:flex-col space-y-4">
+        <img src="{{ object.image1.url }}" class="thumbnail-image w-24 h-24 object-cover rounded-md border-2 border-transparent cursor-pointer" onclick="changeMainImage('{{ object.image1.url }}', this)">
+        <img src="{{ object.image2.url }}" class="thumbnail-image w-24 h-24 object-cover rounded-md border-2 border-transparent cursor-pointer" onclick="changeMainImage('{{ object.image2.url }}', this)">
+        <img src="{{ object.image3.url }}" class="thumbnail-image w-24 h-24 object-cover rounded-md border-2 border-transparent cursor-pointer" onclick="changeMainImage('{{ object.image3.url }}', this)">
+        <img src="{{ object.image4.url }}" class="thumbnail-image w-24 h-24 object-cover rounded-md border-2 border-transparent cursor-pointer" onclick="changeMainImage('{{ object.image4.url }}', this)">
+        <img src="{{ object.image5.url }}" class="thumbnail-image w-24 h-24 object-cover rounded-md border-2 border-transparent cursor-pointer" onclick="changeMainImage('{{ object.image5.url }}', this)">
+      </div>
+
+      <!-- Main Image + Zoom -->
+      <div class="flex">
+        <div style="position: relative; width: 100%; max-width: 714px;">
+          <img id="mainImage" src="{{ object.image1.url }}" style="width: 100%; height: 714px; object-fit: cover; border-radius: 0.375rem; display: block;">
+          <div id="zoomLens" style="position: absolute; border: 3px solid #3b82f6; background-color: rgba(255, 255, 255, 0.4); width: 150px; height: 150px; display: none; pointer-events: none; z-index: 10;"></div>
         </div>
+        <div id="zoomResult" style="display: none; margin-left: 20px; width: 500px; height: 500px; border: 2px solid #d1d5db; background-repeat: no-repeat; border-radius: 0.375rem;"></div>
+      </div>
+    </div>
 
-        <hr class="border-gray-200">
+    <!-- Product Info -->
+    {% include "home/product_descriptions.html" %}
 
-        <!-- Related Products Section -->
-        <div class="p-8 md:p-12">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6">Related Products</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                <!-- Related Product Card -->
-                   {% for item in related_products %}
+  </div>
+</div>
 
-                <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
-                    <div class="relative">
-                        <img src="{{ related_products.image1.url }}" alt="Related Product" class="w-full h-40 object-cover">
-                        <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">10%</span>
-                    </div>
-                    <div class="p-4">
-                        <p class="text-gray-800 text-sm truncate">{{ related_products.name }}</p>
-                        <div class="flex items-center space-x-2 mb-2">
-                            <span class="text-gray-400 line-through text-sm">₹{{ related_products.old_price }}</span>
-                            <span class="text-red-500 font-semibold">₹{{ related_products.price }}</span>
-                        </div>
-                        <button class="w-full border border-red-500 text-red-500 py-1 text-sm rounded hover:bg-red-500 hover:text-white">
-                            ADD TO CART
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+<hr class="border-gray-200">
+
+<!-- Related Products Section -->
+<div class="p-8 md:p-12">
+  <h3 class="text-2xl font-bold text-gray-800 mb-6">Related Products</h3>
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+    {% for item in related_products %}
+    <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
+      <div class="relative">
+        <a href="{% url 'items_details' pk=item.pk %}"><img src="{{ item.image1.url }}" alt="Related Product" class="w-full h-40 object-cover">
+        <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">10%</span>
+      </div>
+      <div class="p-4">
+        <p class="text-gray-800 text-sm truncate">{{ item.name }}</p>
+        <div class="flex items-center space-x-2 mb-2">
+          <span class="text-gray-400 line-through text-sm">₹{{ item.old_price }}</span>
+          <p class="text-red-500 font-semibold">₹{{ variant_product.price }}</p>
         </div>
+        <p class="text-gray-400 font-semibold">{{ item.description }}</p></a>
+      </div>
 
-        <hr class="border-gray-200">
 
 
+    </div>
+    {% endfor %}
+  </div>
+</div>
 
+<hr class="border-gray-200">
+
+<script>
+console.log("Zoom script loading...");
+
+var imageZoom = (function() {
+    var img, lens, result, container;
+    var isActive = false;
+
+    function init() {
+        console.log("Initializing zoom...");
+        
+        img = document.getElementById("mainImage");
+        lens = document.getElementById("zoomLens");
+        result = document.getElementById("zoomResult");
+        container = img.parentElement;
+
+        if (!img || !lens || !result) {
+            console.error("Elements not found!", {img: img, lens: lens, result: result});
+            return;
+        }
+
+        console.log("Elements found, setting up zoom...");
+
+        // Remove previous listeners
+        container.onmousemove = null;
+        container.onmouseenter = null;
+        container.onmouseleave = null;
+
+        // Wait for image to load
+        if (img.complete && img.naturalWidth > 0) {
+            console.log("Image already loaded");
+            setupZoom();
+        } else {
+            console.log("Waiting for image to load...");
+            img.onload = function() {
+                console.log("Image loaded!");
+                setupZoom();
+            };
+        }
+    }
+
+    function setupZoom() {
+        console.log("Setting up zoom handlers...");
+        console.log("Image dimensions:", {
+            natural: {w: img.naturalWidth, h: img.naturalHeight},
+            displayed: {w: img.offsetWidth, h: img.offsetHeight}
+        });
+
+        container.onmouseenter = function() {
+            console.log("Mouse entered");
+            showZoom();
+        };
+
+        container.onmouseleave = function() {
+            console.log("Mouse left");
+            hideZoom();
+        };
+
+        container.onmousemove = function(e) {
+            if (isActive) {
+                moveZoom(e);
+            }
+        };
+
+        console.log("Zoom setup complete!");
+    }
+
+    function showZoom() {
+        isActive = true;
+        
+        // Calculate zoom ratios
+        var lensWidth = 150;
+        var lensHeight = 150;
+        var resultWidth = 500;
+        var resultHeight = 500;
+
+        var cx = resultWidth / lensWidth;
+        var cy = resultHeight / lensHeight;
+
+        // Set background
+        result.style.backgroundImage = "url('" + img.src + "')";
+        result.style.backgroundSize = (img.naturalWidth * cx) + "px " + (img.naturalHeight * cy) + "px";
+
+        lens.style.display = "block";
+        result.style.display = "block";
+        
+        console.log("Zoom activated", {cx: cx, cy: cy});
+    }
+
+    function hideZoom() {
+        isActive = false;
+        lens.style.display = "none";
+        result.style.display = "none";
+    }
+
+    function moveZoom(e) {
+        e.preventDefault();
+
+        var rect = img.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+
+        // Center lens on cursor
+        x = x - 75; // half of lens width
+        y = y - 75; // half of lens height
+
+        // Keep lens within bounds
+        var maxX = img.offsetWidth - 150;
+        var maxY = img.offsetHeight - 150;
+
+        if (x > maxX) x = maxX;
+        if (x < 0) x = 0;
+        if (y > maxY) y = maxY;
+        if (y < 0) y = 0;
+
+        // Position lens
+        lens.style.left = x + "px";
+        lens.style.top = y + "px";
+
+        // Calculate scale ratio
+        var scaleX = img.naturalWidth / img.offsetWidth;
+        var scaleY = img.naturalHeight / img.offsetHeight;
+
+        // Calculate zoom ratios
+        var cx = 500 / 150; // result width / lens width
+        var cy = 500 / 150; // result height / lens height
+
+        // Position zoomed background
+        var bgX = x * cx * scaleX;
+        var bgY = y * cy * scaleY;
+
+        result.style.backgroundPosition = "-" + bgX + "px -" + bgY + "px";
+    }
+
+    return {
+        init: init
+    };
+})();
+
+// Change image function
+function changeMainImage(src, thumb) {
+    console.log("Changing image to:", src);
+    
+    var img = document.getElementById("mainImage");
+    var lens = document.getElementById("zoomLens");
+    var result = document.getElementById("zoomResult");
+
+    // Hide zoom
+    lens.style.display = "none";
+    result.style.display = "none";
+
+    // Update thumbnail border
+    document.querySelectorAll(".thumbnail-image").forEach(function(t) {
+        t.classList.remove("border-blue-500");
+    });
+    thumb.classList.add("border-blue-500");
+
+    // Change image
+    img.src = src;
+
+    // Reinitialize zoom
+    img.onload = function() {
+        console.log("New image loaded, reinitializing zoom");
+        imageZoom.init();
+    };
+}
+
+// Initialize on page load
+window.addEventListener('load', function() {
+    console.log("Page loaded, initializing zoom");
+    setTimeout(function() {
+        imageZoom.init();
+    }, 300);
+});
+
+// Also try on DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM ready, initializing zoom");
+        setTimeout(function() {
+            imageZoom.init();
+        }, 300);
+    });
+} else {
+    console.log("DOM already ready, initializing zoom immediately");
+    setTimeout(function() {
+        imageZoom.init();
+    }, 300);
+}
+</script>
 
 {% endblock content %}

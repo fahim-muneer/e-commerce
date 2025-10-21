@@ -2,6 +2,27 @@
 __pycache__/
 *.py[cod]
 *.sqlite3
+# Python cache and compiled files
+__pycache__/
+*.pyc
+
+# Django static & media files
+/static/
+media/
+
+# Virtual environments
+env/
+venv/
+
+# Environment & secret files
+*.env
+.env
+*.log
+
+# IDE / OS files
+.DS_Store
+.vscode/
+.idea/
 
 # Virtual environment
 env/

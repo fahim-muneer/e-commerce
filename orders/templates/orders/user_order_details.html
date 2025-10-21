@@ -1,27 +1,26 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Order #{{ order.id }} Details{% endblock %}
+{% block title %}Order #{{ order.order_Id }} Details{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-5"> 
     {% include "user_profile_side_bar.html" %}
 
-    <main class="md:col-span-3 bg-white p-6 rounde d-xl shadow-lg flex flex-col justify-between">
+    <main class="md:col-span-3 bg-white p-6 rounded-xl shadow-lg flex flex-col justify-between">
 
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-200 mb-6">
             <div>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Order ID: #{{ order.id }}</h1>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Order ID: #{{ order.order_Id }}</h1>
                 <p class="text-xs text-gray-500 mt-2">
                     Order date: <span class="font-medium">{{ order.created_at|date:"M d, Y" }}</span>
+                    {% if order.order_status == 3 and order.delivered_at %}
                     <span class="mx-2">•</span>
-                    Estimated delivery: 
-                    <span class="font-medium text-green-600">
-                        {{ order.estimated_delivery|date:"M d, Y" }}
-                    </span>
+                    Delivered: <span class="font-medium text-green-600">{{ order.delivered_at|date:"M d, Y" }}</span>
+                    {% endif %}
                 </p>
             </div>
-            <a href="{% url 'download_pdf' uid=order.id %}"class="flex items-center gap-1 mt-4 sm:mt-0 px-4 py-2 text-sm bg-gray-100 rounded-full text-gray-700 font-medium hover:bg-gray-200 transition-colors">
+            <a href="{% url 'download_pdf' uid=order.id %}" class="flex items-center gap-1 mt-4 sm:mt-0 px-4 py-2 text-sm bg-gray-100 rounded-full text-gray-700 font-medium hover:bg-gray-200 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -29,30 +28,45 @@
             </a>
         </div>
 
+        <!-- Order Status Timeline -->
         <div class="flex justify-between items-center mb-6 text-xs text-gray-500">
             <div class="text-center w-1/4">
-                {% if order.order_status is 4  %}
-                <span class="text-red-600 font-bold">{{ order.get_order_status_display }}</span>
-                {% else %}
-                <span class="text-green-600 font-bold">{{ order.get_order_status_display }}</span>
-
+                {% if order.order_status == 4 %}
+                <span class="text-red-600 font-bold">Cancelled</span>
+                {% elif order.order_status >= 1 %}
+                <span class="text-green-600 font-bold">Confirmed</span>
                 <p class="mt-1">{{ order.created_at|date:"M d, Y" }}</p>
+                {% else %}
+                <span class="text-gray-300 font-bold">Pending</span>
                 {% endif %}
             </div>
             <div class="text-center w-1/4">
+                {% if order.order_status >= 2 and order.order_status != 4 %}
                 <span class="text-green-600 font-bold">Shipped</span>
-                <p class="mt-1">--</p>
+                <p class="mt-1">{{ order.updated_at|date:"M d, Y" }}</p>
+                {% else %}
+                <span class="text-gray-300 font-bold">Shipped</span>
+                {% endif %}
             </div>
             <div class="text-center w-1/4">
+                {% if order.order_status >= 2 and order.order_status != 4 %}
                 <span class="text-green-600 font-bold">Out For Delivery</span>
-                <p class="mt-1">--</p>
+                <p class="mt-1">{{ order.updated_at|date:"M d, Y" }}</p>
+                {% else %}
+                <span class="text-gray-300 font-bold">Out For Delivery</span>
+                {% endif %}
             </div>
             <div class="text-center w-1/4">
+                {% if order.order_status == 3 %}
+                <span class="font-semibold text-green-700">Delivered</span>
+                <p class="mt-1">{{ order.delivered_at|date:"M d, Y" }}</p>
+                {% else %}
                 <span class="font-semibold text-gray-700">Delivered</span>
-                <p class="mt-1">Expected by {{ order.estimated_delivery|date:"M d, Y" }}</p>
+                {% endif %}
             </div>
         </div>
 
+        <!-- Order Items with Individual Actions -->
         {% for item in order.items.all %}
         <div class="flex items-center gap-4 py-4 border-b border-gray-200">
             {% if item.product.image1 %}
@@ -62,92 +76,232 @@
                 <span class="text-gray-400 text-xs">No Image</span>
             </div>
             {% endif %}
+            
             <div class="flex-1">
                 <h3 class="text-lg font-medium text-gray-800">{{ item.product.name }}</h3>
+                {% if item.variant %}
+                <p class="text-xs text-gray-500">Variant: {{ item.variant.name }}</p>
+                {% endif %}
                 <div class="text-sm font-semibold text-gray-600 mt-1">
-                    ₹{{ item.product.price|floatformat:2 }}
+                    ₹{{ item.unit_price|floatformat:2 }} × {{ item.quantity }}
                 </div>
             </div>
-            <div class="text-sm text-gray-500">
-                Qty: {{ item.quantity }}
+            
+            <div class="text-sm font-bold text-gray-800">
+                ₹{{ item.total_price|floatformat:2 }}
+            </div>
+            
+            <!-- Item Status Badge -->
+            <div class="min-w-[130px]">
+                {% if item.order_status == 0 %}
+                <span class="text-yellow-600 font-bold text-sm">Pending</span>
+                {% elif item.order_status == 1 %}
+                <span class="text-blue-600 font-bold text-sm">Confirmed</span>
+                {% elif item.order_status == 2 %}
+                <span class="text-indigo-600 font-bold text-sm">Processing</span>
+                {% elif item.order_status == 3 %}
+                <span class="text-green-600 font-bold text-sm">Delivered</span>
+                {% elif item.order_status == 4 %}
+                <span class="text-red-600 font-bold text-sm">Cancelled</span>
+                {% elif item.order_status == 5 %}
+                <span class="text-orange-600 font-bold text-sm">Return Requested</span>
+                {% elif item.order_status == 6 %}
+                <span class="text-blue-600 font-bold text-sm">Return Approved</span>
+                {% elif item.order_status == 7 %}
+                <span class="text-purple-600 font-bold text-sm">Returned</span>
+                {% endif %}
+                
+                <!-- Show return reason if exists -->
+                {% if item.return_reason %}
+                <p class="text-xs text-gray-500 mt-1">Reason: {{ item.return_reason|truncatewords:5 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Item-Level Action Buttons -->
+            <div class="min-w-[100px]">
+                <!-- CANCEL: Only for Confirmed/Processing items -->
+                {% if item.order_status == 1 or item.order_status == 2 %}
+                <form method="post" action="{% url 'cancel_item' oid=order.id pid=item.id %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" 
+                        onclick="return confirm('Are you sure you want to cancel this item? Stock will be restored.')"
+                        class="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded hover:bg-red-600 transition-colors">
+                        Cancel Item
+                    </button>
+                </form>
+                
+                <!-- RETURN: Only for Delivered items within return window -->
+                {% elif item.order_status == 3 %}
+                    {% comment %} {% if item.can_return %} {% endcomment %}
+                    <a href="{% url 'return_item' order_id=order.id item_id=item.id %}"
+                       class="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded hover:bg-orange-600 transition-colors inline-block">
+                        Request Return
+                    </a>
+                    <p class="text-xs text-gray-500 mt-1">{{ item.days_left_for_return }} day(s) left</p>
+                    {% comment %} {% else %}
+                    <span class="text-xs text-gray-400">Return window closed</span>
+                    {% endif %} {% endcomment %}
+                
+                <!-- CANCEL RETURN REQUEST: For items with return requested -->
+                {% elif item.order_status == 5 %}
+                <form method="post" action="{% url 'cancel_return_request' order_id=order.id item_id=item.id %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" 
+                        onclick="return confirm('Cancel your return request? Item will remain as delivered.')"
+                        class="px-3 py-1 bg-gray-500 text-white text-xs font-semibold rounded hover:bg-gray-600 transition-colors">
+                        Cancel Return
+                    </button>
+                </form>
+                
+                <!-- RETURN APPROVED/RETURNED: Show status only -->
+                {% elif item.order_status == 6 %}
+                <span class="text-xs text-blue-600 font-medium">Awaiting Pickup</span>
+                {% elif item.order_status == 7 %}
+                <span class="text-xs text-purple-600 font-medium">Completed</span>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
 
+        <!-- Payment and Delivery Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
             <div>
                 <h4 class="font-bold text-lg text-gray-800 mb-3">Payment</h4>
-                <div class="tex-sm text-green-600">
-                <p>{{ order.get_payment_method_display }}</p>
+                <div class="text-sm text-gray-600">
+                    <p class="font-medium">{{ order.get_payment_method_display }}</p>
+                    <p class="mt-1">Status: 
+                        <span class="{% if order.payment_status == 1 %}text-green-600{% else %}text-yellow-600{% endif %} font-medium">
+                            {{ order.get_payment_status_display }}
+                        </span>
+                    </p>
                 </div>
             </div>
             <div>
-                <h4 class="font-bold text-lg text-gray-800 mb-3">Delivery</h4>
+                <h4 class="font-bold text-lg text-gray-800 mb-3">Delivery Address</h4>
                 <div class="text-sm text-gray-600">
-
-                    <p class="font-bold">{{request.uer.full_name }}</p>
-                    <p>{{ order.delivery_address.mobile }}</p>
-                    <p>{{ order.delivery_address.second_mob }}</p>
-                    <p>{{ order.delivery_address.c }}</p>
-                    <p>{{ order.delivery_address.city }}</p>
-
-                    <p>{{ order.delivery_address.street }}</p>
-                    <p>{{ order.delivery_address.pin }}</p>
-
-
+                    <p class="font-bold">{{ request.user.full_name }}</p>
+                    <p>{{ order.delivery_address.address }}</p>
+                    <p>{{ order.delivery_address.city }}, {{ order.delivery_address.state }}</p>
+                    <p>PIN: {{ order.delivery_address.pin }}</p>
+                    <p class="mt-2">📱 {{ order.delivery_address.mobile }}</p>
+                    {% if order.delivery_address.second_mob %}
+                    <p>📱 {{ order.delivery_address.second_mob }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
+        <!-- Order Summary -->
         <div class="mt-8 border-t border-gray-200 pt-6">
             <h4 class="font-bold text-lg text-gray-800 mb-3">Order Summary</h4>
             <div class="space-y-2 text-sm text-gray-600">
+                {% if cancelled_returned_total > 0 %}
                 <div class="flex justify-between">
-                    <span>Discount</span>
-                    <span class="font-semibold text-gray-800">₹{{ order.discount|default:"0.00" }}</span>
+                    <span>Original Total</span>
+                    <span class="font-semibold text-gray-400 line-through">
+                        ₹{{ original_total|floatformat:2 }}
+                    </span>
+                </div>
+                <div class="flex justify-between text-red-600">
+                    <span>Cancelled/Returned Items</span>
+                    <span class="font-semibold">-₹{{ cancelled_returned_total|floatformat:2 }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span>Delivery</span>
-                    <span class="font-semibold text-gray-800">₹{{ order.delivery_charge|default:"0.00" }}</span>
+                    <span>Active Items Subtotal</span>
+                    <span class="font-semibold text-gray-800">₹{{ active_items_total|floatformat:2 }}</span>
                 </div>
+                {% else %}
                 <div class="flex justify-between">
-                    <span>Tax</span>
-                    <span class="font-semibold text-gray-800">₹{{ order.tax|default:"0.00" }}</span>
+                    <span>Subtotal</span>
+                    <span class="font-semibold text-gray-800">₹{{ order.total_amount|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="flex justify-between">
+                    <span>Shipping</span>
+                    <span class="font-semibold text-green-600">FREE</span>
                 </div>
             </div>
             <div class="flex justify-between items-center font-bold text-lg text-gray-800 border-t border-gray-300 mt-4 pt-4">
-                <span>Total</span>
-                <span>₹{{ order.total_amount|floatformat:2 }}</span>
+                <span>Order Total</span>
+                <span class="text-green-600">₹{{ order.total_amount|floatformat:2 }}</span>
             </div>
-        </div>
-            <div class="mt-6 mr-10 flex justify-start">
-                {% if order.order_status is not 4 %}
-        <form method="post" action="{% url 'return_reason' uid=order.id %}">
-            {% csrf_token %}
-            <button type="submit"
-                class="px-6 py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
-                CANCEL ORDER
-            </button>
-               
-        </form>
-        {% else %}
-         <a  href="{% url 'home' %}"
-                class="px-6 py-3 bg-green-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
-                BACK TO PURCHASE
-            </a>
+            
+            {% if cancelled_returned_total > 0 %}
+            <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded text-sm">
+                <p class="text-yellow-800">
+                    <strong>Note:</strong> Your order total has been adjusted. 
+                    {% if order.payment_status == 1 %}
+                    A refund of ₹{{ cancelled_returned_total|floatformat:2 }} will be processed within 5-7 business days.
+                    {% endif %}
+                </p>
+            </div>
             {% endif %}
+        </div>
 
-     </main>
+        <!-- Order-Level Actions -->
+        <div class="mt-6 flex justify-start gap-4">
+            <!-- CANCEL ENTIRE ORDER: Only if all items are cancellable -->
+            {% if order.order_status == 1 or order.order_status == 2 %}
+            <a href="{% url 'cancel_order_reason' oid=order.id %}"
+               class="px-6 py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                Cancel Entire Order
+            </a>
+            
+            <!-- RETURN ENTIRE ORDER: Only if delivered and within window -->
+            {% elif order.order_status == 3 %}
+                <!-- This block still checks order.can_return, which correctly aggregates all item statuses -->
+                {% if order.can_return %}
+                <a href="{% url 'return_order_reason' uid=order.id %}"
+                   class="px-6 py-3 bg-orange-500 text-white font-semibold rounded-md shadow-md hover:bg-orange-600 transition-colors duration-200">
+                    Return Entire Order
+                </a>
+                <p class="text-sm text-gray-500 self-center">{{ order.days_left_for_return }} day(s) left to return</p>
+                {% endif %}
+            
+            <!-- CANCELLED: Show option to reorder -->
+            {% elif order.order_status == 4 %}
+            <a href="{% url 'home' %}"
+               class="px-6 py-3 bg-green-500 text-white font-semibold rounded-md shadow-md hover:bg-green-600 transition-colors duration-200">
+                Continue Shopping
+            </a>
+            
+            <!-- RETURN REQUESTED: Show cancel option -->
+            {% elif order.order_status == 5 %}
+            <form method="post" action="{% url 'cancel_return_request_order' uid=order.id %}" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                    onclick="return confirm('Cancel return request for entire order?')"
+                    class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200">
+                    Cancel Return Request
+                </button>
+            </form>
+            <p class="text-sm text-orange-600 self-center font-medium">Awaiting admin approval</p>
+            
+            <!-- RETURN APPROVED -->
+            {% elif order.order_status == 6 %}
+            <p class="text-sm text-blue-600 font-medium self-center">Return approved. Product pickup scheduled.</p>
+            
+            <!-- RETURNED -->
+            {% elif order.order_status == 7 %}
+            <p class="text-sm text-purple-600 font-medium self-center">Return completed. Refund processed.</p>
+            {% endif %}
+        </div>
 
+        <!-- Show cancellation/return reason if exists -->
+        {% if order.return_reason %}
+        <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+            <p class="text-sm font-medium text-gray-700">
+                {% if order.order_status == 4 %}
+                Cancellation Reason:
+                {% else %}
+                Return Reason:
+                {% endif %}
+            </p>
+            <p class="text-sm text-gray-600 mt-1">{{ order.return_reason }}</p>
+        </div>
+        {% endif %}
 
-
-
-
-
-    </div>
-
-
-
-
+    </main>
 </div>
 {% endblock content %}

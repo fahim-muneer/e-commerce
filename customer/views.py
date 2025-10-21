@@ -19,11 +19,24 @@ from .forms import SignUpForm, LoginForm, OtpVerificationForm, ForgotPasswordFor
 from django.contrib.auth.mixins import LoginRequiredMixin
 from orders.models import OrderAddress
 from django.core.paginator import Paginator
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+
+from django.db import transaction
+from .models import ReferralCode, Referral, ReferralReward
+from offer.models import Offers
+from datetime import timedelta
+from .utils import create_referral_on_signup
+
+
 
 
 
 User = get_user_model()
 
+class MyLoginRequiredMixin(LoginRequiredMixin):    
+    login_url = '/customer/'      
+    redirect_field_name = 'home'  
 
 
 def generate_and_send_otp(user):
@@ -58,7 +71,7 @@ def generate_and_send_otp(user):
     )
 
 
-
+@method_decorator(never_cache, name='dispatch') 
 class ResendOtp(View):
     
     def get(self, request):
@@ -67,40 +80,174 @@ class ResendOtp(View):
             try:
                 user = User.objects.get(email=email)
                 generate_and_send_otp(user)
-                messages.success(request, "A new OTP has been sent to your email.") 
+                # messages.success(request, "A new OTP has been sent to your email.",extra_tags='Resent-otp') 
                 return redirect('otp-verification')
             except User.DoesNotExist:
-                messages.error(request, "The user does not exist.")
+                messages.error(request, "The user does not exist.",extra_tags='resent-otp')
                 return redirect('signup')
         else:
             messages.error(request, "Session timed out. Please sign up again.")
             return redirect('signup')
 
-
+@method_decorator(never_cache, name='dispatch') 
 class SignUp(View):
     def get(self, request): 
         form = SignUpForm()
+        referral_code = request.GET.get('ref', '')
+        if referral_code:
+            form.initial['referral_code'] = referral_code
         return render(request, 'customer/signup.html', {'form': form})
 
     def post(self, request):
         form = SignUpForm(request.POST)
         if form.is_valid():
-            register_user = form.save(commit=False)
-            register_user.is_active = False  
-            register_user.save()
-            
-            Customer.objects.create(user=register_user) #pylint: disable=no-member
-            
-            generate_and_send_otp(register_user)
-            request.session["email"] = register_user.email
-            messages.info(
-                request, "A verification code has been sent to your email. Please check your inbox.")
-            return redirect('otp-verification')
+            # try:
+                with transaction.atomic():
+                    # Create user
+                    register_user = form.save(commit=False)
+                    register_user.is_active = False
+                    
+                    # Get referral code from form
+                    referral_code_input = form.cleaned_data.get('referral_code', '').strip().upper()
+                    if referral_code_input:
+                        register_user.referred_by_code = referral_code_input
+                    
+                    register_user.save()
+                    # new_user = Register.objects.create_user(
+                    # full_name=register_user.full_name,
+                    # email=register_user.email,
+                    # password=register_user.password
+                    # )
+                    
+                    
+                    # ref_code = request.GET.get('ref') or request.POST.get('referral_code') or request.session.get('referral_code')
+        
+                    # if ref_code:
+                    #     result = create_referral_on_signup(new_user, ref_code)
+                    #     if result['success']:
+                    #         messages.success(
+                    #             request, 
+                    #             f" Welcome! You'll receive ₹50 bonus after your first purchase!"
+                    #         )
+                    #     else:
+                    #         messages.warning(request, f"Referral code issue: {result['message']}")
+                            
+                    Customer.objects.create(user=register_user)
+                    
+                    new_code = ReferralCode.generate_unique_code(register_user)
+                    ReferralCode.objects.create(user=register_user, code=new_code)
+                    
+                    if referral_code_input:
+                        process_referral_signup(register_user, referral_code_input)
+                    
+                    generate_and_send_otp(register_user)
+                    request.session["email"] = register_user.email
+                    
+                    messages.info(
+                        request, 
+                        "A verification code has been sent to your email. Please check your inbox."
+                    )
+                    return redirect('otp-verification')
+                    
+            # except Exception as e:
+            #         messages.error(request, f"Error creating account: {str(e)}")
+            #         return render(request, 'customer/signup.html', {'form': form})
         else:
-            messages.error(request, "Please correct the errors in the form.")
+            messages.error(request, "Please correct the errors in the form.",extra_tags='sign-up')
             return render(request, 'customer/signup.html', {'form': form})
 
 
+def process_referral_signup(new_user, referral_code):
+    try:
+        referral_code_obj = ReferralCode.objects.get(code=referral_code)
+        referrer = referral_code_obj.user
+        
+        if referrer == new_user:
+            return
+        
+        referral = Referral.objects.create(
+            referrer=referrer,
+            referred=new_user,
+            referral_code=referral_code_obj
+        )
+        
+        referral_offers = Offers.objects.filter(
+            offer_type='referral',
+            active=True,
+            start_date__lte=timezone.now(),
+            end_date__gte=timezone.now()
+        )
+        
+        for offer in referral_offers:
+            if offer.applies_to in ['referee', 'both']:
+                ReferralReward.objects.create(
+                    referral=referral,
+                    user=new_user,
+                    reward_type=ReferralReward.REFEREE_BONUS,
+                    offer=offer,
+                    discount_amount=offer.fixed_discount_amount or 0,
+                    valid_from=timezone.now(),
+                    valid_until=timezone.now() + timedelta(days=offer.validity_days)
+                )
+        
+        messages.success(
+            None,
+            f' Referral code applied! You have special rewards waiting for you!'
+        )
+        
+    except ReferralCode.DoesNotExist:
+        messages.warning(None, 'Invalid referral code')
+    except Exception as e:
+        print(f"Error processing referral: {e}")
+
+
+def process_first_purchase(user, order):
+    try:
+        referral = Referral.objects.filter(
+            referred=user,
+            first_purchase_at__isnull=True
+        ).first()
+        
+        if not referral:
+            return
+        
+        referral.first_purchase_at = timezone.now()
+        referral.save()
+        
+        # Get active referral offers
+        referral_offers = Offers.objects.filter(
+            offer_type='referral',
+            active=True,
+            start_date__lte=timezone.now(),
+            end_date__gte=timezone.now()
+        )
+        
+        for offer in referral_offers:
+            # Create reward for referrer (person who referred)
+            if offer.applies_to in ['referrer', 'both']:
+                ReferralReward.objects.create(
+                    referral=referral,
+                    user=referral.referrer,
+                    reward_type=ReferralReward.REFERRER_BONUS,
+                    offer=offer,
+                    discount_amount=offer.fixed_discount_amount or 0,
+                    valid_from=timezone.now(),
+                    valid_until=timezone.now() + timedelta(days=offer.validity_days)
+                )
+        
+        # Update referral status
+        referral.status = Referral.BOTH_REWARDED
+        referral.save()
+        
+        messages.success(
+            None,
+            f' Your referrer has been rewarded for your purchase!'
+        )
+        
+    except Exception as e:
+        print(f"Error processing first purchase reward: {e}")
+
+@method_decorator(never_cache, name='dispatch')
 class LogIn(View):
     def get(self, request):
         form = LoginForm()
@@ -109,29 +256,32 @@ class LogIn(View):
     def post(self, request):
         form = LoginForm(request.POST)
         if form.is_valid():
-            
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-
+            
             user = authenticate(request, username=email, password=password)
-
+            
             if user is not None:
-                login(request, user)
+                if user.is_superuser:
+                    messages.error(request, "Admin accounts cannot login here.",extra_tags='login-user')
+                    return render(request, 'customer/login.html', {"form": form})
                 
+                login(request, user)
                 messages.success(request, f"Welcome back, {user.email}!")
                 return redirect('home')
             else:
-                messages.error(request, "Invalid username or password.")
-                
+                messages.error(request, "The user is not exist.\n Please create an account",extra_tags='login-user')
         
         return render(request, 'customer/login.html', {"form": form})
 
-
+@never_cache
 def Log_out(request):
-    logout(request)
+    if request.user.is_authenticated and not request.user.is_superuser:
+        logout(request)
     return redirect('login')
 
 
+@method_decorator(never_cache, name='dispatch') 
 class OtpVerification(View):
     def get(self, request):
         form = OtpVerificationForm()
@@ -144,7 +294,7 @@ class OtpVerification(View):
             email = request.session.get('email')
 
             if not email:
-                messages.error(request, "Session expired. Please sign up again.")
+                messages.error(request, "Session expired. Please sign up again.",extra_tags='otp-verification')
                 return redirect('signup')
 
             try:
@@ -154,37 +304,49 @@ class OtpVerification(View):
                 if otp_instance.code == entered_otp and otp_instance.is_valid():
                     user.is_active = True
                     user.save()
-                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-
                     
+                    
+                    if user.is_superuser:
+                        messages.error(request, 'Admin accounts must use admin login.',extra_tags='otp-verification')
+                        return redirect('admin_login')
+                    
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     otp_instance.delete()
-
                     messages.success(request, 'Account verified successfully!')
                     return redirect('home')
                 else:
-                    messages.error(request, 'Invalid or expired OTP.')
+                    messages.error(request, 'Invalid or expired OTP.',extra_tags='otp-verification')
             except User.DoesNotExist:
-                messages.error(request, 'User not found. Please try signing up again.')
+                messages.error(request, 'User not found. Please try signing up again.',extra_tags='otp-verification')
                 return redirect('signup') 
 
             except OTP.DoesNotExist:                #pylint: disable=no-member
-                messages.error(request, 'No OTP found for this user. Please request a new one.')
+                messages.error(request, 'No OTP found for this user. Please request a new one.',extra_tags='otp-verification')
 
         return render(request, 'customer/otp_verification.html', {'form': form})
 
+@method_decorator(never_cache, name='dispatch') 
 class ForgotPassword(View):
     def get(self, request):
+        print("got get request in the FORGOT PASSWORD function")
 
         form = ForgotPasswordForm()
 
         return render(request, 'customer/forgot_password.html', {'form': form})
 
     def post(self, request):
+        print(" got POSST request in FORGOT PASSWORD")
 
         form = ForgotPasswordForm(request.POST)
+        print(form)
 
         if form.is_valid():
+            print('form is valid')
+            
             email = form.cleaned_data['email']
+            print(f"the entered email is {email}")
+            
+            
 
             try:
                 user = User.objects.get(email=email) 
@@ -198,16 +360,19 @@ class ForgotPassword(View):
                           'fahimmuneer313@gmail.com', [user.email], fail_silently=False)
 
                 messages.success(
-                    request, "A link was sent to your mail to Reset your password.")
+                    request, "A link was sent to your mail to Reset your password.",extra_tags='otp-success')
                 return redirect('login')
-            except User.DoesNotExist:
+            except User.DoesNotExist as e :
                 messages.error(
-                    request, "The email you enetered does not registered.")
+                    request, "The email you enetered does not registered.",extra_tags='forgot-password')
+                print(f"the redirect error is {str(e)}")
                 return redirect('forgot_password')
         messages.error(request, "Please enter a valid email.")
+        print("please enter a valid email")
         return render(request,'customer/forgot_password.html',{'form':form})
 
 
+@method_decorator(never_cache, name='dispatch') 
 class ChangePassword(View):
     def get(self, request, uidb64, token):
 
@@ -222,7 +387,7 @@ class ChangePassword(View):
             form = CustomSetPasswordForm(user)
 
             return render(request, 'customer/change_password.html', {"form": form})
-        messages.error(request,'The link was exhausted.')
+        messages.error(request,'The link was exhausted.',extra_tags='change-password')
 
     def post(self, request, uidb64, token):
         # decode the uidb64
@@ -241,11 +406,12 @@ class ChangePassword(View):
             else:
                 return render(request, 'customer/change_password.html', {'form': form})
         
-        messages.error(request, "The link is invalid or has expired. Please try again.")
+        messages.error(request, "The link is invalid or has expired. Please try again.",extra_tags='change-password')
         return redirect('forgot_password')
 
 
-class UserProfile(LoginRequiredMixin,View):
+@method_decorator(never_cache, name='dispatch') 
+class UserProfile(MyLoginRequiredMixin,View):
     
     login_url = 'login'   
     redirect_field_name = 'next'
@@ -265,7 +431,7 @@ class UserProfile(LoginRequiredMixin,View):
             #     )
         except Customer.DoesNotExist:  #pylint: disable=no-member
               profile=Customer.objects.create(user=request.user) #pylint: disable=no-member
-              messages.success(request, "No profile found for this account.")
+              messages.warning(request, "Add a profile picture.",extra_tags='customer-profile')
 
         form = UserProfileForm(instance=profile)
         return render(request, 'customer/customer_profile.html', {
@@ -274,7 +440,8 @@ class UserProfile(LoginRequiredMixin,View):
         })
 
 
-class EditPicture(View):
+@method_decorator(never_cache, name='dispatch') 
+class EditPicture(MyLoginRequiredMixin,View):
     
     def get(self ,request ):
         profile = Customer.objects.get(user=request.user) #pylint: disable=no-member
@@ -289,10 +456,12 @@ class EditPicture(View):
             form.save()
             messages.success(request,'Your profile picture was added.')
             return redirect('user_profile')
-        messages.error(request,'Your uploading was failed. Please try again.')
+        messages.error(request,'Your uploading was failed. Please try again.',extra_tags='update-picture')
+        print("redirecting to here and should show the message")
         return render(request ,'customer/update_picture.html',{'form':form})
 
-class UpdateEmailAndFullName(LoginRequiredMixin, View):
+@method_decorator(never_cache, name='dispatch') 
+class UpdateEmailAndFullName(MyLoginRequiredMixin, View):
     login_url = 'login'
     redirect_field_name = 'next'
 
@@ -312,13 +481,14 @@ class UpdateEmailAndFullName(LoginRequiredMixin, View):
             updated_user.save()
             generate_and_send_otp(updated_user)
             request.session["email"] = old_email
-            messages.info(request, "Your email has been changed. A verification code has been sent to your new email. Please verify to continue.")
+            messages.info(request, "Your email has been changed. A verification code has been sent to your new email. Please verify to continue.",extra_tags='update-email')
             return redirect('email_otp')                   
         else:
             messages.error(request, "Please correct the errors in the form.")
             return render(request, 'customer/update_email.html', {'form': form, 'user': user})
                 
-            
+
+@method_decorator(never_cache, name='dispatch')             
 class ChangeEmailOtpVerification(View):
     def get(self, request):
         form = OtpVerificationForm()
@@ -359,7 +529,8 @@ class ChangeEmailOtpVerification(View):
 
         return render(request, 'customer/otp_verification.html', {'form': form})  
 
-class CustomerAddress(View):
+@method_decorator(never_cache, name='dispatch') 
+class CustomerAddress(MyLoginRequiredMixin,View):
     def get(self,request):
        
 
@@ -376,8 +547,8 @@ class CustomerAddress(View):
         return render (request,'customer/customer_address.html',{'form':form,'profile':profile})
 
 
-  
-class AddCustomerAddress(View):
+@method_decorator(never_cache, name='dispatch') 
+class AddCustomerAddress(MyLoginRequiredMixin,View):
     def get(self,request):
         form =UserAddressForm()
         return render(request,'customer/add_address.html',{'form':form})
@@ -401,7 +572,7 @@ class AddCustomerAddress(View):
                     city=form.cleaned_data['city'],
                     state=form.cleaned_data['state'],
                     pin=form.cleaned_data['pin'],
-                    country=form.cleaned_data['country'],
+                   
                 
                     )
             
@@ -409,12 +580,12 @@ class AddCustomerAddress(View):
             messages.success(request,'Your address was added.')
             return redirect('user_address')
         
-        messages.error(request,'Check your credentials.')
+        messages.error(request,'Check your credentials.',extra_tags='add-customer-address')
         return render(request,'customer/add_address.html',{'form':form})
 
-class EditAddress(UpdateView):
+class EditAddress(MyLoginRequiredMixin,UpdateView):
     model = UserAddress
-    fields =['mobile', 'second_mob', 'address', 'city', 'state', 'pin', 'country', 'address_type', 'is_default']
+    fields =['mobile', 'second_mob', 'address', 'city', 'state', 'pin', 'address_type', 'is_default']
     template_name="customer/edit_address.html" 
     success_url=reverse_lazy("user_address" )  
 

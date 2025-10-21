@@ -1,0 +1,98 @@
+{% extends "adminbase.html" %}
+{% block context %}
+
+<main class="lg:col-start-2 row-start-2 p-4 lg:p-6 overflow-y-auto">
+    
+    <h2 class="text-xl font-semibold text-gray-800 mb-6">Update Coupon</h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Update Coupon Form -->
+        <div class="lg:col-span-1 bg-white p-6 shadow-xl rounded-xl">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">
+                Update Coupon - {{ coupon.coupon_code }}
+            </h3>
+
+            <form action="{% url 'update_coupon' coupon.id %}" method="POST" class="space-y-4">
+                {% csrf_token %}
+                
+                <!-- Coupon Code -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Coupon Code</label>
+                    {{ form.coupon_code }}
+                    {% if form.coupon_code.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.coupon_code.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Min Cart Value -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Minimum Cart Value</label>
+                    {{ form.min_cart_value }}
+                    {% if form.min_cart_value.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.min_cart_value.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Discount Value -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Discount Value</label>
+                    {{ form.discount_value }}
+                    {% if form.discount_value.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.discount_value.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Expiry Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                    {{ form.expire_at }}
+                    {% if form.expire_at.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.expire_at.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Use Limit -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Use Limit</label>
+                    {{ form.use_limit }}
+                    {% if form.use_limit.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.use_limit.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Active -->
+                <div class="flex items-center">
+                    {{ form.active }}
+                    <label for="id_active" class="ml-2 text-sm font-medium text-gray-700">Active</label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full mt-6 py-3 text-white font-semibold bg-red-500 rounded-lg shadow-lg hover:bg-red-600 transition-colors duration-200">
+                    UPDATE COUPON
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menu-toggle');
+        menuToggle?.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+    });
+</script>
+
+{% endblock context %}
+

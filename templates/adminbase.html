@@ -1,10 +1,14 @@
 {% load static %}
+{% load tz %}
+{% load widget_tweaks %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> {% block title %}  {% endblock title %} </title>
+    
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome for icons -->
@@ -88,7 +92,7 @@
                     </a>
                 </li>
                 
-                <!-- Other Links with Dropdowns -->
+              
                 <li class="relative">
                     <a href="#" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <span class="flex items-center gap-3">
@@ -96,7 +100,7 @@
                             <span>Home Slides</span>
                         </span>
                     </a>
-                    <!-- Dropdown Content (add logic with JS to toggle visibility) -->
+                   
                 </li>
                 <li class="relative">
                     <a href="{% url 'category_list' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
@@ -106,6 +110,21 @@
                         </span>
                     </a>
                 </li>
+
+
+                <li class="relative">
+                    <a href="{% url 'varient_list' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                        <span class="flex items-center gap-3">
+                            <i class="fas fa-th-large w-5 h-5"></i>
+                            <span>Variants</span>
+                        </span>
+                    </a>
+                </li>
+
+
+
+
+                
                 <li class="relative">
                     <a href="{% url 'product_list' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <span class="flex items-center gap-3">
@@ -114,6 +133,45 @@
                         </span>
                     </a>
                 </li>
+
+
+                <li class="relative">
+                    <a href="{% url 'offer_view' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                        <span class="flex items-center gap-3">
+                             <i class="fa fa-sort-amount-desc" ></i>
+
+                            <span>Offer</span>
+                        </span>
+                    </a>
+                </li>
+
+
+                <li class="relative">
+                    <a href="{% url 'admin_refferal_dashboard' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                        <span class="flex items-center gap-3">
+                             <i class="fa fa-sort-amount-desc" ></i>
+
+                            <span>Refferal</span>
+                        </span>
+                    </a>
+                </li>
+
+
+
+                <li class="relative">
+                    <a href="{% url 'admin_wallet_dashboard' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                        <span class="flex items-center gap-3">
+                             <i class="fa fa-sort-amount-desc" ></i>
+
+                            <span>Wallet</span>
+                        </span>
+                    </a>
+                </li>
+
+
+
+
+
                 <li class="relative">
                     <a href="{% url  'user_panel' %}" class="flex items-center justify-between p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <span class="flex items-center gap-3">
@@ -140,7 +198,7 @@
                 </li>
                 <!-- Coupon and Logout are separate -->
                 <li>
-                    <a href="#" class="flex items-center gap-3 p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                    <a href="{% url 'coupon_list' %}" class="flex items-center gap-3 p-4 font-semibold hover:bg-gray-50 rounded-lg transition-colors duration-200">
                         <i class="fas fa-tags w-5 h-5"></i>
                         <span>Coupon</span>
                     </a>

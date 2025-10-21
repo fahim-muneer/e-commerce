@@ -1,0 +1,190 @@
+{% extends "adminbase.html" %}
+{% block context %}
+
+<!-- Main Content Area -->
+<main class="lg:col-start-2 row-start-2 p-4 lg:p-6 overflow-y-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 1. Add Coupon Form (Left Column) -->
+        <div class="lg:col-span-1 bg-white p-6 shadow-xl rounded-xl">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">Add Coupon</h3>
+            <form action="{% url 'create_coupon' %}" method="POST" class="space-y-4">
+                {% csrf_token %}
+                
+                <!-- Coupon Code -->
+                <div>
+                    <label for="coupon_code" class="block text-sm font-medium text-gray-700 mb-1">Coupon code</label>
+                    <input type="text" id="coupon_code" name="coupon_code" placeholder="Add coupon code here"
+                        value="{{ form.coupon_code }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="description" name="description" rows="2" placeholder="add description here"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">{{ form.description.value }}</textarea>
+                </div>
+
+                <!-- Min Cart Value -->
+                <div>
+                    <label for="min_cart_value" class="block text-sm font-medium text-gray-700 mb-1">Min Cart Value</label>
+                    <input type="number" id="min_cart_value" name="min_cart_value" placeholder="e.g., 500"
+                        value="{{ form.min_cart_value.value }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                </div>
+
+                <!-- Discount Value -->
+                <div>
+                    <label for="discount_value" class="block text-sm font-medium text-gray-700 mb-1">Discount Value</label>
+                    <input type="number" id="discount_value" name="discount_value" placeholder="add numbers for %"
+                        value="{{ form.discount_value.value }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                </div>
+
+                <!-- Expire At -->
+                <div>
+                    <label for="expire_at" class="block text-sm font-medium text-gray-700 mb-1">Expire At</label>
+                    <input type="date" id="expire_at" name="expire_at" value="{{ form.expire_at.value }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                </div>
+
+                <!-- Use Limit -->
+                <div>
+                    <label for="use_limit" class="block text-sm font-medium text-gray-700 mb-1">Use limit</label>
+                    <input type="number" id="use_limit" name="use_limit" placeholder="add limits"
+                        value="{{ form.use_limit.value }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                </div>
+
+                <!-- Active (Boolean Field) -->
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="id_active" name="active"
+                        {% if form.active.value %}checked{% endif %}
+                        class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                    <label for="id_active" class="text-sm font-medium text-gray-700">Active</label>
+                </div>
+                {% if form.active.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.active.errors.0 }}</p>
+                {% endif %}
+
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="w-full mt-6 py-3 text-white font-semibold bg-red-500 rounded-lg shadow-lg hover:bg-red-600 transition-colors duration-200 transform active:scale-[0.98]">
+                    ADD COUPON
+                </button>
+            </form>
+        </div>
+
+        <!-- 2. Coupon List Table (Right Column) -->
+        <div class="lg:col-span-2 bg-white p-6 shadow-xl rounded-xl">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">Coupon List</h3>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No.</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coupon Code</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Offer</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Limit</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                        </tr>
+                    </thead>
+                    {% if coupons %}
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for coupon in coupons %}
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ forloop.counter|add:coupons.start_index|add:"-1" }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ coupon.coupon_code }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ coupon.description }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ coupon.expire_at }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">Rs.{{ coupon.discount_value }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ coupon.use_limit }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ coupon.min_cart_value }}</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if coupon.active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ coupon.active|yesno:"Active,Inactive" }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
+                                <!-- Edit -->
+                                <a href="{% url 'update_coupon' coupon_id=coupon.id %}" class="text-gray-400 hover:text-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </a>
+
+                                {% comment %} <!-- Delete -->
+                                <button onclick="openDeleteModal('{{ coupon.id }}', '{{ coupon.coupon_code }}')" class="text-gray-400 hover:text-red-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button> {% endcomment %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% endif %}
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-center space-x-2 mt-8">
+                {% if coupons.has_previous %}
+                <a href="?page={{ coupons.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+                {% endif %}
+                {% for i in coupons.paginator.page_range %}
+                <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">{{ i }}</a>
+                {% endfor %}
+                {% if coupons.has_next %}
+                <a href="?page={{ coupons.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+
+{% comment %} <!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Confirm Deletion</h2>
+        <p class="text-gray-600 mb-6">
+            Are you sure you want to delete 
+            <span id="couponName" class="font-semibold text-red-500"></span>?
+        </p>
+        <form id="deleteForm" method="POST">
+            {% csrf_token %}
+            <div class="flex justify-center space-x-4">
+                <button type="button" onclick="closeModal()"
+                    class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition">
+                    Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div> {% endcomment %}
+
+<script>
+    function openDeleteModal(couponId, couponCode) {
+        const modal = document.getElementById('deleteModal');
+        const couponName = document.getElementById('couponName');
+        const deleteForm = document.getElementById('deleteForm');
+        couponName.textContent = `"${couponCode}"`;
+        deleteForm.action = `/coupons/${couponId}/delete/`;  
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+</script>
+
+{% endblock context %}

@@ -5,16 +5,16 @@
 
     <!-- HERO SECTION -->
     <div class="relative w-full h-[500px]">
-        <img src="{% static 'images/bedroom_website_banner_2.jpg' %}" alt="Storage Bed" class="w-full h-full object-cover">
+        <img src="{% static 'banner/furniture-and-interior-detail-st.jpg' %}" alt="Storage Bed" class="w-full h-full object-cover">
         
         <!-- Overlay -->
-        <div class="absolute inset-0 bg-black/30"></div>
+        <div class="absolute inset-0 bg-black/10"></div>
 
         <!-- Text Content -->
         <div class="absolute top-1/2 left-10 transform -translate-y-1/2 text-white">
             <h2 class="text-4xl font-bold">Storage Beds</h2>
             <p class="text-xl">Under ₹30,000</p>
-            <a href="#" class="inline-block mt-4 bg-white text-black px-5 py-2 rounded-full font-semibold">Shop Now</a>
+            <a href="{% url 'home' %}" class="inline-block mt-4 bg-white text-black px-5 py-2 rounded-full font-semibold">Shop Now</a>
         </div>
 
         <!-- Arrows -->
@@ -51,46 +51,65 @@
         <div class="flex items-center mb-1">
           ⭐⭐⭐⭐★
         </div>
+        {% if product.block %}
+                            <p class="block w-full py-2 mt-2 bg-white-500 text-red-600 text-sm font-semibold text-center rounded-md">
+                            Currently Unavailable
+                                </p>
+                                       </div>
+
+                            {% else %}
         <div class="flex items-center space-x-2 mb-2">
-          <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
-          <span class="text-red-500 font-semibold">₹{{ product.price }}</span>
-        
+           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
+      {% comment %} <span class="text-red-500 font-semibold">₹{{ product.price }}</span> {% endcomment %}
         </div>
-        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
-    {% csrf_token %}
-    <input type="hidden" name="product_id" value="{{ product.id }}">
-    <input type="hidden" name="quantity" value="1">
+       {% comment %} {% if product.stock %} {% endcomment %}
 
-    {% if user.is_authenticated %}
-        <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
-            ADD TO CART
-        </button>
-    {% else %}
-        <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
-            LOGIN TO ADD TO CART
-        </a>
-    {% endif %}
-</form>
+                        {% comment %} <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                            <input type="hidden" name="quantity" value="1">
 
-      </div>
+                            {% if user.is_authenticated %}
+                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                                    ADD TO CART
+                                </button>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
+                                    LOGIN TO ADD TO CART
+                                </a>
+                            {% endif %}
+                        </form>{% endcomment %}
+                        </div>
+
+                        {% comment %} {% else %}  {% endcomment %}
+
+                        <p class="block w-full py-3  bg-gray-200  text-red-500 font-semibold rounded-md shadow-md  transition-colors duration-200 text-center">
+                                    Shop Now !!!
+                                </p>
+                   {% comment %} </div>
+             {% endif %} {% endcomment %}
+
+
+                  {% endif %}  
     </div>
-  {% empty %}
-    <div class="col-span-full text-center text-gray-500">No products found.</div>
+  {% comment %} {% empty %} {% endcomment %}
+    {% comment %} <div class="col-span-full text-center text-gray-500">No products found.</div> {% endcomment %}
+  
   {% endfor %}
 </div>
   <!-- Banner Section -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
     <div class="relative">
-      <img src="{% static 'images/Single-banner-plural-d.jpg' %}" alt="Banner" class="w-full h-full object-cover rounded">
+      <img src="{% static 'banner/sofa1.jpg' %}" alt="Banner" class="w-full h-full object-cover rounded">
       <button class="absolute top-4 left-4 bg-white px-3 py-1 rounded text-sm shadow">Shop Now</button>
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div class="relative">
-        <img src="{% static 'images/banner_chair.jpg' %}" alt="Banner" class="w-full h-full object-cover rounded">
+        <img src="{% static 'banner/solid_wood_rajwadafurnish_sheesh.jpg' %}" alt="Banner" class="w-full h-full object-cover rounded">
         <button class="absolute top-4 left-4 bg-white px-3 py-1 rounded text-sm shadow">Shop Now</button>
       </div>
       <div class="relative">
-        <img src="{% static 'images/sofa.jpg' %}" alt="Banner" class="w-full h-full object-cover rounded">
+        <img src="{% static 'banner/web.jpg' %}" alt="Banner" class="w-full h-full object-cover rounded">
         <button class="absolute top-4 left-4 bg-white px-3 py-1 rounded text-sm shadow">Shop Now</button>
       </div>
     </div>
@@ -124,19 +143,19 @@
   <!-- Top Banner Row -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="relative">
-      <img src="{% static 'images/modern-sofa.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
+      <img src="{% static 'banner/2-resized_e8ad2bd8-0b4c-4328-855.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
       <span class="absolute bottom-3 left-3 bg-red-500 text-white px-3 py-1 rounded">₹999 SHOP NOW</span>
     </div>
     <div class="relative">
-      <img src="{% static 'images/sofa.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
+      <img src="{% static 'banner/Rudra-Sofa-Cum-Bed-2-Seater-Soli.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
       <span class="absolute bottom-3 left-3 bg-red-500 text-white px-3 py-1 rounded">₹900 SHOP NOW</span>
     </div>
     <div class="relative">
-      <img src="{% static 'images/red sofa.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
+      <img src="{% static 'banner/Festival-sale-BNG B2_17568924560.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
       <span class="absolute bottom-3 left-3 bg-red-500 text-white px-3 py-1 rounded">₹1500 SHOP NOW</span>
     </div>
     <div class="relative">
-      <img src="{% static 'images/Single-banner-plural-d.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
+      <img src="{% static 'banner/Venis Dining table-optimized_175.jpg' %}" class="w-full h-48 object-cover rounded" alt="">
       <span class="absolute bottom-3 left-3 bg-red-500 text-white px-3 py-1 rounded">₹1999 SHOP NOW</span>
     </div>
   </div>
@@ -160,7 +179,6 @@
     <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
       <div class="relative">
         <a href="{% url 'items_details' pk=product.pk %}"><img src="{{ product.image1.url }}" alt="{{ product.name }}" class="w-full h-40 object-cover"></a>
-        <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">13%</span>
       </div>
       <div class="p-4">
         <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
@@ -170,28 +188,37 @@
         </div>
         <div class="flex items-center space-x-2 mb-2">
           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
-          <span class="text-red-500 font-semibold">₹{{ product.price }}</span>
+    {% comment %} <span class="text-red-500 font-semibold">₹{{ product.price }}</span> {% endcomment %}
         </div>
-        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
-    {% csrf_token %}
-    <input type="hidden" name="product_id" value="{{ product.id }}">
-    <input type="hidden" name="quantity" value="1">
+       {% comment %} {% if product.stock %} {% endcomment %}
 
-    {% if user.is_authenticated %}
-        <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
-            ADD TO CART
-        </button>
-    {% else %}
-        <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
-            LOGIN TO ADD TO CART
-        </a>
-    {% endif %}
-</form>
+                        {% comment %} <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                            <input type="hidden" name="quantity" value="1">
 
-      </div>
+                            {% if user.is_authenticated %}
+                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                                    ADD TO CART
+                                </button>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
+                                    LOGIN TO ADD TO CART
+                                </a>
+                            {% endif %}
+                        </form>{% endcomment %}
+                        </div>
+
+                        {% comment %} {% else %}  {% endcomment %}
+
+                        <p class="block w-full py-3  bg-gray-200  text-red-500 font-semibold rounded-md shadow-md  transition-colors duration-200 text-center">
+                                    Shop Now !!!
+                                </p>
+                   {% comment %} </div>
+                    {% endif %} {% endcomment %}
     </div>
-  {% empty %}
-    <div class="col-span-full text-center text-gray-500">No products found.</div>
+  {% comment %} {% empty %} {% endcomment %}
+    {% comment %} <div class="col-span-full text-center text-gray-500">No products found.</div> {% endcomment %}
   {% endfor %}
 </div>
 
@@ -212,11 +239,10 @@
  
     
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-  {% for product in latest_products %}
+  {% for product in featured_product %}
     <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
       <div class="relative">
         <a href="{% url 'items_details' pk=product.pk %}"><img src="{{ product.image1.url }}" alt="{{ product.name }}" class="w-full h-40 object-cover"></a>
-        <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">13%</span>
       </div>
       <div class="p-4">
         <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
@@ -226,28 +252,37 @@
         </div>
         <div class="flex items-center space-x-2 mb-2">
           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
-          <span class="text-red-500 font-semibold">₹{{ product.price }}</span>
+          {% comment %} <span class="text-red-500 font-semibold">₹{{ product.price }}</span> {% endcomment %}
         </div>
-        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
-    {% csrf_token %}
-    <input type="hidden" name="product_id" value="{{ product.id }}">
-    <input type="hidden" name="quantity" value="1">
+       {% comment %} {% if product.stock %} {% endcomment %}
 
-    {% if user.is_authenticated %}
-        <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
-            ADD TO CART
-        </button>
-    {% else %}
-        <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
-            LOGIN TO ADD TO CART
-        </a>
-    {% endif %}
-</form>
+                        {% comment %} <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                            <input type="hidden" name="quantity" value="1">
 
-      </div>
+                            {% if user.is_authenticated %}
+                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                                    ADD TO CART
+                                </button>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
+                                    LOGIN TO ADD TO CART
+                                </a>
+                            {% endif %}
+                        </form>{% endcomment %}
+                        </div>
+
+                        {% comment %} {% else %}  {% endcomment %}
+
+                        <p class="block w-full py-3  bg-gray-200  text-red-500 font-semibold rounded-md shadow-md  transition-colors duration-200 text-center">
+                                    Shop Now !!!
+                                </p>
+                   {% comment %} </div>
+                    {% endif %} {% endcomment %}
     </div>
-  {% empty %}
-    <div class="col-span-full text-center text-gray-500">No products found.</div>
+  {% comment %} {% empty %} {% endcomment %}
+    {% comment %} <div class="col-span-full text-center text-gray-500">No products found.</div> {% endcomment %}
   {% endfor %}
 </div>
 

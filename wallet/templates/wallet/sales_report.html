@@ -1,0 +1,359 @@
+{% extends "adminbase.html" %}
+
+{% block title %}Wallet Management{% endblock %}
+
+{% block context %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Sales Report</h2>
+        <div>
+            <a href="{% url 'export_sales_report_csv' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </a>
+            <a href="{% url 'export_sales_report_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger">
+                <i class="fa-solid fa-file-pdf"></i> Export PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Quick Period</label>
+                    <select name="period" class="form-select" id="periodSelect">
+                        <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
+                        <option value="daily" {% if period == 'daily' %}selected{% endif %}>Today</option>
+                        <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Last 7 Days</option>
+                        <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Last 30 Days</option>
+                        <option value="yearly" {% if period == 'yearly' %}selected{% endif %}>Last Year</option>
+                        <option value="custom" {% if period == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2" id="startDateDiv">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+
+                <div class="col-md-2" id="endDateDiv">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Payment Method</label>
+                    <select name="payment_method" class="form-select">
+                        <option value="">All</option>
+                        {% for value, label in payment_choices %}
+                        <option value="{{ value }}" {% if payment_method == value|stringformat:"s" %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Order Status</label>
+                    <select name="order_status" class="form-select">
+                        <option value="">All</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if order_status == value|stringformat:"s" %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa-solid fa-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total Orders</h6>
+                    <h2 class="mb-0">{{ total_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total Revenue</h6>
+                    <h2 class="mb-0">₹{{ total_revenue|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="text-white-50">Avg Order Value</h6>
+                    <h2 class="mb-0">₹{{ avg_order_value|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Sales Trend Chart -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Sales Trend</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesTrendChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Breakdown -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Payment Methods</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentMethodChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Products and Customers -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Top Selling Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-end">Qty Sold</th>
+                                    <th class="text-end">Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in top_products %}
+                                <tr>
+                                    <td>{{ product.product__name }}</td>
+                                    <td class="text-end">{{ product.quantity_sold }}</td>
+                                    <td class="text-end">₹{{ product.revenue|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Top Customers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th class="text-end">Orders</th>
+                                    <th class="text-end">Total Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for customer in top_customers %}
+                                <tr>
+                                    <td>{{ customer.user__full_name }}</td>
+                                    <td class="text-end">{{ customer.order_count }}</td>
+                                    <td class="text-end">₹{{ customer.total_spent|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Order Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Payment Method</th>
+                            <th>Status</th>
+                            <th class="text-end">Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.order_Id }}</td>
+                            <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ order.user.full_name }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ order.get_payment_method_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ order.get_order_status_display }}</span>
+                            </td>
+                            <td class="text-end">₹{{ order.total_amount|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'order_details' order.pk %}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No orders found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if orders.has_other_pages %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% if orders.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ orders.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in orders.paginator.page_range %}
+                    <li class="page-item {% if orders.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}&{{ request.GET.urlencode }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if orders.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ orders.next_page_number }}&{{ request.GET.urlencode }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Toggle date inputs based on period selection
+document.getElementById('periodSelect').addEventListener('change', function() {
+    const startDiv = document.getElementById('startDateDiv');
+    const endDiv = document.getElementById('endDateDiv');
+    
+    if (this.value === 'custom') {
+        startDiv.style.display = 'block';
+        endDiv.style.display = 'block';
+    } else {
+        startDiv.style.display = 'none';
+        endDiv.style.display = 'none';
+    }
+});
+
+// Initialize on load
+if (document.getElementById('periodSelect').value === 'custom') {
+    document.getElementById('startDateDiv').style.display = 'block';
+    document.getElementById('endDateDiv').style.display = 'block';
+} else {
+    document.getElementById('startDateDiv').style.display = 'none';
+    document.getElementById('endDateDiv').style.display = 'none';
+}
+
+// Sales Trend Chart
+const salesData = {{ daily_sales|safe }};
+const dates = salesData.map(item => item.date);
+const totals = salesData.map(item => item.total);
+
+new Chart(document.getElementById('salesTrendChart'), {
+    type: 'line',
+    data: {
+        labels: dates,
+        datasets: [{
+            label: 'Sales (₹)',
+            data: totals,
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Payment Method Chart
+const paymentData = {{ payment_breakdown|safe }};
+const paymentLabels = [];
+const paymentValues = [];
+
+{% for item in payment_breakdown %}
+paymentLabels.push('{{ item.get_payment_method_display }}');
+paymentValues.push({{ item.total }});
+{% endfor %}
+
+new Chart(document.getElementById('paymentMethodChart'), {
+    type: 'doughnut',
+    data: {
+        labels: paymentLabels,
+        datasets: [{
+            data: paymentValues,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true
+    }
+});
+</script>
+{% endblock context%}

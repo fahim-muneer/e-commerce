@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 {% load static %}
 {% load chunks %}
@@ -48,9 +49,7 @@
                         <input type="checkbox" 
                                name="category" 
                                value="{{ i.name }}" 
-                               class="rounded text-blue-600 focus:ring-blue-500 category-checkbox"
-                               
-                               >
+                               class="rounded text-blue-600 focus:ring-blue-500 category-checkbox">
                         <span>{{ i.name }}</span>
                     </label>
                     {% endfor %}
@@ -60,21 +59,18 @@
 
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Filter By Price</h3>
                 <div class="flex items-center space-x-2 mb-4">
-
-                    <span class="text-sm font-semibold">From: ₹</span>
+                    <span class="text-sm font-semibold">From: </span>
                     <input type="number" 
                            name="min_price" 
                            value="{{ request.GET.min_price }}" 
                            placeholder="0" 
                            class="w-20 px-2 py-1 rounded-md border border-gray-300 text-sm">
-                    <span class="text-sm font-semibold">To: ₹</span>
+                    <span class="text-sm font-semibold">To: </span>
                     <input type="number" 
                            name="max_price" 
-                            value="{{ request.GET.max_price }} "
+                           value="{{ request.GET.max_price }}"
                            placeholder="00000" 
                            class="w-20 px-2 py-1 rounded-md border border-gray-300 text-sm">
-                    
-
                 </div>
                 
                 <div class="flex space-x-2">
@@ -95,7 +91,6 @@
             <div class="flex items-center justify-between mb-4">
                 <p class="text-sm text-gray-600">
                     There are {{ products.paginator.count }} products.
-                   
                 </p>
                 <div class="flex items-center space-x-2 text-sm text-gray-600">
                     <span>Sort By:</span>
@@ -104,8 +99,7 @@
                             <select 
                                 name="sort"
                                 class="block w-36 rounded-md border-gray-300 shadow-sm py-1 pl-3 pr-8 text-sm"
-                                onchange="this.form.submit()"
-                            >
+                                onchange="this.form.submit()">
                                 <option value="price" {% if request.GET.sort == "price" %}selected{% endif %}>
                                     Price: Low to High
                                 </option>
@@ -116,119 +110,139 @@
                         </form>
                     </div>
                 </div>
-
             </div>
             
-            
-            
-            <!-- Product Cards -->
-            {% for product_chunks in products|chunks:5 %}
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-                {% for product in product_chunks %}
-                <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
-                    <div class="relative">
-                         <div class="absolute top-0 right-0 p-4">
-                       
-                       {% if product.id in my_list %}
-                        <!-- Product already in wishlist -->
-                         
+           <!-- Replace the product card section in home.html -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
 
+            {% for product_chunk in products|chunks:5 %}
 
-
-                       <form method="post" action="{% url 'unlike' pid=product.id %}">
-                            {% csrf_token %}
-                                <input type="hidden" name="delete" value="{{product.id}}">
-                            <button type="submit" class="text-gray-400 hover:text-gray-600 transition-colors">💔</button>
-                        </form>
-                    {% else %}
-                        <!-- Product not in wishlist -->
-                        <form method="post" action="{% url 'wish_list' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="product_id" value="{{ product.id }}">
-                            <input type="hidden" name="action" value="add">
-                            <button type="submit">❤️ </button>
-                        </form>
+            {% for product in product_chunk %}
+            <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
+                <div class="relative">
+                    <!-- Discount Badge -->
+                    {% if product.active_offer %}
+                    <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md font-bold z-10">
+                        {{ product.discount_percentage }}% OFF
+                    </span>
                     {% endif %}
-                         </div>
-                        <a href="{% url 'items_details' pk=product.pk %}">
-                            <img src="{{ product.image1.url }}" alt="{{ product.name }}" class="w-full h-40 object-cover">
-                        </a>
+                    
+                    <div class="absolute top-0 right-0 p-4">
+                        {% if product.id in my_list %}
+                            <form method="post" action="{% url 'unlike' pid=product.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete" value="{{product.id}}">
+                                <button type="submit" class="text-gray-400 hover:text-gray-600 transition-colors">❤️</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'wish_list' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                <input type="hidden" name="action" value="add">
+                                <button type="submit" class="flex items-center space-x-2 hover:text-blue-500">
+                                    <i class="fa-regular fa-heart"></i>
+                                </button>
+                            </form>
+                        {% endif %}
                     </div>
-                    <div class="p-4">
-                        <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
-                        <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description }}</p>
-                        <div class="flex items-center mb-1">
-                            ⭐⭐⭐⭐⭐
-                        </div>
+                    
+                    <a href="{% url 'items_details' pk=product.pk %}">
+                        <img src="{{ product.image1.url }}" alt="{{ product.name }}" class="w-full h-40 object-cover">
+                    </a>
+                </div>
+                
+                <div class="p-4">
+                    <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
+                    <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description }}</p>
+                    <div class="flex items-center mb-1">
+                        ⭐⭐⭐⭐⭐
+                    </div>
+                    
+                    {% if product.block %}
+                        <p class="block w-full py-2 mt-2 bg-white-500 text-red-600 text-sm font-semibold text-center rounded-md">
+                            Currently Unavailable
+                        </p>
+                    {% else %}
                         <div class="flex items-center space-x-2 mb-2">
-                            <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
-                            <span class="text-red-500 font-semibold">₹{{ product.price }}</span>
+                            {% if product.active_offer %}
+                                <!-- Show original price and discounted price -->
+                                <span class="text-gray-400 line-through text-sm">₹{{ product.original_display_price }}</span>
+                                <span class="text-red-500 font-semibold text-lg">₹{{ product.discounted_price|floatformat:0 }}</span>
+                            {% else %}
+                                <!-- Show old price and current price -->
+                                <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
+                                <span class="text-red-500 font-semibold">₹{{ product.get_display_price }}</span>
+                            {% endif %}
                         </div>
-                        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
-                            {% csrf_token %}
-                            <input type="hidden" name="product_id" value="{{ product.id }}">
-                            <input type="hidden" name="quantity" value="1">
 
-                            {% if user.is_authenticated %}
-                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
+                        {% if product.largest_variant and product.largest_variant.stock %}
+                            <form method="post" action="{% url 'add_to_cart' %}" class="mt-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                <input type="hidden" name="quantity" value="1">
+
+                                {% if product.variant.exists %}
+                                <input type="hidden" name="variant_id" value="{{ product.largest_variant.id }}">
+                                {% endif %}
+
+                                {% if user.is_authenticated %}
+                                <button type="submit" class="w-full py-2 bg-red-500 text-white text-sm font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors">
                                     ADD TO CART
                                 </button>
-                            {% else %}
-                                <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
-                                    LOGIN TO ADD TO CART
+                                {% else %}
+                                <a href="{% url 'login' %}" class="block w-full py-2 bg-gray-500 text-white text-sm font-semibold rounded-md shadow-md hover:bg-gray-600 text-center transition-colors">
+                                    LOGIN TO ADD
                                 </a>
-                            {% endif %}
-                        </form>
-                    </div>
+                                {% endif %}
+                            </form>
+                        {% else %}
+                            <p class="block w-full py-2 mt-2 bg-red-500 text-white text-sm font-semibold text-center rounded-md">
+                                OUT OF STOCK
+                            </p>
+                        {% endif %}
+                    {% endif %}
                 </div>
-                {% empty %}
-                <div class="col-span-full text-center text-gray-500">No products found.</div>
-                {% endfor %}
             </div>
+            {% empty %}
+            <div class="col-span-full text-center text-gray-500">No products found.</div>
+            {% endfor %}
             {% endfor %}
 
-            <!-- Pagination-->
-            {% if products.paginator.num_pages > 1 %}
+ </div>
+
+
+            <!-- Pagination -->
             <div class="flex justify-center space-x-2 mt-8">
                 {% if products.has_previous %}
-                <a href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                   class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+                <a href="?page={{ products.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
                 {% endif %}
 
                 {% for i in products.paginator.page_range %}
-                <a href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                   class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100 {% if i == products.number %}bg-blue-100 text-blue-600{% endif %}">{{ i }}</a>
+                <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">{{ i }}</a>
                 {% endfor %}
 
-                {% if products.has_next %}
-                <a href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                   class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+                {% if user.has_next %}
+                <a href="?page={{ products.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
                 {% endif %}
             </div>
-            {% endif %}
+  
         </div>
-    </div>
 </div>
 
-    <script>
-        function toggleWishlist(button, productId) {
-            const form = document.getElementById(`wishlist-form-${productId}`);
-            const actionInput = document.getElementById(`action-${productId}`);
+<script>
+    function toggleWishlist(button, productId) {
+        const form = document.getElementById(`wishlist-form-${productId}`);
+        const actionInput = document.getElementById(`action-${productId}`);
 
-            // Toggle the 'added-to-wishlist' class to change the icon's appearance
-            button.classList.toggle('added-to-wishlist');
-            
-            // Check if the button has the class to determine the action
-            if (button.classList.contains('added-to-wishlist')) {
-                // We're adding it, so the next click should be 'remove'
-                actionInput.value = 'add';
-            } else {
-                // We're removing it, so the next click should be 'add'
-                actionInput.value = 'remove';
-            }
-
-            // Submit the form
-            form.submit();
+        button.classList.toggle('added-to-wishlist');
+        
+        if (button.classList.contains('added-to-wishlist')) {
+            actionInput.value = 'add';
+        } else {
+            actionInput.value = 'remove';
         }
-    </script>
+
+        form.submit();
+    }
+</script>
 {% endblock content %}

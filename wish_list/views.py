@@ -14,8 +14,8 @@ from customer.models import Customer
 class MyList(LoginRequiredMixin, View):
     def get(self, request):
         profile = get_object_or_404(Customer, user=request.user)
-        my_list, _ = WishList.objects.get_or_create(user=request.user)
-        wishlist_items = WishListItems.objects.filter(wish_list=my_list)
+        my_list, _ = WishList.objects.get_or_create(user=request.user)  # pylint: disable=no-member
+        wishlist_items = WishListItems.objects.filter(wish_list=my_list)  # pylint: disable=no-member
 
         product_paginator = Paginator(wishlist_items, 2)
         page_number = request.GET.get('page', 1)
@@ -33,19 +33,19 @@ class MyList(LoginRequiredMixin, View):
 
         if product_id and action:
             product = get_object_or_404(ProductPage, pk=product_id)
-            my_list, _ = WishList.objects.get_or_create(user=request.user)
+            my_list, _ = WishList.objects.get_or_create(user=request.user)   # pylint: disable=no-member
 
             if action == 'add':
-                WishListItems.objects.get_or_create(wish_list=my_list, products=product)
+                WishListItems.objects.get_or_create(wish_list=my_list, products=product)   # pylint: disable=no-member
             elif action == 'remove':
-                WishListItems.objects.filter(wish_list=my_list, products=product).delete()
+                WishListItems.objects.filter(wish_list=my_list, products=product).delete()  # pylint: disable=no-member
 
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('home'))
 
 
 class MyListDeleteItem(LoginRequiredMixin, View):
     def post(self, request, pid):
-        WishListItems.objects.filter(pk=pid, wish_list__user=request.user).delete()
+        WishListItems.objects.filter(pk=pid, wish_list__user=request.user).delete()   # pylint: disable=no-member
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('wish_list'))
 
 

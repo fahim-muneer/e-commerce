@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
-from customer.models import Customer, Register
+from customer.models import Customer
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
@@ -58,10 +58,10 @@ class BloackUser(LoginRequiredMixin, View):
         user = get_object_or_404(User, pk=uid)
         if user.is_active:
             user.is_active = False
-            messages.success(request, f'The user {user.full_name} was blocked.')
+            
         else:
             user.is_active = True
-            messages.success(request, f'The user {user.full_name} was unblocked.')
+           
             
         user.save()
         return redirect('user_panel')

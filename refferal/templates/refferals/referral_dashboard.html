@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-5">
+    {% include "user_profile_side_bar.html" %}
+
+    <div class="md:col-span-3">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">My Referral</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
+                <div class="text-sm opacity-90">Total Referrals</div>
+                <div class="text-3xl font-bold">{{ referrals_made.count }}</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
+                <div class="text-sm opacity-90">Successful</div>
+                <div class="text-3xl font-bold">{{ successful_referrals }}</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-6 rounded-lg shadow-lg">
+                <div class="text-sm opacity-90">Pending</div>
+                <div class="text-3xl font-bold">{{ pending_referrals }}</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
+                <div class="text-sm opacity-90">Total Earnings</div>
+                <div class="text-3xl font-bold">₹{{ total_earnings }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Your Referral Code</h2>
+            <p class="text-gray-600 mb-6">Share your code with friends and earn rewards when they make their first purchase!</p>
+
+            <div class="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-sm text-gray-600 mb-1">Your Referral Code</div>
+                        <div class="text-4xl font-bold text-blue-600" id="referralCode">{{ referral_code }}</div>
+                    </div>
+                    <button onclick="copyCode()" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy Code</span>
+                    </button>
+                </div>
+
+                <div class="border-t pt-4">
+                    <div class="text-sm text-gray-600 mb-2">Referral Link</div>
+                    <div class="flex items-center space-x-2">
+                        <input type="text"
+                               id="referralUrl"
+                               value="{{ referral_url }}"
+                               readonly
+                               class="flex-1 px-3 py-2 bg-white border rounded-md text-sm">
+                        <button onclick="copyUrl()" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                            <i class="fa-solid fa-link"></i>
+                        </button>
+                        <button onclick="shareReferral()" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                            <i class="fa-solid fa-share"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if available_rewards %}
+        <div class="bg-white rounded-lg shadow-xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">💰 Available Rewards</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for reward in available_rewards %}
+                <div class="border-2 border-green-500 rounded-lg p-4 bg-green-50">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="text-lg font-bold text-gray-800">₹{{ reward.discount_amount }}</div>
+                            <div class="text-sm text-gray-600">{{ reward.get_reward_type_display }}</div>
+                        </div>
+                        <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        Valid until: {{ reward.valid_until|date:"d M Y" }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Your Referrals</h2>
+
+            {% if referrals_made %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Signed Up</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">First Purchase</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for referral in referrals_made %}
+                        <tr>
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-800">{{ referral.referred.email }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                {{ referral.signed_up_at|date:"d M Y" }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                {% if referral.first_purchase_at %}
+                                    {{ referral.first_purchase_at|date:"d M Y" }}
+                                {% else %}
+                                    <span class="text-gray-400">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if referral.status == 2 %}
+                                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Rewarded</span>
+                                {% elif referral.first_purchase_at %}
+                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Completed</span>
+                                {% else %}
+                                    <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fa-solid fa-users text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-600 mb-2">No referrals yet</h3>
+                <p class="text-gray-500">Share your referral code to start earning rewards!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyCode() {
+        const code = document.getElementById('referralCode').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+            alert('Referral code copied to clipboard!');
+        });
+    }
+
+    function copyUrl() {
+        const url = document.getElementById('referralUrl').value;
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Referral link copied to clipboard!');
+        });
+    }
+
+    function shareReferral() {
+        const url = document.getElementById('referralUrl').value;
+        const text = `Join me on this awesome store! Use my referral code: {{ referral_code }}`;
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'Join with my referral code',
+                text: text,
+                url: url
+            });
+        } else {
+            copyUrl();
+        }
+    }
+</script>
+
+{% endblock %}

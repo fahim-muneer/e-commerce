@@ -7,11 +7,30 @@
     <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
         <!-- Header -->
          <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
-            <h2 class="text-2xl font-bold text-gray-800"> Delete Category</h2>
+            <h2 class="text-2xl font-bold text-gray-800"> Add Category</h2>
           <button class="text-gray-400 hover:text-gray-600">
                  <a href=" {% url 'category_list' %} "><i class="fa-solid fa-times text-xl"></i> </a>
             </button>
         </div>
+         {% comment %} {% if messages %}
+            {% for message in messages %}
+            {% if 'category_add' in message.tags %}
+                <div 
+                    class="mb-4 p-4 rounded-md relative {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}" 
+                    id="message-{{ forloop.counter }}">
+                    
+                    {{ message }}
+
+                    <!-- Close Button -->
+                    <button 
+                        onclick="document.getElementById('message-{{ forloop.counter }}').style.display='none'" 
+                        class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+                        ✕
+                    </button>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %} {% endcomment %}
 
 
 

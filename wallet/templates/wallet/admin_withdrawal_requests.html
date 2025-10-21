@@ -1,0 +1,168 @@
+{% extends "adminbase.html" %}
+
+{% block title %}Wallet Requests{% endblock %}
+
+{% block context %}
+
+    <!-- Main Content -->
+    <div class="  px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-900">Withdrawal Requests</h2>
+            <p class="mt-1 text-sm text-gray-600">Manage and approve user withdrawal requests</p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            {% comment %} <div class="border-b border-gray-200">
+                <nav class="flex -mb-px">
+                    <a href="?status=pending" class="border-b-2 border-blue-500 py-4 px-6 text-sm font-medium text-blue-600">
+                        Pending
+                    </a>
+                    <a href="?status=approved" class="border-b-2 border-transparent py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        Approved
+                    </a>
+                    <a href="?status=rejected" class="border-b-2 border-transparent py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        Rejected
+                    </a>
+                    <a href="?status=completed" class="border-b-2 border-transparent py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        Completed
+                    </a>
+                    <a href="?" class="border-b-2 border-transparent py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        All
+                    </a>
+                </nav>
+            </div> {% endcomment %}
+        </div>
+
+        <!-- Requests Table -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
+
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested At</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                  {% if requests %}
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Sample Row 1 -->
+                        
+                        <tr class="hover:bg-gray-50">
+                            
+
+                            {% for user in requests %}
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+
+
+
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 flex-shrink-0">
+                                        <div class="text-sm font-medium text-gray-900">{{ forloop.counter|add:requests.start_index|add:"-1" }}</div>
+                                    </div>
+
+                                </div>
+                            </td>
+
+
+
+
+
+
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+
+
+
+                                <div class="flex items-center">
+
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{% if user.user_name %}{{user.user.name}}{%else%}<p>Google Registered</p>{% endif %}</div>
+                                        <div class="text-sm text-gray-500">{{user.user_email}}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-gray-900">{{user.amount}}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    {{user.status}}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{user.requested_at}}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                Bank Transfer
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                {% comment %} <button onclick="viewDetails(this)" class="text-blue-600 hover:text-blue-900 mr-3">View</button> {% endcomment %}
+                                <form method="POST" action="{% url 'admin_approve_withdrawal' user.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" onclick="return confirm('Approve this withdrawal request?')" class="text-green-600 hover:text-green-900 mr-3">Approve</button>
+                                </form>
+
+
+                                <form method="POST" action="{% url 'admin_reject_withdrawal' user.id %}" class="inline">
+                                    {% csrf_token %}
+                                <button onclick="showRejectModal({{ user.id }})" class="text-red-600 hover:text-red-900">Reject</button>
+                                </form>
+
+                            </td>
+                            {% endfor %}
+
+                        </tr>
+
+                        
+                    </tbody >
+                           {% else %}
+                           <tbody class="bg-white divide-y divide-gray-200">
+                             <tr class="hover:bg-gray-50">
+                             <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+
+                                        <div class="text-sm font-medium text-red-500"><p>No requests are there</p></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                            
+
+                            {% endif %}
+
+
+                </table>
+
+
+
+            </div>
+
+               <!-- Pagination -->
+            <div class="flex justify-center space-x-2 mt-8 pb-3">
+                {% if requests.has_previous %}
+                <a href="?page={{ requests.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+                {% endif %}
+
+                {% for i in requests.paginator.page_range %}
+                <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">{{ i }}</a>
+                {% endfor %}
+
+                {% if requests.has_next %}
+                <a href="?page={{ requests.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+                {% endif %}
+            </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

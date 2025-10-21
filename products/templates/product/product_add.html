@@ -4,30 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Product</title>
-    <!-- Tailwind CSS CDN -->
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for Icons -->
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Inter Font -->
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+        }
+        /* Add basic styling for form fields to match Tailwind and Django's default widget rendering */
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
         }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
     <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
-        <!-- Header -->
         <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Add Product</h2>
-            <a href=" {% url 'product_list' %} " class="text-gray-400 hover:text-gray-600">
+            <a href="{% url 'product_list' %}" class="text-gray-400 hover:text-gray-600">
                 <i class="fa-solid fa-times text-xl"></i>
             </a>
         </div>
 
-        <!-- Form Layout -->
         <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
 
@@ -37,7 +45,7 @@
                 </div>
             {% endif %}
 
-            {% if messages %}
+            {% comment %} {% if messages %}
                 <ul class="space-y-2">
                     {% for message in messages %}
                         <li class="p-3 rounded-md text-sm {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
@@ -45,134 +53,240 @@
                         </li>
                     {% endfor %}
                 </ul>
-            {% endif %}
+            {% endif %} {% endcomment %}
 
-            <!-- Product Name -->
-            <div class="mb-4">
+            <div>
                 <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                 {{ form.name }}
-                {{ form.name.errors }}
+                {% if form.name.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.name.errors }}</p>
+                {% endif %}
             </div>
 
-            <!-- Product Description -->
-            <div class="mb-4">
+            <div>
                 <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Description</label>
                 {{ form.description }}
-                {{ form.description.errors }}
+                {% if form.description.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.description.errors }}</p>
+                {% endif %}
             </div>
 
-            <!-- Product Details Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>     
                     <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     {{ form.category }}
-                    {{ form.category.errors }}
+                    {% if form.category.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.category.errors }}</p>
+                    {% endif %}
                 </div>
 
-                <div>     
-                    <label for="{{ form.varient.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Varients</label>
+                {% comment %} <div>     
+                    <label for="{{ form.varient.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Variants</label>
                     {{ form.varient }}
-                    {{ form.varient.errors }}
-                </div>
+                    {% if form.varient.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.varient.errors }}</p>
+                    {% endif %}
+                </div> {% endcomment %}
                 
-                
-                <div>
+                {% comment %} <div>
                     <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Price</label>
                     {{ form.price }}
-                    {{ form.price.errors }}
-                </div>
+                    {% if form.price.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.price.errors }}</p>
+                    {% endif %}
+                </div>{% endcomment %}
+            </div> 
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label for="{{ form.old_price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Old Price</label>
                     {{ form.old_price }}
-                    {{ form.old_price.errors }}
+                    {% if form.old_price.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.old_price.errors }}</p>
+                    {% endif %}
                 </div>
-            </div>
-
-            <!-- Product Stock and Brand Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                
                 <div>
-                    <label for="{{ form.stock.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Stock</label>
+                    {% comment %} <label for="{{ form.stock.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Stock</label>
                     {{ form.stock }}
-                    {{ form.stock.errors }}
+                    {% if form.stock.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.stock.errors }}</p>
+                    {% endif %} {% endcomment %}
                 </div>
                 
                 <div>
                     <label for="{{ form.block.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Block Product</label>
-                    {{ form.block }}
-                    {{ form.block.errors }}
+                    <div class="mt-2 flex items-center">
+                        {{ form.block }}
+                        {% comment %} <span class="ml-2 text-sm text-gray-500">Check to block this product</span> {% endcomment %}
+                    </div>
+                    {% if form.block.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.block.errors }}</p>
+                    {% endif %}
                 </div>
             </div>
+            
+            <div>
+                <label for="{{ form.priority.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Priority</label>
+                {{ form.priority }}
+                {% if form.priority.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.priority.errors }}</p>
+                {% endif %}
+            </div>
 
-            <!-- Media & Images -->
             <div class="mb-6">
-                <label class="block text-lg font-semibold text-gray-800 mb-4">Media & Images</label>
-                
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <!-- Image Field 1 -->
-                    <label for="{{ form.image1.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 1</p>
-                        </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image1 }}
+    <label class="block text-lg font-semibold text-gray-800 mb-4">Media & Images</label>
+    
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {% for field in image_fields %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="file-upload-label flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors relative overflow-hidden">
+                    {% if field.value %}
+                        <img src="{{ field.value.url }}" class="thumbnail-preview absolute w-full h-full object-cover">
+                    {% endif %}
+                    <div class="text-center text-gray-400 z-10 p-2">
+                        <i class="fa-solid fa-image text-3xl mb-2"></i>
+                        <p class="text-sm">Image Upload {{ forloop.counter }}</p>
                     </div>
-                    
-                    <!-- Image Field 2 -->
-                    <label for="{{ form.image2.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 2</p>
-                        </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image2 }}
-                    </div>
-
-                    <!-- Image Field 3 -->
-                    <label for="{{ form.image3.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 3</p>
-                        </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image3 }}
-                    </div>
-
-                    <!-- Image Field 4 -->
-                    <label for="{{ form.image4.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 4</p>
-                        </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image4 }}
-                    </div>
-
-                    <!-- Image Field 5 -->
-                    <label for="{{ form.image5.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 5</p>
-                        </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image5 }}
-                    </div>
+                </label>
+                <div class="hidden">
+                    {{ field }}
                 </div>
+                {% if field.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ field.errors }}</p>
+                {% endif %}
             </div>
+        {% endfor %}
+    </div>
+</div>
 
-            <!-- Publish Button -->
             <div class="flex justify-end">
                 <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
+                    <i class="fa-solid fa-cloud-upload-alt"></i>
                     <span>UPDATE AND VIEW</span>
                 </button>
             </div>
         </form>
     </div>
+
+    <div id="cropper-container" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
+            <h3 class="text-xl font-bold mb-4">Crop Image</h3>
+            <div class="mb-4">
+                <img id="imageToCrop" class="max-w-full block">
+            </div>
+            <div class="flex justify-end space-x-4">
+                <button type="button" id="cancelCrop" class="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                <button type="button" id="cropButton" class="px-4 py-2 bg-blue-600 text-white rounded-md">Crop & Upload</button>
+            </div>
+        </div>
+    </div>
+    
+   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // We'll select the labels instead of the inputs
+        const fileUploadLabels = document.querySelectorAll('.file-upload-label');
+        
+        const cropperContainer = document.getElementById('cropper-container');
+        const imageToCrop = document.getElementById('imageToCrop');
+        const cropButton = document.getElementById('cropButton');
+        const cancelCropButton = document.getElementById('cancelCrop');
+        
+        let cropper;
+        let activeInput; // The actual input field
+        let previewImage; // The preview image element
+
+        fileUploadLabels.forEach(label => {
+            label.addEventListener('click', function(e) {
+                // Prevent the default label behavior
+                e.preventDefault();
+                
+                // Get the corresponding hidden input field
+                const inputDiv = this.nextElementSibling;
+                const input = inputDiv.querySelector('input[type="file"]');
+                
+                activeInput = input;
+                previewImage = this.querySelector('.thumbnail-preview');
+
+                // Simulate a click on the hidden input to open the file dialog
+                input.click();
+            });
+        });
+
+        // The change event is now on the input itself
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imageToCrop.src = event.target.result;
+                    cropperContainer.classList.remove('hidden');
+                    cropperContainer.classList.add('flex');
+                    
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    cropper = new Cropper(imageToCrop, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        autoCropArea: 0.8,
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Event listener for the Crop & Upload button
+        cropButton.addEventListener('click', function() {
+            if (cropper && activeInput) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 800,
+                    height: 800,
+                });
+                
+                canvas.toBlob(function(blob) {
+                    const file = new File([blob], 'cropped-image.jpg', { type: blob.type });
+
+                    // We create a new form data object to send with the main form
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    activeInput.files = dataTransfer.files;
+
+                    // Update the thumbnail preview
+                    if (previewImage) {
+                        previewImage.src = URL.createObjectURL(blob);
+                    } else {
+                        const newPreview = document.createElement('img');
+                        newPreview.src = URL.createObjectURL(blob);
+                        newPreview.className = 'thumbnail-preview absolute w-full h-full object-cover';
+                        activeInput.closest('div').previousElementSibling.prepend(newPreview);
+                        previewImage = newPreview;
+                    }
+                    
+                    // Hide the cropper modal
+                    cropperContainer.classList.add('hidden');
+                    cropperContainer.classList.remove('flex');
+
+                    cropper.destroy();
+                    cropper = null;
+                });
+            }
+        });
+
+        // Event listener for the Cancel button
+        cancelCropButton.addEventListener('click', function() {
+            cropperContainer.classList.add('hidden');
+            cropperContainer.classList.remove('flex');
+            
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+    });
+</script>
 </body>
 </html>

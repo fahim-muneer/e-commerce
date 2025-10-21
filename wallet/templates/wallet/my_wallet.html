@@ -1,0 +1,176 @@
+
+
+
+
+{% extends "base.html" %}
+{% load static %}
+{% block title %}My Wallet{% endblock %}
+
+{% block content %}
+<body class="min-h-screen bg-gray-100 antialiased">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+
+            <!-- Sidebar / User Navigation (Left Panel) -->
+            <aside class="w-full lg:w-64 flex-shrink-0 bg-white shadow-xl rounded-xl overflow-hidden">
+               {% include "user_profile_side_bar.html" %}
+            </aside>
+
+            <!-- Main Content Area (Right Panel) -->
+            <main class="flex-1 bg-white p-6 shadow-xl rounded-xl custom-scroll max-h-[85vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-8">
+                        <h1 class="text-3xl font-bold text-gray-800"> My Wallet</h1>
+
+                        <!-- Buttons grouped together -->
+                        <div class="flex gap-2">
+                            <a href="{% url 'wallet_add_money' %}" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                <i class="fa-solid fa-money-bill-transfer"></i> Add Money
+                            </a>
+
+                            <a href="{% url 'wallet_withdrawal_request' %}" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                                <i class="fa-solid fa-money-bill-transfer"></i> Withdraw Money
+                            </a>
+                        </div>
+                    </div>
+
+
+
+                <!-- Available Balance Section (Light Red Box) -->
+                <div class="bg-red-50 border border-red-200 p-5 rounded-xl mb-8 flex justify-between items-center shadow-sm">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">Available Balance:</p>
+                        <p class="text-4xl font-extrabold text-gray-900">
+                            <span class="text-3xl align-top">₹</span>{{ wallet.balance }}
+                            <span class="text-xl font-semibold text-gray-600">/-</span>
+                        </p>
+                        <p class="text-sm opacity-75">Last updated: {{ wallet.updated_at|date:"M d, Y H:i" }}</p>
+
+
+                    </div>
+
+                                <div class="grid grid-cols-2 gap-4 mt-6">
+                                            <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                                                <p class="text-xs opacity-75">Total Credits</p>
+                                                <p class="text-2xl font-bold">₹{{ total_credits }}</p>
+                                            </div>
+                                            <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                                                <p class="text-xs opacity-75">Total Debits</p>
+                                                <p class="text-2xl font-bold">₹{{ total_debits }}</p>
+                                            </div>
+                                        </div>
+
+
+
+                </div>
+
+                <!-- Transaction History Section -->
+                <div class="pt-2">
+                    {% comment %} <h2 class="text-xl font-bold text-red-500 mb-4 border-b border-gray-100 pb-2">Transaction History</h2> {% endcomment %}
+
+                                            <!-- Pending Withdrawals Alert -->
+                            {% if pending_withdrawals %}
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                                <div class="flex items-start">
+                                    <i class="fa-solid fa-clock text-yellow-600 text-xl mr-3"></i>
+                                    <div>
+                                        <h3 class="font-semibold text-yellow-800">Pending Withdrawal Requests</h3>
+                                        <p class="text-sm text-yellow-700 mt-1">You have {{ pending_withdrawals.count }} pending withdrawal request(s)</p>
+                                        {% for withdrawal in pending_withdrawals %}
+                                        <div class="mt-2 p-2 bg-white rounded">
+                                            <p class="text-sm">
+                                                <span class="font-semibold">₹{{ withdrawal.amount }}</span> - 
+                                                Requested on {{ withdrawal.requested_at|date:"M d, Y" }}
+                                                <span class="text-xs text-gray-500">(ID: {{ withdrawal.request_id }})</span>
+                                            </p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Recent Transactions -->
+                            <div class="bg-white rounded-lg shadow-md p-6">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h2 class="text-2xl font-bold text-red-500">Transactions History</h2>
+                                 
+                                    {% comment %} <a href="{% url 'wallet_transaction_history' %}" class="text-blue-600 hover:underline text-sm">
+                                        View All →
+                                    </a> {% endcomment %}
+                                </div>
+
+                                {% if transactions %}
+                                <div class="space-y-3">
+                                    {% for transaction in transactions %}
+                                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                        <div class="flex items-center space-x-4">
+                                            <!-- Icon -->
+                                            <div class="{% if transaction.is_credit %}bg-green-100{% else %}bg-red-100{% endif %} p-3 rounded-full">
+                                                {% if transaction.is_credit %}
+                                                    <i class="fa-solid fa-arrow-down text-green-600"></i>
+                                                {% else %}
+                                                    <i class="fa-solid fa-arrow-up text-red-600"></i>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Details -->
+                                            <div>
+                                                <p class="font-semibold text-gray-800">{{ transaction.get_transaction_type_display }}</p>
+                                                <p class="text-sm text-gray-600">{{ transaction.description }}</p>
+                                                <p class="text-xs text-gray-500">{{ transaction.created_at|date:"M d, Y H:i" }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Amount -->
+                                        <div class="text-right">
+                                            <p class="text-lg font-bold {% if transaction.is_credit %}text-green-600{% else %}text-red-600{% endif %}">
+                                                {% if transaction.is_credit %}+{% else %}-{% endif %}₹{{ transaction.amount }}
+                                            </p>
+                                            <p class="text-xs text-gray-500">Balance: ₹{{ transaction.balance_after }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Pagination -->
+                                {% if transactions.has_other_pages %}
+                                <div class="flex justify-center space-x-2 mt-6">
+                                    {% if transactions.has_previous %}
+                                    <a href="?page={{ transactions.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">
+                                        &lt;
+                                    </a>
+                                    {% endif %}
+
+                                    <span class="px-4 py-2 border rounded-md bg-blue-600 text-white">
+                                        Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
+                                    </span>
+
+                                    {% if transactions.has_next %}
+                                    <a href="?page={{ transactions.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">
+                                        &gt;
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% else %}
+                                <div class="text-center py-12">
+                                    <i class="fa-solid fa-receipt text-gray-300 text-6xl mb-4"></i>
+                                    <h3 class="text-lg font-semibold text-gray-600 mb-2">No transactions yet</h3>
+                                    <p class="text-gray-500">Your transaction history will appear here</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+</body>
+
+   
+
+{% endblock content %}

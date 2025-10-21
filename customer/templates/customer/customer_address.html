@@ -3,13 +3,57 @@
 
 {% block content %}
 {% load static %}
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-5">
         <!-- Sidebar -->
 {% include "user_profile_side_bar.html" %}
 
         <!-- Main Address Content -->
         <main class="md:col-span-3 bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-xl font-bold text-gray-800 mb-6">Address</h2>
+{% if messages %}
+<div class="space-y-3 mb-4"> 
+    {% for message in messages %}
+        {% if 'customer-address' in message.tags %}
+            <div 
+                x-data="{ show: true }" 
+                x-init="setTimeout(() => { show = false }, 5000)" 
+                x-show="show" 
+                x-transition:enter="transition ease-out duration-300" 
+                x-transition:leave="transition ease-in duration-200" 
+                
+                {% if message.tags == 'success' %}
+                    class="flex items-start justify-between p-3 bg-green-100 text-green-800 border border-green-300 rounded-lg shadow-sm"
+                {% elif message.tags == 'error' %}
+                    class="flex items-start justify-between p-3 bg-red-100 text-red-800 border border-red-300 rounded-lg shadow-sm"
+                {% elif message.tags == 'warning' %}
+                    class="flex items-start justify-between p-3 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-lg shadow-sm"
+                {% else %}
+                    class="flex items-start justify-between p-3 bg-blue-100 text-blue-800 border border-blue-300 rounded-lg shadow-sm"
+                {% endif %}
+                
+                role="alert"
+            >
+                <div class="flex items-start space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 flex-shrink-0" 
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-medium text-sm">{{ message }}</span>
+                </div>
+
+                <button 
+                    @click="show = false" 
+                    class="ml-3 hover:text-black text-xl font-bold leading-none focus:outline-none"
+                    title="Close"
+                >
+                    &times;
+                </button>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
 
             <!-- Add Address Card -->
             <div class="bg-gray-50 p-6 rounded-lg border border-red-200 mb-6">
@@ -30,7 +74,7 @@
                     <p class="text-sm text-gray-600">City : {{i.city}} </p>
                     <p class="text-sm text-gray-600">State : {{i.state}} </p>
                     <p class="text-sm text-gray-600">Pin : {{i.pin}} </p>
-                    <p class="text-sm text-gray-600">Country :  {{i.country}} </p>
+                   
 
 
 

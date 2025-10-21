@@ -1,0 +1,228 @@
+{% extends "base_category.html" %}
+{% block context %}
+
+<body class="bg-gray-100 min-h-screen py-8">
+
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-6xl w-full mx-auto">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Add New Offer</h2>
+            <a href="{% url 'offer_view' %}" class="text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-times text-xl"></i>
+            </a>
+        </div>
+
+        {% comment %} <!-- Messages -->
+        {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+            <div class="flex items-start p-4 rounded-lg border {% if message.tags == 'error' %}bg-red-50 border-red-300 text-red-800{% elif message.tags == 'success' %}bg-green-50 border-green-300 text-green-800{% else %}bg-blue-50 border-blue-300 text-blue-800{% endif %}">
+                <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'success' %}fa-circle-check{% else %}fa-info-circle{% endif %} text-xl mr-3"></i>
+                <p class="font-medium">{{ message }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %} {% endcomment %}
+
+        <!-- Form -->
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Offer Basic Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Offer Name -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Offer Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Offer Type -->
+                <div>
+                    <label for="{{ form.offer_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Offer Type <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.offer_type }}
+                    {% if form.offer_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.offer_type.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Discount Percentage -->
+                <div>
+                    <label for="{{ form.discount_percent.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Discount Percentage <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.discount_percent }}
+                    {% if form.discount_percent.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.discount_percent.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-xs text-gray-500">Enter value between 0 and 100</p>
+                </div>
+
+                <!-- Start Date -->
+                <div>
+                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Start Date & Time <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.start_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- End Date -->
+                <div>
+                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        End Date & Time <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.end_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Category Selection (conditionally shown) -->
+            <div id="category-selection" class="border-t pt-6" style="display: none;">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Select Categories</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg">
+                    {% for category in form.categories.field.queryset %}
+                    <div class="flex items-center p-3 bg-white rounded-md shadow-sm hover:shadow-md transition-shadow">
+                        <input type="checkbox" 
+                               name="categories" 
+                               value="{{ category.id }}" 
+                               id="category_{{ category.id }}"
+                               class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                               {% if category in form.categories.value %}checked{% endif %}>
+                        <label for="category_{{ category.id }}" class="ml-3 text-sm text-gray-700 cursor-pointer">
+                            {{ category.name }}
+                        </label>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 col-span-3">No categories available</p>
+                    {% endfor %}
+                </div>
+                {% if form.categories.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.categories.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Product Selection (conditionally shown) -->
+            <div id="product-selection" class="border-t pt-6" style="display: none;">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Select Products</h3>
+                <div class="mb-4">
+                    <input type="text" 
+                           id="product-search" 
+                           placeholder="Search products..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg">
+                    {% for product in form.products.field.queryset %}
+                    <div class="product-item flex items-center p-3 bg-white rounded-md shadow-sm hover:shadow-md transition-shadow"
+                         data-name="{{ product.name|lower }}">
+                        <input type="checkbox" 
+                               name="products" 
+                               value="{{ product.id }}" 
+                               id="product_{{ product.id }}"
+                               class="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                               {% if product in form.products.value %}checked{% endif %}>
+                        <label for="product_{{ product.id }}" class="ml-3 text-sm text-gray-700 cursor-pointer flex-1">
+                            <span class="font-medium">{{ product.name }}</span>
+                            <span class="text-xs text-gray-500 block">₹{{ product.price }}</span>
+                        </label>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 col-span-2">No products available</p>
+                    {% endfor %}
+                </div>
+                {% if form.products.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.products.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Active Status -->
+            <div class="flex items-center border-t pt-6">
+                {{ form.active }}
+                <label for="{{ form.active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                    Active (Offer will be applied immediately if within date range)
+                </label>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex justify-end space-x-3 border-t pt-6">
+                <a href="{% url 'offer_view' %}" 
+                   class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fa-solid fa-times mr-2"></i>Cancel
+                </a>
+                <button type="submit" 
+                        class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors">
+                    <i class="fa-solid fa-plus mr-2"></i>Add Offer
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+</body>
+
+<script>
+    // Show/hide category and product sections based on offer type
+    function toggleOfferFields(offerType) {
+        const categorySection = document.getElementById('category-selection');
+        const productSection = document.getElementById('product-selection');
+        
+        categorySection.style.display = 'none';
+        productSection.style.display = 'none';
+        
+        if (offerType === 'category') {
+            categorySection.style.display = 'block';
+        } else if (offerType === 'product') {
+            productSection.style.display = 'block';
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const offerTypeSelect = document.querySelector('select[name="offer_type"]');
+        if (offerTypeSelect) {
+            toggleOfferFields(offerTypeSelect.value);
+            offerTypeSelect.addEventListener('change', function() {
+                toggleOfferFields(this.value);
+            });
+        }
+    });
+
+    // Product search functionality
+    document.getElementById('product-search')?.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const productItems = document.querySelectorAll('.product-item');
+        
+        productItems.forEach(item => {
+            const productName = item.getAttribute('data-name');
+            if (productName.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+{% endblock context %}

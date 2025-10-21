@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Return Order #{{ order.order_Id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto p-6">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Return Order</h1>
+            <a href="{% url 'user_order_details' pk=order.pk %}" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Order Info -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold text-gray-700 mb-2">Order #{{ order.order_Id }}</h3>
+            <p class="text-sm text-gray-600">Total Amount: <span class="font-bold">₹{{ order.total_amount|floatformat:2 }}</span></p>
+            <p class="text-sm text-gray-600">Items: <span class="font-medium">{{ order.items.count }}</span></p>
+        </div>
+
+        <!-- Return Policy Info -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">Return Policy</h3>
+                    <div class="mt-2 text-sm text-blue-700">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>You have <strong>{{ days_left }} day{{ days_left|pluralize }}</strong> left to return this order</li>
+                            <li>All items must be unused and in original packaging</li>
+                            <li>Return request will be reviewed by our team</li>
+                            <li>Once approved, pickup will be arranged</li>
+                            <li>Refund will be processed after receiving the products (5-7 business days)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Return Form -->
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label for="reason" class="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for Return <span class="text-red-500">*</span>
+                </label>
+                <textarea 
+                    id="reason" 
+                    name="reason" 
+                    rows="5" 
+                    required
+                    minlength="20"
+                    placeholder="Please provide a detailed reason for returning this order (minimum 20 characters)..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                ></textarea>
+                <p class="mt-1 text-xs text-gray-500">Minimum 20 characters required</p>
+            </div>
+
+            <!-- Common Return Reasons (Optional Helper) -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Common Reasons (Click to use)
+                </label>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="setReason('Wrong item received')" 
+                        class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full border border-gray-300">
+                        Wrong item received
+                    </button>
+                    <button type="button" onclick="setReason('Product is defective or damaged')" 
+                        class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full border border-gray-300">
+                        Defective/Damaged
+                    </button>
+                    <button type="button" onclick="setReason('Product quality not as expected')" 
+                        class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full border border-gray-300">
+                        Quality issues
+                    </button>
+                    <button type="button" onclick="setReason('Changed my mind about the purchase')" 
+                        class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full border border-gray-300">
+                        Changed mind
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-4 pt-4">
+                <button type="submit"
+                    class="flex-1 px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-orange-600 transition-colors duration-200">
+                    Submit Return Request
+                </button>
+                <a href="{% url 'user_order_details' pk=order.pk %}"
+                    class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors duration-200 text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+        <!-- Important Note -->
+        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800">
+                <strong>Note:</strong> Your return request will be reviewed by our team. 
+                You will be notified via email once your request is approved or rejected. 
+                Please do not ship the products until your return is approved.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+function setReason(reason) {
+    const textarea = document.getElementById('reason');
+    textarea.value = reason + '. ';
+    textarea.focus();
+}
+</script>
+{% endblock content %}

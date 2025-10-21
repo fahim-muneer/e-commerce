@@ -1,0 +1,331 @@
+{% extends "adminbase.html" %}
+
+{% block title %}Wallet Details{% endblock %}
+
+{% block context %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a 
+            href="{% url 'admin_wallet_list' %}"
+            class="inline-flex items-center text-blue-600 hover:text-blue-800 transition duration-200"
+        >
+            <i class="fas fa-arrow-left mr-2"></i>Back to Wallet List
+        </a>
+    </div>
+
+    <!-- Header Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Wallet Details</h1>
+                <p class="text-gray-600 mt-2">
+                    <i class="fas fa-user mr-2"></i>{{ wallet.user.full_name|default:"N/A" }}
+                </p>
+                <p class="text-gray-500 text-sm mt-1">
+                    <i class="fas fa-envelope mr-2"></i>{{ wallet.user.email }}
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <div class="text-right">
+                    <p class="text-sm text-gray-500 uppercase">Current Balance</p>
+                    <p class="text-4xl font-bold {% if wallet.balance > 0 %}text-green-600{% else %}text-gray-500{% endif %}">
+                        ₹{{ wallet.balance|floatformat:2 }}
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">
+                        Last updated: {{ wallet.updated_at|date:"M d, Y H:i" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Total Credits Card -->
+        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow-md p-6 border border-green-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-green-700 font-medium uppercase">Total Credits</p>
+                    <p class="text-2xl font-bold text-green-800 mt-2">₹{{ total_credits|floatformat:2 }}</p>
+                </div>
+                <div class="bg-green-500 rounded-full p-3">
+                    <i class="fas fa-arrow-down text-white text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Debits Card -->
+        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg shadow-md p-6 border border-red-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-red-700 font-medium uppercase">Total Debits</p>
+                    <p class="text-2xl font-bold text-red-800 mt-2">₹{{ total_debits|floatformat:2 }}</p>
+                </div>
+                <div class="bg-red-500 rounded-full p-3">
+                    <i class="fas fa-arrow-up text-white text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Net Balance Card -->
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md p-6 border border-blue-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-blue-700 font-medium uppercase">Net Balance</p>
+                    <p class="text-2xl font-bold text-blue-800 mt-2">₹{{ wallet.balance|floatformat:2 }}</p>
+                </div>
+                <div class="bg-blue-500 rounded-full p-3">
+                    <i class="fas fa-wallet text-white text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Add Money Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-plus-circle text-green-600 mr-2"></i>Add Money
+            </h3>
+            <form method="post" action="{% url 'admin_add_money' wallet.id %}">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="add_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                        Amount (₹)
+                    </label>
+                    <input 
+                        type="number" 
+                        name="amount" 
+                        id="add_amount" 
+                        step="0.01"
+                        min="1"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Enter amount"
+                    >
+                </div>
+                <div class="mb-4">
+                    <label for="add_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                    </label>
+                    <input 
+                        type="text" 
+                        name="description" 
+                        id="add_description"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Reason for credit"
+                    >
+                </div>
+                <button 
+                    type="submit"
+                    class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition duration-200"
+                >
+                    <i class="fas fa-check mr-2"></i>Add Money
+                </button>
+            </form>
+        </div>
+
+        <!-- Deduct Money Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-minus-circle text-red-600 mr-2"></i>Deduct Money
+            </h3>
+            <form method="post" action="{% url 'admin_deduct_money' wallet.id %}">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="deduct_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                        Amount (₹)
+                    </label>
+                    <input 
+                        type="number" 
+                        name="amount" 
+                        id="deduct_amount" 
+                        step="0.01"
+                        min="1"
+                        max="{{ wallet.balance }}"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="Enter amount"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">Available balance: ₹{{ wallet.balance|floatformat:2 }}</p>
+                </div>
+                <div class="mb-4">
+                    <label for="deduct_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                    </label>
+                    <input 
+                        type="text" 
+                        name="description" 
+                        id="deduct_description"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        placeholder="Reason for debit"
+                    >
+                </div>
+                <button 
+                    type="submit"
+                    class="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition duration-200"
+                    {% if wallet.balance == 0 %}disabled{% endif %}
+                >
+                    <i class="fas fa-minus mr-2"></i>Deduct Money
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Withdrawal Requests Section -->
+    {% if withdrawal_requests %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-money-check-alt text-purple-600 mr-2"></i>Withdrawal Requests
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request ID</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Bank Details</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for request in withdrawal_requests %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm font-mono text-gray-700">{{ request.request_id }}</td>
+                        <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900">₹{{ request.amount|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-center">
+                            {% if request.status == 'pending' %}
+                            <span class="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Pending</span>
+                            {% elif request.status == 'approved' %}
+                            <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Approved</span>
+                            {% elif request.status == 'rejected' %}
+                            <span class="px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-center text-gray-600">{{ request.requested_at|date:"M d, Y" }}</td>
+                        <td class="px-4 py-3 text-sm text-center">
+                            <button 
+                                onclick="showBankDetails{{ request.id }}()"
+                                class="text-blue-600 hover:text-blue-800"
+                            >
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Transaction History -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-history text-blue-600 mr-2"></i>Transaction History
+        </h3>
+        
+        {% if transactions %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance After</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Date</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for transaction in transactions %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ transaction.transaction_id|truncatechars:12 }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if 'credit' in transaction.transaction_type %}
+                            <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
+                                <i class="fas fa-arrow-down mr-1"></i>Credit
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
+                                <i class="fas fa-arrow-up mr-1"></i>Debit
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-700">{{ transaction.description|truncatechars:40 }}</td>
+                        <td class="px-4 py-3 text-sm text-right font-semibold {% if 'credit' in transaction.transaction_type %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if 'credit' in transaction.transaction_type %}+{% else %}-{% endif %}₹{{ transaction.amount|floatformat:2 }}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-right text-gray-900">₹{{ transaction.balance_after|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-sm text-center text-gray-600">
+                            <div>{{ transaction.created_at|date:"M d, Y" }}</div>
+                            <div class="text-xs text-gray-400">{{ transaction.created_at|time:"H:i" }}</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if transactions.has_other_pages %}
+        <div class="mt-6 flex justify-center">
+            <nav class="flex items-center space-x-2">
+                {% if transactions.has_previous %}
+                <a 
+                    href="?page=1"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                >
+                    First
+                </a>
+                <a 
+                    href="?page={{ transactions.previous_page_number }}"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                >
+                    Previous
+                </a>
+                {% endif %}
+
+                <span class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
+                    Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
+                </span>
+
+                {% if transactions.has_next %}
+                <a 
+                    href="?page={{ transactions.next_page_number }}"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                >
+                    Next
+                </a>
+                <a 
+                    href="?page={{ transactions.paginator.num_pages }}"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                >
+                    Last
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-8 text-gray-400">
+            <i class="fas fa-receipt text-4xl mb-2"></i>
+            <p class="text-lg">No transactions yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bank Details Modal Script -->
+<script>
+{% for request in withdrawal_requests %}
+function showBankDetails{{ request.id }}() {
+    alert(`Bank Details for Request {{ request.request_id }}:\n\nAccount Holder: {{ request.account_holder_name }}\nAccount Number: {{ request.account_number }}\nIFSC Code: {{ request.ifsc_code }}\nBank Name: {{ request.bank_name }}`);
+}
+{% endfor %}
+</script>
+{% endblock %}

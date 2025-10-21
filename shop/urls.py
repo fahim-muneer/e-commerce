@@ -21,7 +21,7 @@ from django.conf import settings
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),
-    path('admin/',include('custom_admin.urls')),
+    path('custom_admin/',include('custom_admin.urls')),
     path('category/',include('category.urls')),
     path('customer/',include('customer.urls')),
     path('',include('home.urls')),
@@ -30,4 +30,12 @@ urlpatterns = [
     path('orders/',include('orders.urls')),
     path('wish-list/',include('wish_list.urls')),
     path('varients/',include('varients.urls')),
+    path('offer/',include('offer.urls')),
+    path('payment/',include('payment.urls')),
+    path('wallet/',include('wallet.urls')),
+    path('refferal/',include('refferal.urls')),
+    path('coupon/',include('coupon.urls'))
+
+    
+    
 ] + static (settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

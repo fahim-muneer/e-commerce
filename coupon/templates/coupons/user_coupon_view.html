@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="flex justify-center py-10 bg-gray-50">
+    <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg border border-gray-200 p-6 relative">
+        
+        <!-- Close Button (Top-left) -->
+        <a href="{% url 'checkout' %}" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <i class="fa-solid fa-times text-xl"></i>
+        </a>
+
+        <!-- Heading -->
+        <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2 text-center">
+            Available Coupons
+        </h2>
+        
+        <div class="space-y-4">
+            <!-- Coupon Card (Loop) -->
+            {% for coupons in coupon %}
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-5 bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl shadow-sm border-l-4 border-red-500 transition hover:shadow-md hover:bg-gray-50">
+                
+                <!-- Left Side -->
+                <div class="flex flex-col space-y-1 mb-3 md:mb-0">
+                    <h3 class="text-lg font-bold text-gray-800">{{ coupons.coupon_code }}</h3>
+                    <p class="text-sm text-gray-600">{{ coupons.description }}</p>
+                    <p class="text-sm text-gray-500">Min Cart Value: ₹{{ coupons.min_cart_value }}</p>
+                    <p class="text-sm text-gray-500">Discount: {{ coupons.discount_value }}%</p>
+                </div>
+
+                <!-- Right Side -->
+                <div class="flex flex-col items-start md:items-end text-sm">
+                    <span class="text-gray-600 font-medium">
+                        Valid till: {{ coupons.expire_at|date:"d M, Y" }}
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-6 text-center text-gray-600 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                No available coupons at the moment.
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex justify-center space-x-2 mt-8">
+            {% if coupon.has_previous %}
+            <a href="?page={{ coupon.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+            {% endif %}
+            
+            {% for i in coupon.paginator.page_range %}
+            <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100 {% if i == coupon.number %}bg-red-500 text-white{% endif %}">
+                {{ i }}
+            </a>
+            {% endfor %}
+            
+            {% if coupon.has_next %}
+            <a href="?page={{ coupon.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

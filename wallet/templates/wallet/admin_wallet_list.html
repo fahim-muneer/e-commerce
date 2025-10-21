@@ -1,0 +1,213 @@
+{% extends "adminbase.html" %}
+
+{% block title %}All Wallets{% endblock %}
+
+{% block context %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Wallet Management</h1>
+        <p class="text-gray-600 mt-2">Manage and monitor all user wallets</p>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form method="get" action="{% url 'admin_wallet_list' %}" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Search Input -->
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                        Search User
+                    </label>
+                    <input 
+                        type="text" 
+                        name="search" 
+                        id="search" 
+                        value="{{ search }}"
+                        placeholder="Email or Name"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Balance Filter -->
+                <div>
+                    <label for="balance" class="block text-sm font-medium text-gray-700 mb-2">
+                        Balance Filter
+                    </label>
+                    <select 
+                        name="balance" 
+                        id="balance"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">All Wallets</option>
+                        <option value="positive" {% if balance_filter == 'positive' %}selected{% endif %}>
+                            Positive Balance
+                        </option>
+                        <option value="zero" {% if balance_filter == 'zero' %}selected{% endif %}>
+                            Zero Balance
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Filter Button -->
+                <div class="flex items-end">
+                    <button 
+                        type="submit"
+                        class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                    >
+                        <i class="fas fa-search mr-2"></i>Apply Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Clear Filters -->
+            {% if search or balance_filter %}
+            <div>
+                <a 
+                    href="{% url 'admin_wallet_list' %}"
+                    class="text-sm text-blue-600 hover:text-blue-800"
+                >
+                    <i class="fas fa-times mr-1"></i>Clear Filters
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Wallets Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            User
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Email
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Balance
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Last Updated
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for wallet in wallets %}
+                    <tr class="hover:bg-gray-50 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ wallet.user.full_name|default:"N/A" }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-600">
+                                {{ wallet.user.email }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <div class="text-sm font-semibold {% if wallet.balance > 0 %}text-green-600{% else %}text-gray-500{% endif %}">
+                                ₹{{ wallet.balance|floatformat:2 }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="text-sm text-gray-600">
+                                {{ wallet.updated_at|date:"M d, Y" }}
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                {{ wallet.updated_at|time:"H:i" }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <a 
+                                href="{% url 'admin_wallet_detail' wallet.id %}"
+                                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition duration-200"
+                            >
+                                <i class="fas fa-eye mr-1"></i>View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center">
+                            <div class="text-gray-400">
+                                <i class="fas fa-wallet text-4xl mb-2"></i>
+                                <p class="text-lg">No wallets found</p>
+                                {% if search or balance_filter %}
+                                <p class="text-sm mt-2">Try adjusting your filters</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if wallets.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center space-x-2">
+            {% if wallets.has_previous %}
+            <a 
+                href="?page=1{% if search %}&search={{ search }}{% endif %}{% if balance_filter %}&balance={{ balance_filter }}{% endif %}"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            >
+                First
+            </a>
+            <a 
+                href="?page={{ wallets.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if balance_filter %}&balance={{ balance_filter }}{% endif %}"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            >
+                Previous
+            </a>
+            {% endif %}
+
+            <span class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
+                Page {{ wallets.number }} of {{ wallets.paginator.num_pages }}
+            </span>
+
+            {% if wallets.has_next %}
+            <a 
+                href="?page={{ wallets.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if balance_filter %}&balance={{ balance_filter }}{% endif %}"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            >
+                Next
+            </a>
+            <a 
+                href="?page={{ wallets.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if balance_filter %}&balance={{ balance_filter }}{% endif %}"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            >
+                Last
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    <!-- Summary Stats -->
+    <div class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-blue-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                Showing <strong>{{ wallets|length }}</strong> wallets
+                {% if wallets.paginator.count %}
+                    out of <strong>{{ wallets.paginator.count }}</strong> total
+                {% endif %}
+            </div>
+            <a 
+                href="{% url 'admin_wallet_dashboard' %}"
+                class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+                <i class="fas fa-chart-line mr-1"></i>View Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

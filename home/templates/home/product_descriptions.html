@@ -1,60 +1,245 @@
 <div class="space-y-6">
-    <h3 class="text-3xl font-bold text-gray-900">{{object.name}}</h3>
-    <div class="space-y-2 text-gray-600">
-        <p class="flex items-center space-x-2"><i class="fa-solid fa-tag text-blue-500"></i><span><b>Brand:</b> GANT</span></p>
-        <p class="flex items-center space-x-2"><i class="fa-solid fa-star text-yellow-400"></i><span class="ml-2 text-sm">(13) Review</span></p>
-        <p class="flex items-center space-x-2"><i class="fa-solid fa-calendar-alt text-blue-500"></i><span><b>Published:</b> {{object.created_at}}</span></p>
-    </div>
-    <div class="flex items-center space-x-2">
-        {% if object.old_price %}
-            <span class="text-gray-400 line-through text-sm">₹{{object.old_price}}</span>
-        {% endif %}
-        <span class="text-red-500 font-semibold text-lg">₹{{object.price}}</span>
-        {% if object.old_price %}
-            {% widthratio object.old_price object.price 100 as discount_percent %}
-            {% if discount_percent > 100 %}
-                <span class="text-green-500 text-sm font-medium">
-                    {{ discount_percent|floatformat:0|add:"-100" }}% OFF
-                </span>
-            {% endif %}
-        {% endif %}
-    </div>
 
-    <h4 class="text-xl font-bold text-gray-800">Product Description</h4>
-    <p class="text-gray-600 leading-relaxed">
-        {{object.description}}
+  <!-- Product Name and Date -->
+  <h3 class="text-3xl font-bold text-gray-900">
+    {{ product.name }}
+  </h3>
+  
+  <!-- Offer Badge -->
+  {% if has_offer %}
+  <div class="inline-block bg-red-500 text-white px-4 py-2 rounded-md font-bold">
+    🎉 {{ discount_percentage }}% OFF - {{ active_offer.name }}
+  </div>
+  {% endif %}
+  
+  <div class="space-y-2 text-gray-600">
+    <p class="flex items-center space-x-2">
+      <i class="fa-solid fa-calendar-alt text-blue-500"></i>
+      <span><b>Published:</b> {{ product.created_at|date:"d M Y" }}</span>
     </p>
+  </div>
 
-
-        
-        <!-- Fixed Add to Cart Form -->
-        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
-            {% csrf_token %}
-            <div class="flex items-center space-x-4">
-                <span class="text-sm font-semibold text-gray-800">Quantity:</span>
-                <input type="hidden" name="product_id" value="{{object.pk}}">
-                <input type="number" name="quantity" value="1" min="1" max="99" 
-                       class="w-20 px-2 py-1 rounded-md border border-gray-300 text-center">
-            </div>
-            
-            {% if user.is_authenticated %}
-                <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
-                    ADD TO CART
-                </button>
-            {% else %}
-                <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 transition-colors duration-200 text-center">
-                    LOGIN TO ADD TO CART
-                </a>
-            {% endif %}
-        </form>
-
-        <div class="flex items-center space-x-4 text-gray-600">
-            <button class="flex items-center space-x-2 hover:text-blue-500">
-                <i class="fa-regular fa-heart"></i><span>Add to Wishlist</span>
-            </button>
-            <button class="flex items-center space-x-2 hover:text-blue-500">
-                <i class="fa-solid fa-balance-scale"></i><span>Add to Compare</span>
-            </button>
+  <!-- Price Display with Offers -->
+  <div class="space-y-2">
+    {% if is_variant_selected %}
+      <!-- Variant Pricing -->
+      {% if has_offer %}
+        <div class="flex items-center space-x-3">
+          <span class="text-gray-400 line-through text-lg">₹{{ variant_original_price }}</span>
+          <span class="text-red-500 font-bold text-2xl">₹{{ variant_discounted_price|floatformat:0 }}</span>
+          {% widthratio variant_original_price 1 1 as original %}
+          {% widthratio variant_discounted_price 1 1 as discounted %}
+          <span class="text-green-600 font-semibold text-sm bg-green-100 px-2 py-1 rounded">
+            Save ₹{{ variant_original_price|add:"-"|add:variant_discounted_price|floatformat:0 }}
+          </span>
         </div>
+      {% else %}
+        <div class="flex items-center space-x-2">
+          {% if product.old_price and variant_product.price < product.old_price %}
+            <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
+          {% endif %}
+          <span class="text-red-500 font-semibold text-lg">₹{{ variant_product.price }}</span>
+        </div>
+      {% endif %}
+      
+      <!-- Stock Info for Variant -->
+      <p class="text-sm text-gray-600">
+        <i class="fa-solid fa-box text-green-500"></i>
+        {% if variant_product.stock > 0 %}
+          <span class="text-green-600 font-semibold">In Stock: {{ variant_product.stock }} available</span>
+        {% else %}
+          <span class="text-red-600 font-semibold">Out of Stock</span>
+        {% endif %}
+      </p>
+      
+    {% else %}
+      <!-- Product Pricing (No Variant) -->
+      {% if has_offer %}
+        <div class="flex items-center space-x-3">
+          <span class="text-gray-400 line-through text-lg">₹{{ product.get_original_price }}</span>
+          <span class="text-red-500 font-bold text-2xl">₹{{ product.get_display_price|floatformat:0 }}</span>
+          <span class="text-green-600 font-semibold text-sm bg-green-100 px-2 py-1 rounded">
+            {{ discount_percentage }}% OFF
+          </span>
+        </div>
+      {% else %}
+        <div class="flex items-center space-x-2">
+          {% if product.old_price %}
+            <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
+          {% endif %}
+          <span class="text-red-500 font-semibold text-lg">₹{{ product.price }}</span>
+        </div>
+      {% endif %}
+      
+      <!-- Stock Info for Product -->
+      <p class="text-sm text-gray-600">
+        <i class="fa-solid fa-box text-green-500"></i>
+        {% if product.stock > 0 %}
+          <span class="text-green-600 font-semibold">In Stock: {{ product.stock }} available</span>
+        {% else %}
+          <span class="text-red-600 font-semibold">Out of Stock</span>
+        {% endif %}
+      </p>
+    {% endif %}
+    
+    <!-- Offer Validity -->
+    {% if has_offer %}
+    <p class="text-sm text-gray-600">
+      <i class="fa-solid fa-clock text-orange-500"></i>
+      Offer valid till: {{ active_offer.end_date|date:"d M Y, h:i A" }}
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Product Description -->
+  <h4 class="text-xl font-bold text-gray-800">Product Description</h4>
+  <p class="text-gray-600 leading-relaxed">
+    {{ product.description }}
+  </p>
+
+  <!-- Variant Selection -->
+  {% if product.variant.exists %}
+  <div class="mb-6">
+    <h4 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+      <i class="fa-solid fa-layer-group text-blue-500 mr-2"></i>
+      Choose Variant
+    </h4>
+
+    <form method="get" class="relative w-full group" id="variantForm">
+      <div class="relative">
+        {{ variant_form.variant }}
+        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+          <i class="fa-solid fa-chevron-down text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+        </div>
+      </div>
+    </form>
+
+    <script>
+      document.querySelector('#variantForm select').addEventListener('change', function() {
+        this.form.submit();
+      });
+    </script>
+  </div>
+  {% endif %}
+
+  <!-- Add to Cart or Unavailable Section -->
+  {% if product.block %}
+    <div class="bg-red-50 border border-red-200 p-4 rounded-md">
+      <p class="text-red-600 text-center font-semibold">
+        <i class="fa-solid fa-ban mr-2"></i>
+        Currently Unavailable
+      </p>
     </div>
+
+  {% else %}
+    {% if is_variant_selected %}
+      {% if variant_product.stock > 0 %}
+        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="product_id" value="{{ product.pk }}">
+          <input type="hidden" name="variant_id" value="{{ variant_product.id }}">
+          
+          <div class="flex items-center space-x-4">
+            <label class="font-semibold text-gray-700">Quantity:</label>
+            <input type="number" 
+                   name="quantity" 
+                   value="1" 
+                   min="1" 
+                   max="{{ variant_product.stock }}" 
+                   class="w-24 px-3 py-2 rounded-md border border-gray-300 text-center focus:ring-2 focus:ring-blue-500">
+            <span class="text-sm text-gray-500">Max: {{ variant_product.stock }}</span>
+          </div>
+
+          {% if user.is_authenticated %}
+            <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors">
+              <i class="fa-solid fa-shopping-cart mr-2"></i>
+              ADD TO CART
+            </button>
+          {% else %}
+            <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 text-center transition-colors">
+              <i class="fa-solid fa-sign-in-alt mr-2"></i>
+              LOGIN TO ADD TO CART
+            </a>
+          {% endif %}
+        </form>
+      {% else %}
+        <div class="bg-red-50 border border-red-200 p-4 rounded-md">
+          <p class="text-red-600 text-center font-semibold">
+            <i class="fa-solid fa-exclamation-triangle mr-2"></i>
+            OUT OF STOCK
+          </p>
+        </div>
+      {% endif %}
+    {% else %}
+      {% if product.stock > 0 %}
+        <form method="post" action="{% url 'add_to_cart' %}" class="space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="product_id" value="{{ product.pk }}">
+          
+          <div class="flex items-center space-x-4">
+            <label class="font-semibold text-gray-700">Quantity:</label>
+            <input type="number" 
+                   name="quantity" 
+                   value="1" 
+                   min="1" 
+                   max="{{ product.stock }}" 
+                   class="w-24 px-3 py-2 rounded-md border border-gray-300 text-center focus:ring-2 focus:ring-blue-500">
+            <span class="text-sm text-gray-500">Max: {{ product.stock }}</span>
+          </div>
+
+          {% if user.is_authenticated %}
+            <button type="submit" class="w-full py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors">
+              <i class="fa-solid fa-shopping-cart mr-2"></i>
+              ADD TO CART
+            </button>
+          {% else %}
+            <a href="{% url 'login' %}" class="block w-full py-3 bg-gray-500 text-white font-semibold rounded-md shadow-md hover:bg-gray-600 text-center transition-colors">
+              <i class="fa-solid fa-sign-in-alt mr-2"></i>
+              LOGIN TO ADD TO CART
+            </a>
+          {% endif %}
+        </form>
+      {% else %}
+        <div class="bg-red-50 border border-red-200 p-4 rounded-md">
+          <p class="text-red-600 text-center font-semibold">
+            <i class="fa-solid fa-exclamation-triangle mr-2"></i>
+            OUT OF STOCK
+          </p>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <!-- Wishlist Button -->
+    <div class="mt-4">
+      {% if user.is_authenticated %}
+        {% if product.pk in my_list %} 
+          <form method="post" action="{% url 'wish_list' %}">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.pk }}">
+            <input type="hidden" name="action" value="remove">
+            <button type="submit" class="flex items-center space-x-2 text-red-500 hover:text-red-600 transition-colors text-lg">
+              <i class="fa-solid fa-heart"></i>
+              <span>Remove from Wishlist</span>
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'wish_list' %}">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.pk }}">
+            <input type="hidden" name="action" value="add">
+            <button type="submit" class="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors text-lg">
+              <i class="fa-regular fa-heart"></i>
+              <span>Add to Wishlist</span>
+            </button>
+          </form>
+        {% endif %}
+      {% else %}
+        <a href="{% url 'login' %}" class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 text-lg">
+          <i class="fa-regular fa-heart"></i>
+          <span>Login to Add to Wishlist</span>
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+
 </div>

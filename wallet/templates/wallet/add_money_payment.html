@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-8">
+    <div class="max-w-md mx-auto px-4">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">Complete Payment</h1>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="text-center">
+                    <p class="text-gray-600">Amount to Add</p>
+                    <p class="text-3xl font-bold text-blue-600">₹{{ amount }}</p>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'wallet_verify_payment' %}" id="wallet-payment-form">
+                {% csrf_token %}
+                <input type="hidden" name="amount" value="{{ amount }}">
+                <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+                <input type="hidden" name="razorpay_order_id" id="razorpay_order_id" value="{{ razorpay_order_id }}">
+                <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+
+                <button 
+                    type="button" 
+                    id="rzp-button" 
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                >
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Pay ₹{{ amount }} Securely</span>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <a href="{% url 'my_wallet' %}" class="text-gray-600 hover:underline text-sm">Cancel</a>
+            </div>
+
+            <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fa-solid fa-shield-halved text-green-600 mt-1 mr-3"></i>
+                    <div class="text-sm text-green-800">
+                        <p class="font-semibold mb-1">Secure Payment</p>
+                        <p>Your payment is processed securely through Razorpay. We never store your card details.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('rzp-button').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    var options = {
+        key: "{{ razorpay_merchant_key }}",
+        amount: {{ razorpay_amount }},
+        currency: "INR",
+        name: "Wallet Recharge",
+        description: "Add money to wallet",
+        order_id: "{{ razorpay_order_id }}",
+        handler: function(response) {
+            console.log("Payment successful:", response);
+            document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+            document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+            document.getElementById('razorpay_signature').value = response.razorpay_signature;
+            document.getElementById('wallet-payment-form').submit();
+        },
+        prefill: {
+            name: "{{ request.user.first_name }} {{ request.user.last_name }}",
+            email: "{{ request.user.email }}"
+        },
+        theme: {
+            color: "#3B82F6"
+        },
+        modal: {
+            ondismiss: function() {
+                console.log("Payment cancelled by user");
+            }
+        }
+    };
+    
+    var rzp = new Razorpay(options);
+    
+    rzp.on('payment.failed', function(response) {
+        console.error("Payment failed:", response.error);
+        alert('Payment failed: ' + response.error.description);
+    });
+    
+    rzp.open();
+});
+
+// Auto-trigger payment on page load
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        document.getElementById('rzp-button').click();
+    }, 500);
+});
+</script>
+{% endblock %}

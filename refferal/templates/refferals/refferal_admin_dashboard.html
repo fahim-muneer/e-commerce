@@ -1,0 +1,230 @@
+{% extends "adminbase.html" %}
+
+{% block title %}Referral Dashboard{% endblock %}
+
+{% block context %}
+<div class="container mx-auto p-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Referral</h1>
+       {% comment %} {% url 'admin_offer_list' %} {% endcomment %}
+        <a href="#" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            Manage Offers
+        </a>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- Total Referrals -->
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Referrals</p>
+                    <p class="text-3xl font-bold">{{ stats.total_referrals }}</p>
+                </div>
+                <i class="fa-solid fa-users text-4xl opacity-50"></i>
+            </div>
+        </div>
+        
+        <!-- Successful Referrals -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Successful</p>
+                    <p class="text-3xl font-bold">{{ stats.successful_referrals }}</p>
+                    <p class="text-xs mt-1">{{ stats.conversion_rate|floatformat:1 }}% conversion</p>
+                </div>
+                <i class="fa-solid fa-check-circle text-4xl opacity-50"></i>
+            </div>
+        </div>
+        
+        <!-- Pending Referrals -->
+        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Pending</p>
+                    <p class="text-3xl font-bold">{{ stats.pending_referrals }}</p>
+                </div>
+                <i class="fa-solid fa-clock text-4xl opacity-50"></i>
+            </div>
+        </div>
+        
+        <!-- Total Discount Given -->
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Discount</p>
+                    <p class="text-3xl font-bold">₹{{ stats.total_discount_given }}</p>
+                </div>
+                <i class="fa-solid fa-gift text-4xl opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rewards Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <p class="text-sm text-gray-600">Total Rewards Created</p>
+            <p class="text-2xl font-bold text-gray-800">{{ stats.total_rewards }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <p class="text-sm text-gray-600">Rewards Used</p>
+            <p class="text-2xl font-bold text-green-600">{{ stats.used_rewards }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <p class="text-sm text-gray-600">Available Rewards</p>
+            <p class="text-2xl font-bold text-blue-600">{{ stats.available_rewards }}</p>
+        </div>
+    </div>
+    
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Top Referrers -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">🏆 Top Referrers</h2>
+            <div class="space-y-3">
+                {% for referrer in top_referrers %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div>
+                        <p class="font-semibold text-gray-800">{{ referrer.referrer__full_name }}</p>
+                        <p class="text-sm text-gray-600">{{ referrer.referrer__email }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-blue-600">{{ referrer.referral_count }}</p>
+                        <p class="text-xs text-gray-500">{{ referrer.successful_count }} successful</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">No referrers yet</p>
+                {% endfor %}
+            </div>
+
+            {% comment %} {% url 'admin_referral_list' %} {% endcomment %}
+            <a href="#" class="block text-center mt-4 text-blue-600 hover:underline">
+                View All Referrals →
+            </a>
+        </div>
+        
+        <!-- Recent Referrals -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📋 Recent Referrals</h2>
+            <div class="space-y-3">
+                {% for referral in recent_referrals %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ referral.referrer.full_name }} 
+                            <span class="text-gray-500">→</span> 
+                            {{ referral.referred.full_name }}
+                        </p>
+                        <p class="text-xs text-gray-600">{{ referral.signed_up_at|date:"M d, Y" }}</p>
+                    </div>
+                    <div>
+                        {% if referral.status == 2 %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">✓ Rewarded</span>
+                        {% elif referral.first_purchase_at %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Completed</span>
+                        {% else %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">No referrals yet</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Offers -->
+    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-800">🎯 Active Referral Offers</h2>
+            
+            
+            <a href="{% url 'add_offer' %}" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
+                + Create New Offer
+            </a>
+        </div>
+        
+        {% if active_offers %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Offer Name</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Applies To</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Valid Until</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for offer in active_offers %}
+                    <tr>
+                        <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ offer.name }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">₹{{ offer.fixed_discount_amount }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                                {{ offer.get_applies_to_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ offer.end_date|date:"M d, Y" }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            
+                            {% comment %} {% url 'admin_offer_detail' offer.pk %} {% endcomment %}
+                            <a href="#" class="text-blue-600 hover:underline">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <p class="text-gray-500 mb-4">No active referral offers</p>
+            <a href="{% url 'add_offer' %}" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                Create First Referral Offer
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Quick Links -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+       
+       {% comment %} {% url 'admin_referral_list' %} {% endcomment %}
+        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-list text-2xl text-blue-600"></i>
+                <div>
+                    <p class="font-semibold text-gray-800">All Referrals</p>
+                    <p class="text-sm text-gray-600">View complete referral list</p>
+                </div>
+            </div>
+        </a>
+        {% comment %} {% url 'admin_referral_rewards' %} {% endcomment %}
+        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-gift text-2xl text-purple-600"></i>
+                <div>
+                    <p class="font-semibold text-gray-800">Manage Rewards</p>
+                    <p class="text-sm text-gray-600">View all referral rewards</p>
+                </div>
+            </div>
+        </a>
+        {% comment %} {% url 'admin_offer_list' %} {% endcomment %}
+        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-tags text-2xl text-green-600"></i>
+                <div>
+                    <p class="font-semibold text-gray-800">All Offers</p>
+                    <p class="text-sm text-gray-600">Manage all offer types</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock context %}

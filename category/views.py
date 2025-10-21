@@ -6,8 +6,12 @@ from django.contrib import messages
 from .forms import CategoryForm
 from category.models import CategoryPage
 from django.core.paginator import Paginator
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
-class Category(View):
+@method_decorator(never_cache, name='dispatch')
+class Category(LoginRequiredMixin,View):
     def get(self , request):
         search = request.GET.get("q")
         if search:
@@ -23,8 +27,8 @@ class Category(View):
         return render(request ,'category/category_view.html',{'category':category})
 
 
-
-class CategoryAdd(View):
+@method_decorator(never_cache, name='dispatch')
+class CategoryAdd(LoginRequiredMixin,View):
     def get(self,request):
         form=CategoryForm()
         return render(request , 'category/category_add.html',{'form':form})
@@ -34,21 +38,21 @@ class CategoryAdd(View):
         form = CategoryForm(request.POST,request.FILES)
         if form.is_valid():
             form.save()
-            messages.success(request,'The category was successfully added.')
+            
             return redirect('category_list')
-        messages.error(request,'Invalid name. Please type valid name.')
+        messages.add_message(request, messages.ERROR, "This name is already there.", extra_tags='category_add')
         return render(request ,'category/category_add.html',{'form':form})
 
 
-
-class UpdateCategory(UpdateView):
+@method_decorator(never_cache, name='dispatch')
+class UpdateCategory(LoginRequiredMixin,UpdateView):
     model=CategoryPage
     fields = ['name','image']
     template_name = 'category/update_category.html'
     success_url=reverse_lazy('category_list')
     
-    
-class DeleteCategory(DeleteView):
+@method_decorator(never_cache, name='dispatch')    
+class DeleteCategory(LoginRequiredMixin,DeleteView):
     model = CategoryPage
     template_name = 'category/delete_category.html'
     success_url=reverse_lazy('category_list')
