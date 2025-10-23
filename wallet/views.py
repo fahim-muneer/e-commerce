@@ -171,12 +171,12 @@ class WalletDashboardView(MyLoginRequiredMixin, View):
             status=WalletWithdrawalRequest.PENDING
         )
         print("the profile picture process starts here")
-        profile = Customer.objects.get(user=request.user) #pylint: disable=no-member
+        profile = Customer.objects.get(user=self.request.user) #pylint: disable=no-member
         print("the profile picture is updated ")
 
         
         context = {
-            'profie':profile,
+            'profile':profile,
             'wallet': wallet,
             'transactions': transactions,
             'total_credits': total_credits,

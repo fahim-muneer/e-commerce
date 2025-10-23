@@ -87,13 +87,13 @@ def apply_coupon(request):
         print(f"coupon code is {code}")
 
         if not code:
-            messages.error(request, "Please enter a coupon code.")
+            messages.error(request, "Please enter a coupon code.",extra_tags='coupon-tag')
             print("no code found")
             return redirect("checkout")
 
         try:
             user_cart = Cart.objects.get(owner=request.user)
-            print(f"The cart belongs to {user_cart}")
+            print(f"The cart belongs to : {user_cart}")
         except Cart.DoesNotExist:
             messages.error(request, "No cart found.")
             print("no cart found")
@@ -101,44 +101,44 @@ def apply_coupon(request):
 
         if not user_cart.ordered_items.exists():
             print("cart is empty")
-            messages.error(request, "Your cart is empty.")
+            messages.error(request, "Your cart is empty.",extra_tags='coupon-tag')
             return redirect("checkout")
 
         if user_cart.coupon_code and user_cart.coupon_code.coupon_code.lower() == code.lower():
             print("thiis coupon is used just before")
-            messages.info(request, "This coupon is already applied.")
+            messages.info(request, "This coupon is already applied.",extra_tags='coupon-tag')
             return redirect("checkout")
 
         if user_cart.coupon_code:
             old_coupon = user_cart.coupon_code.coupon_code
             user_cart.coupon_code = None
             user_cart.save(update_fields=['coupon_code'])
-            print(f"🗑️ Cleared old coupon: {old_coupon}")
+            print(f"Cleared old coupon: {old_coupon}")
 
-        # Continue with rest of your logic...
         try:
             coupon = Coupons.objects.get(coupon_code__iexact=code)
         except Coupons.DoesNotExist:
-            messages.error(request, "Invalid coupon code.")
+            messages.error(request, "Invalid coupon code.",extra_tags='coupon-tag')
+            print("coupon doesn't exist")
             return redirect("checkout")
 
-        # Validate coupon
         if not coupon.is_valid():
-            messages.error(request, "This coupon is expired, inactive, or used up.")
+            messages.error(request, "This coupon is expired, inactive, or used up.",extra_tags='coupon-tag')
+            print("coupon is expired ")
             return redirect("checkout")
 
-        # Check minimum cart value
         if user_cart.subtotal < coupon.min_cart_value:
-            messages.error(request, f"Cart must be at least ₹{coupon.min_cart_value} to use this coupon.")
+            messages.error(request, f"Cart must be at least ₹{coupon.min_cart_value} to use this coupon.",extra_tags='coupon-tag')
+            print(f"Cart must be at least ₹{coupon.min_cart_value} to use this coupon.")
             return redirect("checkout")
 
-        # ✅ Apply coupon
         user_cart.coupon_code = coupon
         user_cart.save(update_fields=['coupon_code'])
 
         messages.success(request, f"Coupon '{coupon.coupon_code}' applied! You saved ₹{coupon.discount_value}.")
+        print("coupon applyed successfully")
         return redirect("checkout")
-
+    print("geting get request ")
     return redirect("checkout")
 
 

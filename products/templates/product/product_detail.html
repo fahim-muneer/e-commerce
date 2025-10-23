@@ -2,133 +2,138 @@
 {% block title %} product-detail {% endblock title %} 
 {% block heading %} Product Detail {% endblock heading %}
 
-
 {% block context %}
-           <div class="flex items-center justify-between p-8 md:p-12">
-        <h2 class="text-2xl font-bold text-gray-800">Product Details</h2>
-        <a href="{% url 'product_list' %}" class="text-gray-400 hover:text-gray-600">
-            <i class="fa-solid fa-times text-xl"></i>
-        </a>
+<div class="flex items-center justify-between p-8 md:p-12">
+    <h2 class="text-2xl font-bold text-gray-800">Product Details</h2>
+    <a href="{% url 'product_list' %}" class="text-gray-400 hover:text-gray-600">
+        <i class="fa-solid fa-times text-xl"></i>
+    </a>
+</div>
+
+<!-- Product Details Section -->
+<div class="p-8 md:p-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Image Gallery -->
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+            <!-- Thumbnails -->
+<div class="flex md:flex-col space-x-4 md:space-x-0 md:space-y-4 overflow-x-auto md:overflow-y-auto">
+    {% for img in images %}
+    <img src="{{ img.url }}" 
+         class="thumbnail w-20 h-20 md:w-24 md:h-24 object-cover rounded-md border-2 cursor-pointer"
+         onclick="changeMainImage(this)">
+    {% endfor %}
+</div>
+
+{% comment %} <!-- Main Image -->
+<div class="flex-1">
+    <img id="main-image" src="{{ images.0.url }}" alt="Main Product" 
+         class="w-full h-auto object-cover rounded-md cursor-zoom-in" onclick="zoomImage(this)">
+</div> {% endcomment %}
+            <!-- Main Image -->
+            <div class="flex-1">
+                <img id="main-image" src="{{ product.image1.url }}" alt="Main Product" 
+                     class="w-full h-auto object-cover rounded-md cursor-zoom-in" onclick="zoomImage(this)">
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="space-y-6">
+            <h3 class="text-3xl font-bold text-gray-900">{{product.name}}</h3>
+            <div class="space-y-2 text-gray-600">
+                <p class="flex items-center space-x-2">
+                    <i class="fa-solid fa-list-ul text-blue-500"></i>
+                    <span><b>Category:</b> {{product.category}}</span>
+                </p>
+                <p class="flex items-center space-x-2">
+                    <i class="fa-solid fa-star text-yellow-400"></i>
+                    <i class="fa-solid fa-star text-yellow-400"></i>
+                    <i class="fa-solid fa-star text-yellow-400"></i>
+                    <i class="fa-solid fa-star text-yellow-400"></i>
+                    <i class="fa-solid fa-star text-gray-300"></i>
+                </p>
+                <p class="flex items-center space-x-2">
+                    <i class="fa-solid fa-calendar-alt text-blue-500"></i>
+                    <span><b>Published:</b> {{product.created_at}}</span>
+                </p>
+            </div>
+
+            <h4 class="text-xl font-bold text-gray-800">Product Description</h4>
+            <p class="text-gray-600 leading-relaxed">{{product.description}}</p>
+
+            <h4 class="text-xl font-bold text-gray-800 mt-8">Product Variants</h4>
+            <table class="min-w-full border border-gray-200 mt-2">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="px-4 py-2 text-left border">Variant Name</th>
+                        <th class="px-4 py-2 text-left border">Price</th>
+                        <th class="px-4 py-2 text-left border">Stock</th>
+                        <th class="px-4 py-2 text-left border">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for variant in variants %}
+                    <tr class="border-b">
+                        <td class="px-4 py-2 border">{{ variant.variant.name }}</td>
+                        <td class="px-4 py-2 border">{{ variant.get_price }}</td>
+                        <td class="px-4 py-2 border">{{ variant.stock }}</td>
+                        <td class="px-4 py-2 border">
+                            <a href="{% url 'delete_product_variant' pk=variant.pk %}"><i class="fa-solid fa-trash"></i></a>
+                            <a href="{% url 'update_product_variant' pk=variant.pk %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-4 py-2 text-center text-gray-500">No variants available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-        
-        <!-- Product Details Section -->
-        <div class="p-8 md:p-12">
-            
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Image Gallery -->
-                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                    <div class="flex md:flex-col space-x-4 md:space-x-0 md:space-y-4 overflow-x-auto md:overflow-y-auto">
-                        <!-- Thumbnails (adjust URLs as needed) -->
-                        <img src="{{product.image2.url}}" class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-md border-2 border-blue-500 cursor-pointer">
-                        <img src="{{product.image3.url}}" class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-md cursor-pointer">
-                        <img src="{{product.image4.url}}" class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-md cursor-pointer">
-                        <img src="{{product.image5.url}}" class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-md cursor-pointer">
-                    </div>
-                    <!-- Main Image -->
-                    <div class="flex-1">
-                        <img src="{{product.image1.url}}" alt="Main Product" class="w-full h-auto object-cover rounded-md">
-                    </div>
-                </div>
+</div>
 
-                <!-- Product Info -->
-                <div class="space-y-6">
-                    <h3 class="text-3xl font-bold text-gray-900">{{product.name}}</h3>
-                    <div class="space-y-2 text-gray-600">
-                        <p class="flex items-center space-x-2"><i class="fa-solid fa-list-ul text-blue-500"></i><span><b>Category:</b> {{product.category}}</span></p>
-                        <p class="flex items-center space-x-2">
-                            <i class="fa-solid fa-star text-yellow-400"></i>
-                            <i class="fa-solid fa-star text-yellow-400"></i>
-                            <i class="fa-solid fa-star text-yellow-400"></i>
-                            <i class="fa-solid fa-star text-yellow-400"></i>
-                            <i class="fa-solid fa-star text-gray-300"></i>
-                        </p>
-                        <p class="flex items-center space-x-2"><i class="fa-solid fa-calendar-alt text-blue-500"></i><span><b>Published:</b> {{product.created_at}} </span></p>
-                    </div>
-                    
-                    <h4 class="text-xl font-bold text-gray-800">Product Description</h4>
-                    <p class="text-gray-600 leading-relaxed">
-                        {{product.description}}
-                    </p>
-                    <h4 class="text-xl font-bold text-gray-800 mt-8">Product Variants</h4>
-                            <table class="min-w-full border border-gray-200 mt-2">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="px-4 py-2 text-left border">Variant Name</th>
-                                        <th class="px-4 py-2 text-left border">Price</th>
-                                        <th class="px-4 py-2 text-left border">Stock</th>
-                                        <th class="px-4 py-2 text-left border">ACTION</th>
+<hr class="border-gray-200">
 
+<!-- Customer Reviews Section -->
+<div class="p-8 md:p-12">
+    <h3 class="text-2xl font-bold text-gray-800 mb-6">Customer Reviews</h3>
+    <div class="space-y-6">
+        {% comment %} Repeat reviews here {% endcomment %}
+    </div>
+</div>
 
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for variant in variants %}
-                                    <tr class="border-b">
-                                        <td class="px-4 py-2 border">{{ variant.variant.name }}</td>
-                                        <td class="px-4 py-2 border">{{ variant.get_price }}</td>
-                                        <td class="px-4 py-2 border">{{ variant.stock }}</td>
-                                        <td class="px-4 py-2 border"><a href="{% url 'delete_product_variant' pk=variant.pk %}"><i class="fa-solid fa-trash"></i></a>
-                                        <a href="{% url 'update_product_variant' pk=variant.pk %}"><i class="fa-solid fa-pen-to-square"></i></a></td>
+<!-- JS for image zoom & thumbnail selection -->
+<script>
+function changeMainImage(img) {
+    const mainImage = document.getElementById('main-image');
+    mainImage.src = img.src;
+}
 
-                                    </tr>
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="3" class="px-4 py-2 text-center text-gray-500">No variants available</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                </div>
-            </div>
-        </div>
+// Simple zoom functionality
+function zoomImage(img) {
+    const zoomDiv = document.createElement('div');
+    zoomDiv.style.position = 'fixed';
+    zoomDiv.style.top = 0;
+    zoomDiv.style.left = 0;
+    zoomDiv.style.width = '100vw';
+    zoomDiv.style.height = '100vh';
+    zoomDiv.style.background = 'rgba(0,0,0,0.8)';
+    zoomDiv.style.display = 'flex';
+    zoomDiv.style.alignItems = 'center';
+    zoomDiv.style.justifyContent = 'center';
+    zoomDiv.style.cursor = 'zoom-out';
+    zoomDiv.style.zIndex = 9999;
 
-        <hr class="border-gray-200">
+    const zoomedImg = document.createElement('img');
+    zoomedImg.src = img.src;
+    zoomedImg.style.maxWidth = '90%';
+    zoomedImg.style.maxHeight = '90%';
+    zoomedImg.style.borderRadius = '8px';
+    zoomDiv.appendChild(zoomedImg);
 
-        <!-- Customer Reviews Section -->
-        <div class="p-8 md:p-12">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6">Customer Reviews</h3>
-            
-            <div class="space-y-6">
-                <!-- Review 1 -->
-                <div class="flex items-start space-x-4">
-                    <div class="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between">
-                            <div class="font-semibold text-gray-900">Zaw Lay</div>
-                            <div class="text-sm text-gray-500">2025-03-28</div>
-                        </div>
-                        <div class="text-yellow-400">
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                        </div>
-                        <p class="text-gray-600 mt-2">nice Product</p>
-                    </div>
-                </div>
+    zoomDiv.addEventListener('click', () => zoomDiv.remove());
 
-                <!-- Review 2 -->
-                <div class="flex items-start space-x-4">
-                    <div class="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between">
-                            <div class="font-semibold text-gray-900">Zaw Lay</div>
-                            <div class="text-sm text-gray-500">2025-03-28</div>
-                        </div>
-                        <div class="text-yellow-400">
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star-half-stroke"></i>
-                            <i class="fa-regular fa-star"></i>
-                        </div>
-                        <p class="text-gray-600 mt-2">fgdgfgg</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    
-        
+    document.body.appendChild(zoomDiv);
+}
+</script>
 {% endblock context %}

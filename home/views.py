@@ -35,9 +35,9 @@ from coupon.models import Coupons
 logger = logging.getLogger(__name__)
 from datetime import date
 from wallet.models import Wallet
+from django.db.models import Min, Max, Q
 
 
-# Initialize razorpay client
 razorpay_client = razorpay.Client(
     auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
 )
@@ -58,80 +58,62 @@ class Index(View):
         }
         
         return render(request, 'home/index.html', context)
-
-
 def home(request):
-    products = ProductPage.objects.all()
-    
+    products = ProductPage.objects.prefetch_related('variant').all()
+
+    category_filter = request.GET.getlist('category')
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    sort_option = request.GET.get('sort')
+
+    # Apply category filter
+    if category_filter:
+        products = products.filter(category__name__in=category_filter)
+
+    # Filter by price range using variants
+    if min_price and max_price:
+        products = products.filter(
+            variant__price__gte=min_price,
+            variant__price__lte=max_price
+        ).distinct()
+
+    # Annotate highest-stock variant for each product
+    for product in products:
+        highest_stock_variant = product.variant.order_by('-stock').first()
+        product.largest_variant = highest_stock_variant  # attach it to product
+
+        # Optional: attach display prices
+        if highest_stock_variant:
+            product.get_display_price = highest_stock_variant.price
+        else:
+            product.get_display_price = 0
+
+    # Sort products: highest stock first by default
+    products = sorted(products, key=lambda p: p.largest_variant.stock if p.largest_variant else 0, reverse=True)
+
+    # Pagination
+    paginator = Paginator(products, 10)
+    page = request.GET.get('page')
+    products = paginator.get_page(page)
+
+    # Wishlist for logged-in users
     if request.user.is_authenticated:
         my_list = list(
-            WishListItems.objects.filter(wish_list__user=request.user).values_list("products_id", flat=True)
+            WishListItems.objects.filter(wish_list__user=request.user)
+            .values_list("products_id", flat=True)
         )
     else:
         my_list = []
-    
-    product_sort = request.GET.get('sort')
-    allowed_sorts = ["price", "-price", "name", "-name", "created_at", "-created_at"]
-    
-    if product_sort in allowed_sorts:
-        products = products.order_by(product_sort)
-    
-    total = ProductPage.objects.aggregate(total=Max("price"))['total'] or 0
-    search = request.GET.get("search")
-    
-    if search:
-        products = ProductPage.objects.filter(name__icontains=search)
-    
-    category_filter = request.GET.getlist("category")
-    minimum_price_prm = request.GET.get('min_price')
-    maximum_price_prm = request.GET.get('max_price')
-    minimum_price = int(minimum_price_prm) if minimum_price_prm not in [None, ''] else 0
-    maximum_price = int(maximum_price_prm) if maximum_price_prm not in [None, ''] else total
-    
-    if minimum_price or maximum_price:
-        products = products.filter(price__gte=minimum_price, price__lte=maximum_price)
-    
-    if category_filter:
-        products = products.filter(category__name__in=category_filter)
-    
-    products = products.select_related('offer', 'category__offer').prefetch_related('variant')
-    
-    for product in products:
-        largest_variant = product.variant.order_by('-stock').first()
-        product.largest_variant = largest_variant
-        
-        product.active_offer = product.get_active_offer()
-        product.discounted_price = product.get_display_price()
-        product.original_display_price = product.get_original_price()
-        
-        if product.active_offer:
-            original_price = product.original_display_price
-            discounted_price = product.discounted_price
-            
-            if original_price and original_price > 0:
-                discount_amount = original_price - discounted_price
-                product.discount_percentage = int((discount_amount / original_price) * 100)
-            else:
-                product.discount_percentage = 0
-        else:
-            product.discount_percentage = 0
-    
-    page = request.GET.get('page', 1)
-    product_paginator = Paginator(products, 10)
-    products = product_paginator.get_page(page)
-    
-    categories = CategoryPage.objects.all()
-    
+
     context = {
-        'products': products,
-        'category': categories,
-        'current_category': category_filter,
-        'my_list': my_list,
+        "products": products,
+        "category": CategoryPage.objects.all(),
+        "request": request,
+        "my_list": my_list,
+        "current_category": category_filter,
     }
-    
-    return render(request, 'home/home.html', context)
 
-
+    return render(request, "home/home.html", context)
 class Unlike(MyLoginRequiredMixin, View):
     def post(self, request, pid):
         WishListItems.objects.filter(products_id=pid, wish_list__user=request.user).delete()
@@ -322,7 +304,6 @@ def update_cart_item(request, item_id):
                 'error': 'Quantity must be at least 1.'
             })
 
-        # Get stock and price with fallbacks
         if cart_item.variant:
             max_stock = cart_item.variant.stock or 0
             item_price = cart_item.variant.get_discounted_price()
@@ -330,7 +311,6 @@ def update_cart_item(request, item_id):
             max_stock = cart_item.product.stock or 0
             item_price = cart_item.product.get_display_price()
         
-        # Ensure price is Decimal
         if isinstance(item_price, int):
             item_price = Decimal(str(item_price))
         elif item_price is None:
@@ -347,7 +327,6 @@ def update_cart_item(request, item_id):
         cart_item.quantity = new_quantity
         cart_item.save(update_fields=['quantity'])
 
-        # Recalculate cart totals
         cart = cart_item.owner
         cart_total = cart.total_price or Decimal('0')
         total_items = sum(item.quantity for item in cart.ordered_items.all())
@@ -444,17 +423,14 @@ def _finalize_order(
     else:
         raise ValueError(f"Invalid payment method: {payment_method}")
 
-    # Fetch cart items with lock to prevent concurrent modifications
     cart_items = list(cart.ordered_items.select_for_update().all())
     if not cart_items:
         raise ValueError("Cart is empty - no valid items found")
 
-    # Validate stock availability
     is_valid, error_message, items_info = _validate_stock_availability(cart_items)
     if not is_valid:
         raise ValueError(error_message)
 
-    # Calculate final total (if not passed)
     if total_amount is None:
         total_amount = cart.total_price
 
@@ -470,7 +446,6 @@ def _finalize_order(
         # total_amount = max(total_amount, 0)
         print("coupon is applied in finalize function for order")
 
-    # Create the order with proper payment status
     order = Orders.objects.create(
         user=user,
         delivery_address=delivery_address,
@@ -550,12 +525,6 @@ def create_order_from_cart(cart):
 
 
     return order
-# from decimal import Decimal
-# from django.db import transaction
-# from django.db.models import F
-# from django.shortcuts import render, redirect
-# from django.urls import reverse
-# from django.utils import timezone
 
 class CheckoutList(MyLoginRequiredMixin, View):
     def get(self, request):
@@ -571,7 +540,6 @@ class CheckoutList(MyLoginRequiredMixin, View):
             messages.error(request, 'Your cart is empty.')
             return redirect('cart')
 
-        # Clean up invalid / ineligible coupons (do NOT decrement use_limit here)
         if cart.coupon_code:
             coupon = cart.coupon_code
             if not coupon.is_valid():
@@ -595,7 +563,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
         print(f" Subtotal: {subtotal}, Discount: {coupon_discount}, Total: {total_price}")
 
         wallet, created = Wallet.objects.get_or_create(user=user)
-        applied_coupon = cart.coupon_code  # None if invalid/removed
+        applied_coupon = cart.coupon_code 
 
         addresses_queryset = OrderAddress.objects.filter(user=request.user).order_by('-id')
         page = request.GET.get('page', 1)
@@ -674,15 +642,12 @@ class CheckoutList(MyLoginRequiredMixin, View):
             print("no cart found  so redirected")
             return redirect('cart')
 
-        # Use cart.total_price (already accounts for coupon_discount if coupon is still attached)
         total_amount = cart.total_price or Decimal('0')
         print(f"total amount is {total_amount}")
 
-        # Always read applied coupon from the cart field
         applied_coupon = getattr(cart, 'coupon_code', None)
         print(f"applied coupon is {applied_coupon}")
 
-        # Re-validate coupon at checkout POST time and clear if invalid
         if applied_coupon:
             if not applied_coupon.is_valid():
                 messages.warning(request, "Coupon is not valid anymore. Removed automatically.")
@@ -695,7 +660,6 @@ class CheckoutList(MyLoginRequiredMixin, View):
                 cart.save(update_fields=['coupon_code'])
                 applied_coupon = None
 
-        # Razorpay flow
         if payment_method == 'razorpay':
             razorpay_payment_id = request.POST.get('razorpay_payment_id', '').strip()
             razorpay_order_id = request.POST.get('razorpay_order_id', '').strip()
@@ -725,17 +689,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
                     coupon=applied_coupon
                 )
 
-                # # Safely decrement use_limit (atomic DB update to avoid races)
-                # if applied_coupon:
-                #     updated = Coupons.objects.filter(pk=applied_coupon.pk, use_limit__gt=0) \
-                #         .update(use_limit=F('use_limit') - 1)
-                #     if not updated:
-                #         # nothing updated — coupon exhausted or race; clear and warn
-                #         cart.coupon_code = None
-                #         cart.save(update_fields=['coupon_code'])
-                #         messages.warning(request, "Coupon could not be applied (usage limit reached). It was removed.")
-                #         # You may optionally adjust order.discount_value here if you stored it.
-
+             
                 messages.success(request, f"Payment successful! Order #{order.pk} confirmed.")
                 print("seccess redirected")
                 return redirect(reverse('order_success', kwargs={'uid': order.pk}))
@@ -746,7 +700,6 @@ class CheckoutList(MyLoginRequiredMixin, View):
                 print(f"the error is {str(e)}")
                 return redirect('checkout')
 
-        # Wallet flow
         elif payment_method == 'wallet':
             try:
                 from wallet.models import Wallet, WalletTransaction
@@ -772,13 +725,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
                     coupon=applied_coupon
                 )
 
-                # if applied_coupon:
-                #     updated = Coupons.objects.filter(pk=applied_coupon.pk, use_limit__gt=0) \
-                #         .update(use_limit=F('use_limit') - 1)
-                #     if not updated:
-                #         cart.coupon_code = None
-                #         cart.save(update_fields=['coupon_code'])
-                #         messages.warning(request, "Coupon could not be applied (usage limit reached). It was removed.")
+              
 
                 last_transaction = WalletTransaction.objects.filter(
                     wallet=wallet,
@@ -801,7 +748,6 @@ class CheckoutList(MyLoginRequiredMixin, View):
                 logger.exception(f"Wallet payment error for user {user.pk}: {e}")
                 return redirect('checkout')
 
-        # COD flow
         elif payment_method == 'cod':
             try:
                 order = _finalize_order(
@@ -813,14 +759,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
                     coupon=applied_coupon
                 )
 
-                # if applied_coupon:
-                #     updated = Coupons.objects.filter(pk=applied_coupon.pk, use_limit__gt=0) \
-                #         .update(use_limit=F('use_limit') - 1)
-                #     if not updated:
-                #         cart.coupon_code = None
-                #         cart.save(update_fields=['coupon_code'])
-                #         messages.warning(request, "Coupon could not be applied (usage limit reached). It was removed.")
-
+               
                 messages.success(request, f'Order #{order.pk} confirmed!')
                 return redirect(reverse('order_success', kwargs={'uid': order.pk}))
             except Exception as e:
@@ -853,7 +792,7 @@ class unlike(MyLoginRequiredMixin, View):
 def apply_coupon_to_cart(request):
     if request.method == "POST":
         code = request.POST.get("coupon_code", "").strip()
-        cart = request.user.cart  # your Cart model uses OneToOne with User
+        cart = request.user.cart  
         
         try:
             coupon = Coupons.objects.get(coupon_code=code)
@@ -861,7 +800,6 @@ def apply_coupon_to_cart(request):
             messages.error(request, "Invalid coupon code.")
             return redirect("checkout")
         
-        # Check if coupon is valid
         if not coupon.active:
             messages.error(request, "Coupon is inactive.")
             return redirect("checkout")

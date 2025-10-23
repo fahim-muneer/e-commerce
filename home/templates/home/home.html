@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% load static %}
 {% load chunks %}
@@ -42,6 +41,11 @@
                     <input type="hidden" name="search" value="{{ request.GET.search }}">
                 {% endif %}
                 
+                <!-- Preserve sort parameter if it exists -->
+                {% if request.GET.sort %}
+                    <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+                {% endif %}
+                
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Shop By Category</h3>
                 <div class="space-y-2 mb-4">
                     {% for i in category %}
@@ -49,6 +53,7 @@
                         <input type="checkbox" 
                                name="category" 
                                value="{{ i.name }}" 
+                               {% if i.name in current_category %}checked{% endif %}
                                class="rounded text-blue-600 focus:ring-blue-500 category-checkbox">
                         <span>{{ i.name }}</span>
                     </label>
@@ -95,16 +100,37 @@
                 <div class="flex items-center space-x-2 text-sm text-gray-600">
                     <span>Sort By:</span>
                     <div class="relative">
-                        <form method="get" action="{% url 'home' %}">
+                        <form method="get" action="{% url 'home' %}" id="sortForm">
+                            <!-- Preserve all existing parameters except sort -->
+                            {% for key, value in request.GET.items %}
+                                {% if key != 'sort' and key != 'page' %}
+                                    {% if key == 'category' %}
+                                        <!-- Handle multiple category values -->
+                                        {% for cat in request.GET.getlist|default:value %}
+                                        <input type="hidden" name="category" value="{{ cat }}">
+                                        {% endfor %}
+                                    {% else %}
+                                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            
                             <select 
                                 name="sort"
                                 class="block w-36 rounded-md border-gray-300 shadow-sm py-1 pl-3 pr-8 text-sm"
                                 onchange="this.form.submit()">
+                                <option value="">Default</option>
                                 <option value="price" {% if request.GET.sort == "price" %}selected{% endif %}>
                                     Price: Low to High
                                 </option>
                                 <option value="-price" {% if request.GET.sort == "-price" %}selected{% endif %}>
                                     Price: High to Low
+                                </option>
+                                <option value="name" {% if request.GET.sort == "name" %}selected{% endif %}>
+                                    Name: A to Z
+                                </option>
+                                <option value="-name" {% if request.GET.sort == "-name" %}selected{% endif %}>
+                                    Name: Z to A
                                 </option>
                             </select>
                         </form>
@@ -112,121 +138,121 @@
                 </div>
             </div>
             
-           <!-- Replace the product card section in home.html -->
-<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-
-            {% for product_chunk in products|chunks:5 %}
-
-            {% for product in product_chunk %}
-            <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
-                <div class="relative">
-                    <!-- Discount Badge -->
-                    {% if product.active_offer %}
-                    <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md font-bold z-10">
-                        {{ product.discount_percentage }}% OFF
-                    </span>
-                    {% endif %}
-                    
-                    <div class="absolute top-0 right-0 p-4">
-                        {% if product.id in my_list %}
-                            <form method="post" action="{% url 'unlike' pid=product.id %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="delete" value="{{product.id}}">
-                                <button type="submit" class="text-gray-400 hover:text-gray-600 transition-colors">❤️</button>
-                            </form>
-                        {% else %}
-                            <form method="post" action="{% url 'wish_list' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="product_id" value="{{ product.id }}">
-                                <input type="hidden" name="action" value="add">
-                                <button type="submit" class="flex items-center space-x-2 hover:text-blue-500">
-                                    <i class="fa-regular fa-heart"></i>
-                                </button>
-                            </form>
-                        {% endif %}
-                    </div>
-                    
-                    <a href="{% url 'items_details' pk=product.pk %}">
-                        <img src="{{ product.image1.url }}" alt="{{ product.name }}" class="w-full h-40 object-cover">
-                    </a>
-                </div>
-                
-                <div class="p-4">
-                    <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
-                    <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description }}</p>
-                    <div class="flex items-center mb-1">
-                        ⭐⭐⭐⭐⭐
-                    </div>
-                    
-                    {% if product.block %}
-                        <p class="block w-full py-2 mt-2 bg-white-500 text-red-600 text-sm font-semibold text-center rounded-md">
-                            Currently Unavailable
-                        </p>
-                    {% else %}
-                        <div class="flex items-center space-x-2 mb-2">
+           <!-- Product Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                {% for product_chunk in products|chunks:5 %}
+                    {% for product in product_chunk %}
+                    <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
+                        <div class="relative">
+                            <!-- Discount Badge -->
                             {% if product.active_offer %}
-                                <!-- Show original price and discounted price -->
-                                <span class="text-gray-400 line-through text-sm">₹{{ product.original_display_price }}</span>
-                                <span class="text-red-500 font-semibold text-lg">₹{{ product.discounted_price|floatformat:0 }}</span>
+                            <span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md font-bold z-10">
+                                {{ product.discount_percentage }}% OFF
+                            </span>
+                            {% endif %}
+                            
+                            <div class="absolute top-0 right-0 p-4">
+                                {% if product.id in my_list %}
+                                    <form method="post" action="{% url 'unlike' pid=product.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="delete" value="{{product.id}}">
+                                        <button type="submit" class="text-gray-400 hover:text-gray-600 transition-colors">❤️</button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" action="{% url 'wish_list' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                                        <input type="hidden" name="action" value="add">
+                                        <button type="submit" class="flex items-center space-x-2 hover:text-blue-500">
+                                            <i class="fa-regular fa-heart"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            
+                            <a href="{% url 'items_details' pk=product.pk %}">
+                                <img src="{{ product.image1.url }}" alt="{{ product.name }}" class="w-full h-40 object-cover">
+                            </a>
+                        </div>
+                        
+                        <div class="p-4">
+                            <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
+                            <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description }}</p>
+                            <div class="flex items-center mb-1">
+                                ⭐⭐⭐⭐⭐
+                            </div>
+                            
+                            {% if product.block %}
+                                <p class="block w-full py-2 mt-2 bg-white-500 text-red-600 text-sm font-semibold text-center rounded-md">
+                                    Currently Unavailable
+                                </p>
                             {% else %}
-                                <!-- Show old price and current price -->
-                                <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
-                                <span class="text-red-500 font-semibold">₹{{ product.get_display_price }}</span>
+                                <div class="flex items-center space-x-2 mb-2">
+                                    {% if product.active_offer %}
+                                        <!-- Show original price and discounted price -->
+                                        <span class="text-gray-400 line-through text-sm">₹{{ product.original_display_price }}</span>
+                                        <span class="text-red-500 font-semibold text-lg">₹{{ product.discounted_price|floatformat:0 }}</span>
+                                    {% else %}
+                                        <!-- Show old price and current price -->
+                                        <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
+                                        <span class="text-red-500 font-semibold">₹{{ product.get_display_price }}</span>
+                                    {% endif %}
+                                </div>
+
+                                {% if product.largest_variant and product.largest_variant.stock %}
+                                    <form method="post" action="{% url 'add_to_cart' %}" class="mt-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                                        <input type="hidden" name="quantity" value="1">
+
+                                        {% if product.variant.exists %}
+                                        <input type="hidden" name="variant_id" value="{{ product.largest_variant.id }}">
+                                        {% endif %}
+
+                                        {% if user.is_authenticated %}
+                                        <button type="submit" class="w-full py-2 bg-red-500 text-white text-sm font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors">
+                                            ADD TO CART
+                                        </button>
+                                        {% else %}
+                                        <a href="{% url 'login' %}" class="block w-full py-2 bg-gray-500 text-white text-sm font-semibold rounded-md shadow-md hover:bg-gray-600 text-center transition-colors">
+                                            LOGIN TO ADD
+                                        </a>
+                                        {% endif %}
+                                    </form>
+                                {% else %}
+                                    <p class="block w-full py-2 mt-2 bg-red-500 text-white text-sm font-semibold text-center rounded-md">
+                                        OUT OF STOCK
+                                    </p>
+                                {% endif %}
                             {% endif %}
                         </div>
-
-                        {% if product.largest_variant and product.largest_variant.stock %}
-                            <form method="post" action="{% url 'add_to_cart' %}" class="mt-2">
-                                {% csrf_token %}
-                                <input type="hidden" name="product_id" value="{{ product.id }}">
-                                <input type="hidden" name="quantity" value="1">
-
-                                {% if product.variant.exists %}
-                                <input type="hidden" name="variant_id" value="{{ product.largest_variant.id }}">
-                                {% endif %}
-
-                                {% if user.is_authenticated %}
-                                <button type="submit" class="w-full py-2 bg-red-500 text-white text-sm font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors">
-                                    ADD TO CART
-                                </button>
-                                {% else %}
-                                <a href="{% url 'login' %}" class="block w-full py-2 bg-gray-500 text-white text-sm font-semibold rounded-md shadow-md hover:bg-gray-600 text-center transition-colors">
-                                    LOGIN TO ADD
-                                </a>
-                                {% endif %}
-                            </form>
-                        {% else %}
-                            <p class="block w-full py-2 mt-2 bg-red-500 text-white text-sm font-semibold text-center rounded-md">
-                                OUT OF STOCK
-                            </p>
-                        {% endif %}
-                    {% endif %}
-                </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-full text-center text-gray-500">No products found.</div>
+                    {% endfor %}
+                {% endfor %}
             </div>
-            {% empty %}
-            <div class="col-span-full text-center text-gray-500">No products found.</div>
-            {% endfor %}
-            {% endfor %}
 
- </div>
-
-
-            <!-- Pagination -->
+            <!-- Pagination with preserved parameters -->
             <div class="flex justify-center space-x-2 mt-8">
                 {% if products.has_previous %}
-                <a href="?page={{ products.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+                <a href="?page={{ products.previous_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for cat in request.GET.getlist.category %}&category={{ cat }}{% endfor %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" 
+                   class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
                 {% endif %}
 
                 {% for i in products.paginator.page_range %}
-                <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">{{ i }}</a>
+                <a href="?page={{ i }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for cat in request.GET.getlist.category %}&category={{ cat }}{% endfor %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" 
+                   class="px-4 py-2 border rounded-md {% if products.number == i %}bg-blue-500 text-white{% else %}text-gray-700 hover:bg-gray-100{% endif %}">{{ i }}</a>
                 {% endfor %}
 
-                {% if user.has_next %}
-                <a href="?page={{ products.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+                {% if products.has_next %}
+                <a href="?page={{ products.next_page_number }}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% for cat in request.GET.getlist.category %}&category={{ cat }}{% endfor %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" 
+                   class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
                 {% endif %}
             </div>
   
         </div>
+    </div>
 </div>
 
 <script>
@@ -244,5 +270,16 @@
 
         form.submit();
     }
+
+    // Optional: Auto-submit filter form on category change for better UX
+    document.addEventListener('DOMContentLoaded', function() {
+        const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // Optional: uncomment to auto-submit on category change
+                // document.getElementById('filterForm').submit();
+            });
+        });
+    });
 </script>
 {% endblock content %}

@@ -66,8 +66,10 @@ class ProductView(AdminLoginMixin,View):
 
         product_paginator = Paginator(products, 5)
         products = product_paginator.get_page(page)
-        
+        # images = [product.image1, product.image2, product.image3, product.image4, product.image5]
+
         context={
+            # 'images' :images
             'products': products,
             'wishlist_ids':wishlist_ids,
             'categories': CategoryPage.objects.all(),   # pylint: disable=no-member
@@ -132,15 +134,21 @@ class ProductDelete(DeleteView):
 
 
 
-class ProductDetail(AdminLoginMixin,View):
-    def get(self , request,pk):
-        product = get_object_or_404(ProductPage,pk=pk)
-        variants =product.variant.all()
-        context={
+class ProductDetail(AdminLoginMixin, View):
+    def get(self, request, pk):
+        product = get_object_or_404(ProductPage, pk=pk)
+        variants = product.variant.all()
+
+        # Collect all product images dynamically
+        images = [product.image1, product.image2, product.image3, product.image4, product.image5]
+        images = [img for img in images if img]  # only include non-empty images
+
+        context = {
             'product': product,
-            'variants':variants
+            'variants': variants,
+            'images': images,
         }
-        return render (request , 'product/product_detail.html',context)
+        return render(request, 'product/product_detail.html', context)
 
 
 

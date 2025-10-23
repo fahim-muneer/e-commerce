@@ -34,6 +34,7 @@ from decimal import Decimal
 
 
 
+
 def pdf(request, uid):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)

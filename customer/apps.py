@@ -12,3 +12,4 @@ class CustomerConfig(AppConfig):
             print("✅ Customer signals loaded successfully")
         except ImportError as e:
             print(f"⚠️ Could not import customer signals: {e}")
+            

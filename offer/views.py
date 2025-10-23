@@ -60,12 +60,12 @@ class AddOffer(View):
                     messages.error(request, error)
                 return render(request, 'offers/add_offer.html', {'form': form})
             except Exception as e:
-                messages.error(request, f'Error adding offer: {str(e)}')
+                messages.error(request, f'Error adding offer: {str(e)}',extra_tags='add-offer')
                 return render(request, 'offers/add_offer.html', {'form': form})
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{field}: {error}')
+                    messages.error(request, f'{field}: {error}',extra_tags='add-offer')
             return render(request, 'offers/add_offer.html', {'form': form})
 
 
@@ -74,24 +74,26 @@ class UpdateOffer(UpdateView):
     form_class = AddOfferForm
     template_name = "offers/update_offer.html"
     success_url = reverse_lazy('offer_view')
-    
+
     def form_valid(self, form):
         try:
             offer = form.save(commit=False)
-            offer.full_clean()
             offer.save()
             form.save_m2m()  
-            
+
             messages.success(self.request, f'Offer "{offer.name}" updated successfully.')
-            print("the offer updated ")
+            
             return redirect(self.success_url)
+
         except ValidationError as e:
             for error in e.messages:
                 messages.error(self.request, error)
-                print("the offer is not updated")
+                print(f"error is {str(e)}")
             return self.form_invalid(form)
+
         except Exception as e:
             messages.error(self.request, f'Error updating offer: {str(e)}')
+            print(f"error is {str(e)}")
             return self.form_invalid(form)
 
 

@@ -89,164 +89,230 @@ class ResendOtp(View):
             messages.error(request, "Session timed out. Please sign up again.")
             return redirect('signup')
 
-@method_decorator(never_cache, name='dispatch') 
+@method_decorator(never_cache, name='dispatch')
 class SignUp(View):
-    def get(self, request): 
+    """User signup view with referral support"""
+    
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('home')
+        
         form = SignUpForm()
-        referral_code = request.GET.get('ref', '')
+        
+        # Get referral code from URL parameter
+        referral_code = request.GET.get('ref', '').strip().upper()
+        
+        # Validate and pre-fill referral code
         if referral_code:
-            form.initial['referral_code'] = referral_code
+            try:
+                referral_code_obj = ReferralCode.objects.get(code=referral_code)
+                if referral_code_obj.is_active:
+                    form.initial['referral_code'] = referral_code
+                    messages.info(
+                        request,
+                        f'Referral code "{referral_code}" applied! Complete signup to get rewards! 🎁'
+                    )
+                else:
+                    messages.warning(request, 'This referral code is no longer active.')
+            except ReferralCode.DoesNotExist:
+                messages.warning(request, 'Invalid referral code.')
+        
         return render(request, 'customer/signup.html', {'form': form})
 
     def post(self, request):
         form = SignUpForm(request.POST)
+        
         if form.is_valid():
-            # try:
+            try:
                 with transaction.atomic():
-                    # Create user
                     register_user = form.save(commit=False)
                     register_user.is_active = False
                     
-                    # Get referral code from form
                     referral_code_input = form.cleaned_data.get('referral_code', '').strip().upper()
+                    
                     if referral_code_input:
                         register_user.referred_by_code = referral_code_input
                     
                     register_user.save()
-                    # new_user = Register.objects.create_user(
-                    # full_name=register_user.full_name,
-                    # email=register_user.email,
-                    # password=register_user.password
-                    # )
                     
-                    
-                    # ref_code = request.GET.get('ref') or request.POST.get('referral_code') or request.session.get('referral_code')
-        
-                    # if ref_code:
-                    #     result = create_referral_on_signup(new_user, ref_code)
-                    #     if result['success']:
-                    #         messages.success(
-                    #             request, 
-                    #             f" Welcome! You'll receive ₹50 bonus after your first purchase!"
-                    #         )
-                    #     else:
-                    #         messages.warning(request, f"Referral code issue: {result['message']}")
-                            
                     Customer.objects.create(user=register_user)
                     
                     new_code = ReferralCode.generate_unique_code(register_user)
                     ReferralCode.objects.create(user=register_user, code=new_code)
                     
+                    referral_success = False
                     if referral_code_input:
-                        process_referral_signup(register_user, referral_code_input)
+                        referral_success = process_referral_signup(register_user, referral_code_input)
                     
                     generate_and_send_otp(register_user)
                     request.session["email"] = register_user.email
                     
-                    messages.info(
-                        request, 
-                        "A verification code has been sent to your email. Please check your inbox."
-                    )
+                    if referral_success:
+                        messages.success(
+                            request,
+                            'Account created! Check your email for verification code. '
+                            'You\'ll receive special rewards after your first purchase! 🎉'
+                        )
+                    else:
+                        messages.success(
+                            request,
+                            'Account created successfully! Check your email for verification code.'
+                        )
+                    
                     return redirect('otp-verification')
                     
-            # except Exception as e:
-            #         messages.error(request, f"Error creating account: {str(e)}")
-            #         return render(request, 'customer/signup.html', {'form': form})
+            except Exception as e:
+                messages.error(request, f"Error creating account: {str(e)}")
+                print(f"the error is : {str(e)}")
+                return render(request, 'customer/signup.html', {'form': form})
         else:
-            messages.error(request, "Please correct the errors in the form.",extra_tags='sign-up')
+            messages.error(request, "Please correct the errors in the form.", extra_tags='sign-up')
             return render(request, 'customer/signup.html', {'form': form})
 
-
 def process_referral_signup(new_user, referral_code):
+    """
+    Process referral when a new user signs up with a referral code
+    Creates referral record and immediate signup rewards
+    """
+    print("="*80)
+    print(f" Starting referral signup process for: {new_user.email}")
+    print(f" Referral code: {referral_code}")
+    
     try:
+        # Validate referral code
         referral_code_obj = ReferralCode.objects.get(code=referral_code)
         referrer = referral_code_obj.user
         
-        if referrer == new_user:
-            return
+        print(f" Referral code found. Referrer: {referrer.email}")
         
+        # Prevent self-referral
+        if referrer == new_user:
+            print(" Self-referral not allowed")
+            return False
+        
+        # Check if user was already referred
+        if Referral.objects.filter(referred=new_user).exists():
+            print("❌ User was already referred")
+            return False
+        
+        # Create referral record
         referral = Referral.objects.create(
             referrer=referrer,
             referred=new_user,
-            referral_code=referral_code_obj
+            referral_code=referral_code_obj,
+            status=Referral.PENDING
         )
         
+        print(f"✅ Referral record created: ID {referral.id}")
+        
+        # Get active referral offers
+        now = timezone.now()
         referral_offers = Offers.objects.filter(
             offer_type='referral',
             active=True,
-            start_date__lte=timezone.now(),
-            end_date__gte=timezone.now()
+            start_date__lte=now,
+            end_date__gte=now
         )
         
+        print(f"📦 Found {referral_offers.count()} active referral offers")
+        
+        if not referral_offers.exists():
+            print("⚠️ No active referral offers found - Referral created but no rewards")
+            return True
+        
+        # Create immediate signup rewards for referee
+        rewards_created = 0
         for offer in referral_offers:
-            if offer.applies_to in ['referee', 'both']:
-                ReferralReward.objects.create(
+            print(f"\n📌 Processing offer: {offer.name}")
+            print(f"   - Applies to: {offer.applies_to}")
+            print(f"   - Fixed amount: ₹{offer.fixed_discount_amount}")
+            print(f"   - Percentage: {offer.percentage_discount}%")
+            
+            # Check if this offer applies to referee (new user)
+            # Handle both 'referee' and 'both' cases
+            if offer.applies_to in ['referee', 'both', 'Referee', 'Both']:
+                validity_days = getattr(offer, 'validity_days', 30) or 30
+                
+                reward = ReferralReward.objects.create(
                     referral=referral,
                     user=new_user,
                     reward_type=ReferralReward.REFEREE_BONUS,
                     offer=offer,
                     discount_amount=offer.fixed_discount_amount or 0,
                     valid_from=timezone.now(),
-                    valid_until=timezone.now() + timedelta(days=offer.validity_days)
+                    valid_until=timezone.now() + timedelta(days=validity_days)
                 )
+                
+                rewards_created += 1
+                print(f"   ✅ Referee reward created: ID {reward.id}")
+                print(f"      Amount: ₹{reward.discount_amount}")
+                print(f"      Valid until: {reward.valid_until.strftime('%Y-%m-%d')}")
+            else:
+                print(f"   ⏭️ Skipping - offer applies to: {offer.applies_to}")
         
-        messages.success(
-            None,
-            f' Referral code applied! You have special rewards waiting for you!'
-        )
+        print(f"\n✅ Process complete: {rewards_created} rewards created for referee")
+        print("="*80)
+        return True
         
     except ReferralCode.DoesNotExist:
-        messages.warning(None, 'Invalid referral code')
+        print("❌ Invalid referral code")
+        print("="*80)
+        return False
     except Exception as e:
-        print(f"Error processing referral: {e}")
+        print(f"❌ Error processing referral: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*80)
+        return False
 
 
 def process_first_purchase(user, order):
+    """
+    Process referral rewards when referred user makes their first purchase
+    Credits wallets and creates reward records for both referrer and referee
+    """
+    print("="*80)
+    print(f"🎯 Processing first purchase for: {user.email}")
+    print(f"📦 Order ID: {order.order_Id}")
+    
     try:
+        # Check if this user was referred and hasn't made first purchase yet
         referral = Referral.objects.filter(
             referred=user,
             first_purchase_at__isnull=True
         ).first()
         
         if not referral:
-            return
+            print(f"ℹ️ No pending referral found for user {user.email}")
+            print("="*80)
+            return None, None
         
+        print(f"✓ Found referral: ID {referral.id}")
+        print(f"   Referrer: {referral.referrer.email}")
+        print(f"   Referred: {referral.referred.email}")
+        
+        # Update referral record with first purchase info
         referral.first_purchase_at = timezone.now()
+        referral.first_order = order
         referral.save()
         
-        # Get active referral offers
-        referral_offers = Offers.objects.filter(
-            offer_type='referral',
-            active=True,
-            start_date__lte=timezone.now(),
-            end_date__gte=timezone.now()
-        )
+        print(f"✅ Referral updated with first purchase timestamp")
         
-        for offer in referral_offers:
-            # Create reward for referrer (person who referred)
-            if offer.applies_to in ['referrer', 'both']:
-                ReferralReward.objects.create(
-                    referral=referral,
-                    user=referral.referrer,
-                    reward_type=ReferralReward.REFERRER_BONUS,
-                    offer=offer,
-                    discount_amount=offer.fixed_discount_amount or 0,
-                    valid_from=timezone.now(),
-                    valid_until=timezone.now() + timedelta(days=offer.validity_days)
-                )
+        # The signal will handle wallet credits and reward creation
+        # But we can return the referral info
+        print(f"📡 Signal will process wallet credits automatically")
+        print("="*80)
         
-        # Update referral status
-        referral.status = Referral.BOTH_REWARDED
-        referral.save()
-        
-        messages.success(
-            None,
-            f' Your referrer has been rewarded for your purchase!'
-        )
+        # Return referral object for any additional processing
+        return referral, None
         
     except Exception as e:
-        print(f"Error processing first purchase reward: {e}")
-
+        print(f"❌ Error processing first purchase: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*80)
+        return None, None   
+    
 @method_decorator(never_cache, name='dispatch')
 class LogIn(View):
     def get(self, request):

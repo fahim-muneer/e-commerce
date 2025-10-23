@@ -14,7 +14,15 @@ from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.contrib.admin.views.decorators import staff_member_required
+
 User = get_user_model()
+
+# def staff_member_required(
+#     # view_func: @staff_member_required,
+#     redirect_field_name: str | None = ...,
+#     login_url: str = '/customer/'
+# ) :
+#     pass
 
 class AdminLoginMixin(LoginRequiredMixin):
     login_url = '/custom_admin/'

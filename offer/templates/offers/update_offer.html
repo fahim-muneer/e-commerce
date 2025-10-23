@@ -1,55 +1,163 @@
 {% extends "base_category.html" %}
 {% block context %}
 
+<body class="bg-gray-100 min-h-screen py-8">
 
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-6xl w-full mx-auto">
+        
         <!-- Header -->
-         <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
-            <h2 class="text-2xl font-bold text-gray-800"> Update Offer</h2>
-          <button class="text-gray-400 hover:text-gray-600">
-                 <a href=" {% url 'offer_view' %} "><i class="fa-solid fa-times text-xl"></i> </a>
-            </button>
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Update Offer</h2>
+            <a href="{% url 'offer_view' %}" class="text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-times text-xl"></i>
+            </a>
         </div>
 
+        <!-- Messages -->
+        {% if messages %}
+        <div class="space-y-3 mb-4"> 
+            {% for message in messages %}
+                <div class="p-3 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
-
-        <!-- Form Layout -->
-        <form method="post" enctype="multipart/form-data" class="space-y-6">
+        <!-- Form -->
+        <form method="post" class="space-y-6">
             {% csrf_token %}
-            
-            
-            <!-- offer Name -->
-            <div class="mb-4">
-                <label for={{form.name.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.name}}</label>
-                <label for={{form.discription.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.discription}}</label>
-                <label for={{form.offer_type.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.offer_type}}</label>
-                <label for={{form.discount_percent.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.discount_percent}}</label>
-                <label for={{form.start_date.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.start_date}}</label>
-                <label for={{form.end_date.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.end_date}}</label>
-                <label for={{form.active.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.active}}</label>
 
+            <!-- Basic Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Offer Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
 
+                <div class="md:col-span-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.offer_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Offer Type</label>
+                    {{ form.offer_type }}
+                    {% if form.offer_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.offer_type.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.discount_percent.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
+                    {{ form.discount_percent }}
+                    {% if form.discount_percent.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.discount_percent.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.start_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.end_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
             </div>
 
-
-
-
-
-            
-            <!-- Publish Button -->
-            <div class="flex justify-end">
-                <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
-                    <span>UPDATE OFFER</span>
-                </button>
+            <!-- Categories -->
+            <div id="category-selection" class="border-t pt-6" style="display: none;">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Select Categories</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for category in form.categories.field.queryset %}
+                    <div>
+                        <input type="checkbox" name="categories" value="{{ category.id }}"
+                               id="category_{{ category.id }}"
+                               {% if category in form.initial.categories %}checked{% endif %}>
+                        <label for="category_{{ category.id }}">{{ category.name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
+
+            <!-- Products -->
+            <div id="product-selection" class="border-t pt-6" style="display: none;">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Select Products</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for product in form.products.field.queryset %}
+                    <div>
+                        <input type="checkbox" name="products" value="{{ product.id }}"
+                               id="product_{{ product.id }}"
+                               {% if product in form.initial.products %}checked{% endif %}>
+                        <label for="product_{{ product.id }}">{{ product.name }} - ₹{{ product.price }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Referral -->
+            <div id="referral-details" class="border-t pt-6" style="display: none;">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Referral Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="{{ form.fixed_discount_amount.id_for_label }}">Fixed Amount</label>
+                        {{ form.fixed_discount_amount }}
+                    </div>
+                    <div>
+                        <label for="{{ form.percentage_discount.id_for_label }}">Percentage Bonus</label>
+                        {{ form.percentage_discount }}
+                    </div>
+                    <div>
+                        <label for="{{ form.validity_days.id_for_label }}">Validity (Days)</label>
+                        {{ form.validity_days }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active -->
+            <div class="flex items-center border-t pt-6">
+                {{ form.active }}
+                <label for="{{ form.active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">Active</label>
+            </div>
+
+            <!-- Submit -->
+            <div class="flex justify-end border-t pt-6">
+                <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-md">Update Offer</button>
+            </div>
+
         </form>
-
-
-
     </div>
 
 </body>
+
+<script>
+function toggleOfferFields(offerType) {
+    document.getElementById('category-selection').style.display = offerType === 'category' ? 'block' : 'none';
+    document.getElementById('product-selection').style.display = offerType === 'product' ? 'block' : 'none';
+    document.getElementById('referral-details').style.display = offerType === 'referral' ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.querySelector('select[name="offer_type"]');
+    toggleOfferFields(select.value);
+    select.addEventListener('change', function() {
+        toggleOfferFields(this.value);
+    });
+});
+</script>
+
 {% endblock context %}
