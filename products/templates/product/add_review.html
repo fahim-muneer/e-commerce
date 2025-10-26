@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+        {% if existing_review %}Edit Your Review{% else %}Write a Review{% endif %}
+    </h2>
+
+    <!-- Product Info -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="flex items-center space-x-4">
+            <img src="{{ product.image1.url }}" alt="{{ product.name }}" class="w-20 h-20 object-cover rounded">
+            <div>
+                <h3 class="text-xl font-semibold text-gray-800">{{ product.name }}</h3>
+                <p class="text-gray-600">{{ variant.variant.name }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Form -->
+    <form method="POST" class="bg-white rounded-lg shadow p-6">
+        {% csrf_token %}
+        
+        <!-- Rating -->
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">
+                Rating <span class="text-red-500">*</span>
+            </label>
+            <div class="flex space-x-2" id="star-rating">
+                {% for i in "12345" %}
+                <i class="star far fa-star text-3xl cursor-pointer text-gray-300 hover:text-yellow-500 transition-colors" 
+                   data-rating="{{ forloop.counter }}"></i>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="rating" id="rating-input" 
+                   value="{% if existing_review %}{{ existing_review.rating }}{% endif %}" required>
+            <p class="text-sm text-gray-500 mt-2">Click to rate (1-5 stars)</p>
+        </div>
+
+        <!-- Comment -->
+        <div class="mb-6">
+            <label for="comment" class="block text-gray-700 font-semibold mb-2">
+                Your Review <span class="text-red-500">*</span>
+            </label>
+            <textarea 
+                name="comment" 
+                id="comment" 
+                rows="6" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Share your experience with this product..."
+                required>{% if existing_review %}{{ existing_review.comment }}{% endif %}</textarea>
+            <p class="text-sm text-gray-500 mt-1">Minimum 10 characters</p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex space-x-4">
+            <button type="submit" 
+                    class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors">
+                {% if existing_review %}Update Review{% else %}Submit Review{% endif %}
+            </button>
+            <a href="{% url 'items_details' pk=product.pk %}" 
+               class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg shadow hover:bg-gray-400 transition-colors">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('.star');
+    const ratingInput = document.getElementById('rating-input');
+    const currentRating = parseInt(ratingInput.value) || 0;
+
+    // Set initial rating if editing
+    if (currentRating > 0) {
+        updateStars(currentRating);
+    }
+
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            ratingInput.value = rating;
+            updateStars(rating);
+        });
+
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.dataset.rating);
+            highlightStars(rating);
+        });
+    });
+
+    document.getElementById('star-rating').addEventListener('mouseleave', function() {
+        const currentRating = parseInt(ratingInput.value) || 0;
+        updateStars(currentRating);
+    });
+
+    function updateStars(rating) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.remove('far');
+                star.classList.add('fas', 'text-yellow-500');
+                star.classList.remove('text-gray-300');
+            } else {
+                star.classList.remove('fas', 'text-yellow-500');
+                star.classList.add('far', 'text-gray-300');
+            }
+        });
+    }
+
+    function highlightStars(rating) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.add('text-yellow-500');
+                star.classList.remove('text-gray-300');
+            } else {
+                star.classList.remove('text-yellow-500');
+                star.classList.add('text-gray-300');
+            }
+        });
+    }
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const rating = parseInt(ratingInput.value);
+        const comment = document.getElementById('comment').value.trim();
+
+        if (!rating || rating < 1 || rating > 5) {
+            e.preventDefault();
+            alert('Please select a rating between 1 and 5 stars.');
+            return;
+        }
+
+        if (comment.length < 10) {
+            e.preventDefault();
+            alert('Please write at least 10 characters in your review.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

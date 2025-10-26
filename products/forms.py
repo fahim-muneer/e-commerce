@@ -1,5 +1,5 @@
 from django import forms
-from .models import ProductPage,ProductVariants
+from .models import ProductPage,ProductVariants,Review
 
 
 
@@ -47,4 +47,11 @@ class ProductVariantCrudForm(forms.ModelForm):
         model=ProductVariants
         fields = [ 'variant', 'stock', 'price', 'review']
 
-        
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'comment']
+        widgets = {
+            'rating': forms.NumberInput(attrs={'min': 1, 'max': 5, 'class': 'form-control'}),
+            'comment': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+        }

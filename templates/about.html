@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+{% load chunks %}
+
+{% block content %}
+
+
+<!-- 1. Hero Section: Mission Statement -->
+    <section class="relative bg-gray-900 text-white overflow-hidden py-24 md:py-32">
+        <div class="absolute inset-0">
+            <!-- Background Image Placeholder (Replace with actual URL) -->
+            <img src="https://placehold.co/1920x800/222222/ffffff?text=Elegance+in+Every+Detail" 
+                 alt="Elegant interior design" 
+                 class="w-full h-full object-cover opacity-50" 
+                 onerror="this.onerror=null; this.src='https://placehold.co/1920x800/222222/ffffff?text=Aura+Home+Background';"
+            >
+        </div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
+            {% comment %} <span class="text-sm font-semibold uppercase tracking-widest text-indigo-400">Our Foundation</span> {% endcomment %}
+            <h1 class="mt-4 text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white text-shadow-custom">
+                {% comment %} Crafting Spaces, Inspiring Life. {% endcomment %}
+            </h1>
+            <p class="mt-6 text-xl max-w-3xl mx-auto font-light text-indigo-200">
+                {% comment %} Aura Home is built on the belief that furniture is not just an object, but the canvas for your life's best moments. {% endcomment %}
+            </p>
+        </div>
+    </section>
+
+    <!-- 2. Our Story Section -->
+    <section class="py-16 md:py-24 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-12 items-center">
+            <!-- Image Side -->
+            <div class="relative bg-gray-300 rounded-xl overflow-hidden shadow-2xl transform hover:scale-[1.01] transition duration-300">
+                <img src="{% static 'deveeloper_image/IMG-20250924-WA0174(1).jpg' %}" 
+                     {% comment %} alt="A close-up of a craftsman working on wood" 
+                     class="w-full h-full object-cover"
+                     onerror="this.onerror=null; this.src='https://placehold.co/600x450/e0e7ff/1e3a8a?text=Our+Story+Image';" {% endcomment %}
+                >
+                <span class="absolute bottom-0 left-1/2 -translate-x-1/2 mb-3 text-white font-bold bg-black/50 px-4 py-2 rounded-lg">Founder and Developer  :  Fahim Muneer</span>
+            </div>
+            
+            <!-- Text Side -->
+            <div>
+                <h2 class="text-base font-semibold text-indigo-600 tracking-wide uppercase">Our Genesis</h2>
+                <p class="mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+                    From a Small Workshop to Your Home.
+                </p>
+                <div class="mt-6 text-lg text-gray-600 space-y-4">
+                    <p>
+                        Banus Home Furnishings began in 2025 in a small, sunlit workshop with a simple idea: furniture should be beautiful, durable, and kind to the planet. Frustrated by mass-produced, disposable pieces, our founder, Elias Vance, sought to bring the principles of **timeless craftsmanship** back to the modern consumer.
+                    </p>
+                    <p>
+                        We started with a single, perfectly designed dining table. Today, our collection has grown, but our commitment remains the same: every piece is ethically sourced, lovingly crafted, and built to be passed down, not thrown away. We believe in quality that transcends trends.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Mission and Values Grid -->
+    <section class="py-16 md:py-24 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-base font-semibold text-indigo-600 tracking-wide uppercase">Core Philosophy</h2>
+                <p class="mt-2 text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
+                    The Values That Shape Every Piece.
+                </p>
+            </div>
+            <div class="mt-12 grid gap-10 lg:grid-cols-3">
+                
+                <!-- Value 1: Sustainability -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 hover:shadow-xl transition duration-300">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    </div>
+                    <h3 class="mt-5 text-xl font-bold text-gray-900">Sustainable Sourcing</h3>
+                    <p class="mt-2 text-gray-500">
+                        We use only certified woods and recycled materials, ensuring minimal environmental impact from forest to finish.
+                    </p>
+                </div>
+
+                <!-- Value 2: Craftsmanship -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 hover:shadow-xl transition duration-300">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="mt-5 text-xl font-bold text-gray-900">Timeless Craft</h3>
+                    <p class="mt-2 text-gray-500">
+                        Our pieces are designed for longevity, using classic joinery techniques and rigorous quality checks that reject fleeting trends.
+                    </p>
+                </div>
+
+                <!-- Value 3: Transparency -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border-t-4 border-indigo-500 hover:shadow-xl transition duration-300">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    </div>
+                    <h3 class="mt-5 text-xl font-bold text-gray-900">Full Transparency</h3>
+                    <p class="mt-2 text-gray-500">
+                        We share the origin of our materials and the process of construction so you know exactly where your furniture comes from.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. CTA Section: Shop Now -->
+    <section class="bg-indigo-700">
+        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
+                Ready to find your Aura?
+            </h2>
+            <p class="mt-4 text-xl text-indigo-200 max-w-2xl mx-auto">
+                Explore our curated collection of handcrafted furniture designed to elevate your everyday living.
+            </p>
+            <div class="mt-8 flex justify-center">
+                <a href="{% url 'home' %}" class="px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-lg text-indigo-700 bg-white hover:bg-indigo-50 transition duration-300 transform hover:scale-105">
+                    View Our Collection
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock content %}

@@ -17,12 +17,6 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 User = get_user_model()
 
-# def staff_member_required(
-#     # view_func: @staff_member_required,
-#     redirect_field_name: str | None = ...,
-#     login_url: str = '/customer/'
-# ) :
-#     pass
 
 class AdminLoginMixin(LoginRequiredMixin):
     login_url = '/custom_admin/'
@@ -94,3 +88,15 @@ class DashBoard(AdminLoginMixin,View):
         
         return render(request, 'custom_admin/dashboard.html',context)
     
+
+def custom_404(request, exception):
+    return render(request, '404.html', status=404)
+
+def custom_500(request):
+    return render(request, '500.html', status=500)
+
+def custom_403(request, exception):
+    return render(request, '403.html', status=403)
+
+def custom_400(request, exception):
+    return render(request, '400.html', status=400)

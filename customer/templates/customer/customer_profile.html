@@ -3,6 +3,8 @@
 
 {% block content %}
 {% load static %}
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-5">
         <!-- Sidebar -->
         
@@ -76,9 +78,14 @@
             </div>
             
             <div class="flex space-x-4">
+                {% if google_user %}
+
+
+                {% else %}
                  <a href="{% url 'email_update' %}" class="px-6 py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
                     UPDATE PROFILE
                 </a>
+                {% endif %}
             </div>
         </form>
         </main>

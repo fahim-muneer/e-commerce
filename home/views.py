@@ -20,7 +20,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from customer.views import MyLoginRequiredMixin
 from decimal import Decimal
-from products.models import ProductVariants
+from products.models import ProductVariants,Review
 from django.db.models import Prefetch
 from django.views.decorators.http import require_POST
 from customer.utils import mark_referral_first_purchase
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 from datetime import date
 from wallet.models import Wallet
 from django.db.models import Min, Max, Q
-
+from products.forms import ReviewForm
 
 razorpay_client = razorpay.Client(
     auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
@@ -61,42 +61,75 @@ class Index(View):
 def home(request):
     products = ProductPage.objects.prefetch_related('variant').all()
 
+    # Get ALL filter parameters
     category_filter = request.GET.getlist('category')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     sort_option = request.GET.get('sort')
+    search_query = request.GET.get('search', '').strip()
+    
+    print(f"Filters - Category: {category_filter}, Price: {min_price}-{max_price}, Sort: {sort_option}, Search: {search_query}")
+
+    # Apply search filter
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(category__name__icontains=search_query)
+        )
 
     # Apply category filter
     if category_filter:
         products = products.filter(category__name__in=category_filter)
 
-    # Filter by price range using variants
+    # Apply price filter on variants
     if min_price and max_price:
-        products = products.filter(
-            variant__price__gte=min_price,
-            variant__price__lte=max_price
-        ).distinct()
+        try:
+            min_price_decimal = Decimal(min_price)
+            max_price_decimal = Decimal(max_price)
+            products = products.filter(
+                variant__price__gte=min_price_decimal,
+                variant__price__lte=max_price_decimal
+            ).distinct()
+        except (ValueError, TypeError):
+            pass  # Invalid price values, ignore filter
 
-    # Annotate highest-stock variant for each product
-    for product in products:
+    # Attach largest_variant and display_price to each product
+    products_list = list(products)
+    for product in products_list:
         highest_stock_variant = product.variant.order_by('-stock').first()
-        product.largest_variant = highest_stock_variant  # attach it to product
-
-        # Optional: attach display prices
+        product.largest_variant = highest_stock_variant
         if highest_stock_variant:
-            product.get_display_price = highest_stock_variant.price
+            product.display_price_value = highest_stock_variant.price
         else:
-            product.get_display_price = 0
+            product.display_price_value = product.price if product.price else 0
 
-    # Sort products: highest stock first by default
-    products = sorted(products, key=lambda p: p.largest_variant.stock if p.largest_variant else 0, reverse=True)
+    # Apply sorting
+    if sort_option:
+        if sort_option == 'price':
+            products_list = sorted(products_list, key=lambda p: p.display_price_value or 0)
+        elif sort_option == '-price':
+            products_list = sorted(products_list, key=lambda p: p.display_price_value or 0, reverse=True)
+        elif sort_option == 'name':
+            products_list = sorted(products_list, key=lambda p: p.name.lower())
+        elif sort_option == '-name':
+            products_list = sorted(products_list, key=lambda p: p.name.lower(), reverse=True)
+        elif sort_option == 'stock':
+            products_list = sorted(products_list, key=lambda p: p.largest_variant.stock if p.largest_variant else 0, reverse=True)
+        elif sort_option == '-created_at':
+            products_list = sorted(products_list, key=lambda p: p.created_at, reverse=True)
+        elif sort_option == 'created_at':
+            products_list = sorted(products_list, key=lambda p: p.created_at)
+    else:
+        # Default: Sort by stock (highest first)
+        products_list = sorted(products_list, key=lambda p: p.largest_variant.stock if p.largest_variant else 0, reverse=True)
 
     # Pagination
-    paginator = Paginator(products, 10)
+    paginator = Paginator(products_list, 10)
     page = request.GET.get('page')
     products = paginator.get_page(page)
 
-    # Wishlist for logged-in users
+    # Get wishlist
     if request.user.is_authenticated:
         my_list = list(
             WishListItems.objects.filter(wish_list__user=request.user)
@@ -111,6 +144,7 @@ def home(request):
         "request": request,
         "my_list": my_list,
         "current_category": category_filter,
+        "search_query": search_query,
     }
 
     return render(request, "home/home.html", context)
@@ -168,7 +202,9 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
         context["active_offer"] = active_offer
         context["has_offer"] = active_offer is not None
         context["discount_percentage"] = product.get_discount_percentage() if active_offer else 0
-
+        
+        context["reviews"] = Review.objects.filter(product_variant__product=product)
+        context["review_form"] = ReviewForm()
         related_products = (
             ProductPage.objects.filter(category=product.category)
             .exclude(id=product.id)[:6]
@@ -355,7 +391,6 @@ def update_cart_item(request, item_id):
 
 
 def _get_item_price(cart_item):
-    """Helper to get the correct price for a cart item including discounts."""
     if cart_item.variant:
         price = cart_item.variant.get_discounted_price()
     else:
@@ -367,10 +402,7 @@ def _get_item_price(cart_item):
 
 
 def _validate_stock_availability(cart_items):
-    """
-    Validate that all items have sufficient stock.
-    Returns (is_valid, error_message, items_needing_reduction)
-    """
+
     items_needing_reduction = []
     
     for cart_item in cart_items:
@@ -461,17 +493,14 @@ def _finalize_order(
     print("the order created in the finalized function")
     logger.info(f"Order {order.pk} created with payment_method={payment_method}, payment_status={payment_status}")
 
-    # Process each item atomically
     for item_info in items_info:
         cart_item = item_info['cart_item']
         stock_source = item_info['stock_source']
         price = item_info['price']
 
-        # Reduce stock with F expression
         stock_source.stock = F('stock') - cart_item.quantity
         stock_source.save(update_fields=["stock"])
 
-        # Create order item
         OrderItem.objects.create(
             order=order,
             product=cart_item.product,
@@ -489,7 +518,6 @@ def _finalize_order(
         cart.save(update_fields=['coupon_code'])       
         print("the coupon updated and decrease its limit in finalized function ")
 
-    # Clear cart items and delete cart
     CartItems.objects.filter(owner=cart).delete()
     cart.delete()
     print("the cart deleted from the finalized function ")
@@ -508,18 +536,17 @@ def create_order_from_cart(cart):
         user=cart.owner,
         total_amount=cart.total_price,
         coupon_code=cart.coupon if hasattr(cart, 'coupon') else None,
-        delivery_address=cart.owner.default_address,  # example
+        delivery_address=cart.owner.default_address,  
         payment_method=Orders.CASH_ON_DELIVERY
     )
 
-    # Create OrderItem entries
     for item in cart.ordered_items.all():
         OrderItem.objects.create(
             order=order,
             product=item.product,
             variant=item.variant,
             quantity=item.quantity,
-            unit_price=item.unit_price  # discount already included in unit_price
+            unit_price=item.unit_price 
         )
 
 
@@ -818,3 +845,76 @@ def apply_coupon_to_cart(request):
         
         messages.success(request, f"Coupon '{coupon.coupon_code}' applied successfully!")
         return redirect("checkout")
+    
+@login_required
+def add_review(request, variant_id):
+    print("Getting into the add review function")
+    variant = get_object_or_404(ProductVariants, id=variant_id)
+    print(f"Variant is = {variant}")
+    
+    has_bought = OrderItem.objects.filter(
+        order__user=request.user,
+        variant=variant,
+        order__order_status=Orders.STATUS_DELIVERED 
+    ).exists()
+    
+    if not has_bought:
+        messages.error(request, "You can only review products you have purchased and received.",extra_tags='product-details')
+        print("User hasn't purchased this product")
+        
+        return redirect('items_details', pk=variant.product.pk)
+    
+    existing_review = Review.objects.filter(
+        user=request.user,
+        product_variant=variant
+    ).first()
+    
+    if request.method == "POST":
+        try:
+            rating = request.POST.get('rating')
+            comment = request.POST.get('comment', '').strip()
+            
+            if not rating or not comment:
+                messages.error(request, "Please provide both rating and comment.")
+                return render(request, 'reviews/add_review.html', {
+                    'variant': variant,
+                    'existing_review': existing_review
+                })
+            
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                messages.error(request, "Rating must be between 1 and 5.")
+                return render(request, 'reviews/add_review.html', {
+                    'variant': variant,
+                    'existing_review': existing_review
+                })
+            
+            Review.objects.update_or_create(
+                user=request.user,
+                product_variant=variant,
+                defaults={'rating': rating, 'comment': comment}
+            )
+            
+            messages.success(request, "Your review has been submitted successfully!",extra_tags="'product-details'")
+            print("Review submitted successfully!")
+            return redirect('items_details', pk=variant.product.pk)
+            
+        except ValueError:
+            messages.error(request, "Invalid rating value.",extra_tags="add_review")
+            print("Invalid rating value")
+        except Exception as e:
+            messages.error(request, "Please buy the product and try again.")
+            print(f"The error is: {str(e)}")
+    
+    context = {
+        'variant': variant,
+        'product': variant.product,
+        'existing_review': existing_review
+    }
+    return render(request, 'product/add_review.html', context)
+
+def about(request):
+    return render(request,'about.html')
+
+def contact_us(request):
+    return render(request,'contact_us.html')

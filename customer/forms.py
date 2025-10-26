@@ -3,7 +3,8 @@ from .models import Register, ReferralCode
 from .models import AddressType, UserAddress, Customer
 from django.contrib.auth.forms import SetPasswordForm
 from allauth.socialaccount.forms import SignupForm
-
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 class CustomSocialSignupForm(SignupForm):
     def save(self, request):
@@ -52,7 +53,15 @@ class SignUpForm(forms.ModelForm):
                 'placeholder': 'Email ID'
             }),
         }
-
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            try:
+                validate_password(password, user=self.instance)
+            except ValidationError as e:
+                raise forms.ValidationError(e.messages)
+        return password
+    
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
@@ -67,7 +76,6 @@ class SignUpForm(forms.ModelForm):
         if code:
             try:
                 referral_code_obj = ReferralCode.objects.get(code=code)
-                # Don't allow using your own code (check happens later in view)
                 return code
             except ReferralCode.DoesNotExist:
                 raise forms.ValidationError('Invalid referral code. Please check and try again.')

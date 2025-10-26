@@ -6,6 +6,8 @@ from imagekit.processors import ResizeToFit
 from offer.models import Offers
 from decimal import Decimal
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 
 class ProductPage(models.Model):
@@ -71,12 +73,10 @@ class ProductPage(models.Model):
         """Get the active offer for this product (product offer takes priority over category offer)"""
         now = timezone.now()
         
-        # Check for product-specific offer first (direct FK relationship)
         if self.offer and self.offer.active:
             if self.offer.start_date <= now <= self.offer.end_date:
                 return self.offer
         
-        # Check for product offers via ManyToMany relationship
         product_offer = Offers.objects.filter(
             products=self,  
             offer_type='product',  
@@ -88,12 +88,10 @@ class ProductPage(models.Model):
         if product_offer:
             return product_offer
         
-        # Check for category offer (FK on category)
         if self.category.offer and self.category.offer.active:
             if self.category.offer.start_date <= now <= self.category.offer.end_date:
                 return self.category.offer
         
-        # Check for category offers via ManyToMany relationship
         category_offer = Offers.objects.filter(
             categories=self.category, 
             offer_type='category',  
@@ -105,7 +103,6 @@ class ProductPage(models.Model):
         return category_offer
 
     def calculate_discounted_price(self, original_price):
-        """Calculate price after applying offer discount"""
         if original_price is None:
             return Decimal('0.00')
         
@@ -118,7 +115,6 @@ class ProductPage(models.Model):
         return Decimal(str(original_price))
 
     def get_display_price(self):
-        """Return the discounted price if offer exists, else normal price"""
         first_variant = self.variant.first()
         
         if first_variant and first_variant.price is not None:
@@ -131,23 +127,19 @@ class ProductPage(models.Model):
         return self.calculate_discounted_price(original_price)
 
     def get_original_price(self):
-        """Get the original price before discount"""
         first_variant = self.variant.first()
         if first_variant and first_variant.price:
             return first_variant.price
         return self.price
 
     def get_discount_percentage(self):
-        """Get the discount percentage if offer is active"""
         offer = self.get_active_offer()
         return offer.discount_percent if offer else 0
 
     def has_active_offer(self):
-        """Check if product has an active offer"""
         return self.get_active_offer() is not None
 
     def has_stock(self):
-        """Check if product or its first variant has stock"""
         first_variant = self.variant.first()
         if first_variant:
             return first_variant.stock > 0 if first_variant.stock else False
@@ -178,18 +170,31 @@ class ProductVariants(models.Model):
         return f"{self.product.name} - {self.variant.name}"
     
     def get_discounted_price(self):
-        """Get price after applying product/category offer"""
         original_price = self.price if self.price else self.product.price
         return self.product.calculate_discounted_price(original_price)
 
     def get_original_price(self):
-        """Get original price before discount"""
         return self.price if self.price else self.product.price
 
     def has_active_offer(self):
-        """Check if variant's product has active offer"""
         return self.product.has_active_offer()
 
     def get_discount_percentage(self):
-        """Get discount percentage from product offer"""
         return self.product.get_discount_percentage()
+    
+    
+class Review(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="reviews")
+    product_variant=models.ForeignKey(ProductVariants,on_delete=models.CASCADE,related_name="reviews")
+    comment=models.TextField(max_length=1000)
+    rating = models.PositiveIntegerField(default=5)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together=('user','product_variant')
+        
+    def __str__(self):
+        return f"{self.user.email} - {self.product_variant.product.name} ({self.rating})"
+
+        

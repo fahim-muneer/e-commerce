@@ -8,7 +8,7 @@ from category.models import CategoryPage
 from .forms import ProductForm,ProductPage,ProductVariantCrudForm
 from wish_list.models import WishListItems
 from varients.models import Varient
-from .models import ProductVariants
+from .models import ProductVariants,Review
 from custom_admin.views import AdminLoginMixin
 from django.http import JsonResponse
 from django.core.files.base import ContentFile
@@ -16,6 +16,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import os
 from django.urls import reverse
+from orders.models import OrderItem
+
 
 
 @csrf_exempt  
@@ -209,7 +211,9 @@ class DeleteProductVariant(AdminLoginMixin,DeleteView):
         product_id = self.object.product.id
         return reverse('product_details', kwargs={'pk': product_id})
 
-            
+
+
+        
     
 
         

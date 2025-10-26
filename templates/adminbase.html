@@ -262,6 +262,13 @@
 
 
     </main>
+    <script>
+  window.onpageshow = function(event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  };
+</script>
 
     <script>
         // JavaScript to toggle the sidebar on mobile

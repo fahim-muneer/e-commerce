@@ -10,7 +10,7 @@ from django.utils import timezone
 
 
 def user_coupon_list(request):
-    '''user side coupon listing function'''
+    print(" Request got in the coupon listing function in user side ")
     coupon=Coupons.objects.all().order_by('-id')
     page = 1
     if request.GET:
@@ -22,8 +22,11 @@ def user_coupon_list(request):
     return render(request, 'coupons/user_coupon_view.html', {'coupon': coupon})
 
 def coupon_list(request):
-    '''admin side coupon listing function '''
+    print("request got in the coupon list in admin side ")
+
+    
     coupons = Coupons.objects.all().order_by('-id')
+    print (f"COupon = {coupons}")
     page = 1
     if request.GET:
         page = request.GET.get('page', 1)
@@ -34,7 +37,8 @@ def coupon_list(request):
     return render(request, 'coupons/admin_coupon.html', {'coupons': coupons})
 
 def create_coupon(request):
-    '''admin side coupon creating function '''
+    print(" coupon created in the admin side ")
+
     if request.method == 'POST':
         form = CouponForm(request.POST)
         if form.is_valid():
@@ -48,6 +52,7 @@ def create_coupon(request):
     return render(request, 'coupons/add_coupon.html', {'form': form})
 
 def delete_coupon(request, coupon_id):
+    
     '''this fuction is not using so leave it '''
     coupon = get_object_or_404(Coupons, id=coupon_id)
     coupon.delete()
@@ -55,7 +60,7 @@ def delete_coupon(request, coupon_id):
 
 
 def update_coupon(request, coupon_id):
-    '''this function is for editing the  coupon in admin side'''
+    print("request got in the update couppon function in admin side ")
     coupon = get_object_or_404(Coupons, id=coupon_id)
     
     if request.method == 'POST':
@@ -142,24 +147,6 @@ def apply_coupon(request):
     return redirect("checkout")
 
 
-# def remove_coupon(request):
-#     """Remove applied coupon from cart"""
-#     try:
-#         user_cart = Cart.objects.get(owner=request.user)
-#         print("🗑️ remove_coupon called")
-#         if user_cart.coupon:  # ✅ FIXED: use 'coupon' not 'coupon_code'
-#             coupon_name = user_cart.coupon.coupon_code
-#             user_cart.coupon = None
-#             user_cart.save(update_fields=['coupon'])
-#             messages.success(request, f"Coupon '{coupon_name}' removed successfully.")
-#             print(f"✅ Coupon '{coupon_name}' removed")
-#         else:
-#             print("❌ No coupon to remove")
-#     except Cart.DoesNotExist as e:
-#         print(f"❌ Cart not found: {str(e)}")
-#         messages.error(request, "No cart found.")
-    
-#     return redirect("checkout")
 def remove_coupon(request):
     """Remove applied coupon from cart"""
     try:

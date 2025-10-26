@@ -213,10 +213,20 @@
                                 Insufficient balance. <a href="{% url 'wallet_add_money' %}" class="underline">Add money to wallet</a>
                             </p>
                             {% endif %}
+                                        {% if subtotal > 1000 %}
+                                        
+                                        <button  class="w-full mt-3 py-3 bg-gray-300 text-white font-semibold rounded-md shadow-md  transition-colors duration-200 flex items-center justify-center space-x-2">
+                                            <i class="fa-solid fa-truck"></i><span>CASH ON DELIVERY (Unavailable)</span>
+                                        </button>
+                                        <p class="text-xs text-red-600 mt-1 text-center">cash on delivary is not available above purchase of 1000</p>
+                                        {% else %}
+                                        <button type="button" onclick="submitOrder('cod')" class="w-full mt-3 py-3 bg-gray-800 text-white font-semibold rounded-md shadow-md hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center space-x-2">
+                                            <i class="fa-solid fa-truck"></i><span>CASH ON DELIVERY</span>
+                                        </button>
+                                        
+                                        {% endif %} 
 
-                            <button type="button" onclick="submitOrder('cod')" class="w-full mt-3 py-3 bg-gray-800 text-white font-semibold rounded-md shadow-md hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center space-x-2">
-                                <i class="fa-solid fa-truck"></i><span>CASH ON DELIVERY</span>
-                            </button>
+
                         {% else %}
                             <div class="bg-red-50 border border-red-200 p-4 rounded-lg mb-4">
                                 <p class="text-red-800 text-sm">Please add a delivery address to proceed with payment.</p>

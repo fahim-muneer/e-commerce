@@ -1,10 +1,12 @@
 from django.urls import path
 from .views import LogIn,SignUp,Log_out,OtpVerification,ResendOtp,ForgotPassword,ChangePassword,UserProfile,EditPicture,UpdateEmailAndFullName,ChangeEmailOtpVerification,CustomerAddress,AddCustomerAddress,EditAddress
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
+
 
 urlpatterns = [
-    path('',LogIn.as_view(),name="login"),
-    path('signup/',SignUp.as_view(),name='signup'),
+    path('',never_cache(LogIn.as_view()),name="login"),
+    path('signup/',never_cache(SignUp.as_view()),name='signup'),
     path('logout/',login_required(Log_out) , name="logout"),
     path('otp/',OtpVerification.as_view(),name='otp-verification'),
     path('resend_otp/',ResendOtp.as_view(),name="resend_otp"),

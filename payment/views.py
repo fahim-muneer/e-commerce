@@ -20,7 +20,6 @@ def paymenthandler(request):
             razorpay_order_id = request.POST.get('razorpay_order_id', '')
             signature = request.POST.get('razorpay_signature', '')
             
-            # Fetch the order from your database
             order = Orders.objects.get(razorpay_order_id=razorpay_order_id)
             
             params_dict = {
@@ -31,17 +30,14 @@ def paymenthandler(request):
 
             razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
             
-            # Verify the payment signature
             result = razorpay_client.utility.verify_payment_signature(params_dict)
 
             if result is not None:
                 with transaction.atomic():
-                    # Update order status to PAID and change order status to Confirmed
                     order.payment_status = Orders.PAID
                     order.order_status = Orders.CONFIRMED
                     order.save()
                     
-                    # Reduce stock for each item in the order
                     for order_item in order.items.all():
                         if order_item.variant:
                             order_item.variant.stock = F('stock') - order_item.quantity

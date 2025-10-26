@@ -55,7 +55,6 @@ class AddMoneyToWalletView(MyLoginRequiredMixin, View):
         try:
             amount = Decimal(request.POST.get('amount', '0'))
             
-            # Validation
             if amount < 100:
                 messages.error(request, 'Minimum amount to add is ₹100')
                 return redirect('wallet_add_money')
@@ -63,8 +62,6 @@ class AddMoneyToWalletView(MyLoginRequiredMixin, View):
             if amount > 50000:
                 messages.error(request, 'Maximum amount to add is ₹50,000')
                 return redirect('wallet_add_money')
-            
-            # Create Razorpay order
             razorpay_amount = int(amount * 100)  # Convert to paise
             
             razorpay_order = razorpay_client.order.create({
@@ -89,7 +86,6 @@ class AddMoneyToWalletView(MyLoginRequiredMixin, View):
 
 
 class VerifyWalletPaymentView(MyLoginRequiredMixin, View):
-    """Verify Razorpay payment and credit wallet"""
     
     @transaction.atomic
     def post(self, request):
@@ -109,7 +105,6 @@ class VerifyWalletPaymentView(MyLoginRequiredMixin, View):
                 messages.error(request, 'Payment details are incomplete.')
                 return redirect('wallet_add_money')
             
-            # Verify signature
             params_dict = {
                 'razorpay_order_id': razorpay_order_id,
                 'razorpay_payment_id': razorpay_payment_id,
@@ -119,7 +114,6 @@ class VerifyWalletPaymentView(MyLoginRequiredMixin, View):
             print("Verifying payment signature...")
             razorpay_client.utility.verify_payment_signature(params_dict)
             
-            # Add money to wallet
             print(f"Adding ₹{amount} to wallet...")
             transaction = wallet.add_money(
                 amount=amount,
@@ -143,7 +137,6 @@ class VerifyWalletPaymentView(MyLoginRequiredMixin, View):
 
 
 class WalletDashboardView(MyLoginRequiredMixin, View):
-    """User's wallet dashboard"""
     
     def get(self, request):
         wallet, created = Wallet.objects.get_or_create(user=request.user)
@@ -188,12 +181,10 @@ class WalletDashboardView(MyLoginRequiredMixin, View):
 
 
 class WithdrawalRequestView(MyLoginRequiredMixin, View):
-    """User creates withdrawal request"""
     
     def get(self, request):
         wallet = get_object_or_404(Wallet, user=request.user)
         
-        # Get pending requests
         pending_requests = WalletWithdrawalRequest.objects.filter(
             wallet=wallet,
             status=WalletWithdrawalRequest.PENDING
@@ -216,7 +207,6 @@ class WithdrawalRequestView(MyLoginRequiredMixin, View):
             ifsc_code = request.POST.get('ifsc_code', '').strip()
             bank_name = request.POST.get('bank_name', '').strip()
             
-            # Validation
             if amount <= 0:
                 messages.error(request, 'Please enter a valid amount')
                 return redirect('wallet_withdrawal_request')
@@ -233,7 +223,6 @@ class WithdrawalRequestView(MyLoginRequiredMixin, View):
                 messages.error(request, 'Please fill all bank details')
                 return redirect('wallet_withdrawal_request')
             
-            # Check for pending requests
             pending_count = WalletWithdrawalRequest.objects.filter(
                 wallet=wallet,
                 status=WalletWithdrawalRequest.PENDING
@@ -243,7 +232,6 @@ class WithdrawalRequestView(MyLoginRequiredMixin, View):
                 messages.error(request, 'You already have 3 pending withdrawal requests. Please wait for them to be processed.')
                 return redirect('wallet_withdrawal_request')
             
-            # Create withdrawal request
             withdrawal = WalletWithdrawalRequest.objects.create(
                 wallet=wallet,
                 amount=amount,
@@ -265,19 +253,16 @@ class WithdrawalRequestView(MyLoginRequiredMixin, View):
 
 
 class TransactionHistoryView(MyLoginRequiredMixin, View):
-    """View detailed transaction history"""
     
     def get(self, request):
         wallet = get_object_or_404(Wallet, user=request.user)
         
-        # Filters
         transaction_type = request.GET.get('type', '')
         start_date = request.GET.get('start_date', '')
         end_date = request.GET.get('end_date', '')
         
         transactions = WalletTransaction.objects.filter(wallet=wallet)
         
-        # Apply filters
         if transaction_type:
             transactions = transactions.filter(transaction_type=transaction_type)
         
@@ -293,7 +278,6 @@ class TransactionHistoryView(MyLoginRequiredMixin, View):
         
         transactions = transactions.order_by('-created_at')
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(transactions, 20)
         transactions = paginator.get_page(page)
@@ -310,15 +294,12 @@ class TransactionHistoryView(MyLoginRequiredMixin, View):
 
 
 def apply_wallet_to_order(user, order_total):
-    """Apply wallet balance to reduce order total"""
     try:
         wallet = Wallet.objects.get(user=user)
         
         if wallet.balance > 0:
-            # Calculate how much wallet balance to use
             wallet_amount_used = min(wallet.balance, Decimal(str(order_total)))
             
-            # Deduct from wallet
             wallet.deduct_money(
                 amount=wallet_amount_used,
                 transaction_type=WalletTransaction.DEBIT_PURCHASE,
@@ -326,7 +307,6 @@ def apply_wallet_to_order(user, order_total):
                 reference_id=None  # Add order ID later
             )
             
-            # Calculate remaining amount to pay
             remaining_amount = Decimal(str(order_total)) - wallet_amount_used
             
             return {
@@ -346,7 +326,6 @@ def apply_wallet_to_order(user, order_total):
 
 
 def credit_refund_to_wallet(user, amount, order_id):
-    """Credit refund to user's wallet"""
     wallet, created = Wallet.objects.get_or_create(user=user)
     return wallet.add_money(
         amount=amount,
@@ -357,7 +336,6 @@ def credit_refund_to_wallet(user, amount, order_id):
 
 
 def credit_cashback_to_wallet(user, amount, order_id):
-    """Credit cashback to user's wallet"""
     wallet, created = Wallet.objects.get_or_create(user=user)
     return wallet.add_money(
         amount=amount,
@@ -368,7 +346,6 @@ def credit_cashback_to_wallet(user, amount, order_id):
 
 
 def credit_referral_bonus_to_wallet(user, amount, referral_id):
-    """Credit referral bonus to user's wallet"""
     wallet, created = Wallet.objects.get_or_create(user=user)
     return wallet.add_money(
         amount=amount,
@@ -388,10 +365,8 @@ def credit_referral_bonus_to_wallet(user, amount, referral_id):
 
 
 class AdminWalletDashboardView(AdminLoginMixin, View):
-    """Admin dashboard for wallet system"""
     
     def get(self, request):
-        # Overall statistics
         total_wallets = Wallet.objects.count()
         total_balance = Wallet.objects.aggregate(
             total=Sum('balance')
@@ -399,7 +374,6 @@ class AdminWalletDashboardView(AdminLoginMixin, View):
         
         active_wallets = Wallet.objects.filter(balance__gt=0).count()
         
-        # Transaction statistics
         total_transactions = WalletTransaction.objects.count()
         total_credits = WalletTransaction.objects.filter(
             transaction_type__startswith='credit'
@@ -409,7 +383,6 @@ class AdminWalletDashboardView(AdminLoginMixin, View):
             transaction_type__startswith='debit'
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
         
-        # Withdrawal statistics
         pending_withdrawals = WalletWithdrawalRequest.objects.filter(
             status=WalletWithdrawalRequest.PENDING
         ).count()
@@ -418,12 +391,10 @@ class AdminWalletDashboardView(AdminLoginMixin, View):
             status=WalletWithdrawalRequest.PENDING
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
         
-        # Recent transactions
         recent_transactions = WalletTransaction.objects.select_related(
             'wallet__user'
         ).order_by('-created_at')[:10]
         
-        # Top wallets
         top_wallets = Wallet.objects.select_related('user').order_by('-balance')[:10]
         
         context = {
@@ -445,7 +416,6 @@ class AdminWalletDashboardView(AdminLoginMixin, View):
 
 
 class AdminWalletListView(AdminLoginMixin, View):
-    """List all user wallets"""
     
     def get(self, request):
         search = request.GET.get('search', '')
@@ -453,7 +423,6 @@ class AdminWalletListView(AdminLoginMixin, View):
         
         wallets = Wallet.objects.select_related('user').all()
         
-        # Apply filters
         if search:
             wallets = wallets.filter(
                 Q(user__email__icontains=search) |
@@ -467,7 +436,6 @@ class AdminWalletListView(AdminLoginMixin, View):
         
         wallets = wallets.order_by('-balance')
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(wallets, 20)
         wallets = paginator.get_page(page)
@@ -482,22 +450,18 @@ class AdminWalletListView(AdminLoginMixin, View):
 
 
 class AdminWalletDetailView(AdminLoginMixin, View):
-    """View detailed wallet information"""
     
     def get(self, request, wallet_id):
         wallet = get_object_or_404(Wallet, pk=wallet_id)
         
-        # Get transactions
         transactions = WalletTransaction.objects.filter(
             wallet=wallet
         ).order_by('-created_at')
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(transactions, 20)
         transactions = paginator.get_page(page)
         
-        # Statistics
         from django.db.models import Sum
         total_credits = WalletTransaction.objects.filter(
             wallet=wallet,
@@ -509,7 +473,6 @@ class AdminWalletDetailView(AdminLoginMixin, View):
             transaction_type__startswith='debit'
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
         
-        # Withdrawal requests
         withdrawal_requests = WalletWithdrawalRequest.objects.filter(
             wallet=wallet
         ).order_by('-requested_at')
@@ -526,7 +489,6 @@ class AdminWalletDetailView(AdminLoginMixin, View):
 
 
 class AdminAddMoneyView(AdminLoginMixin, View):
-    """Admin adds money to user wallet"""
     
     def post(self, request, wallet_id):
         wallet = get_object_or_404(Wallet, pk=wallet_id)
@@ -539,7 +501,6 @@ class AdminAddMoneyView(AdminLoginMixin, View):
                 messages.error(request, 'Amount must be positive')
                 return redirect('admin_wallet_detail', wallet_id=wallet_id)
             
-            # Add money
             wallet.add_money(
                 amount=amount,
                 transaction_type=WalletTransaction.CREDIT_ADMIN,
@@ -556,7 +517,6 @@ class AdminAddMoneyView(AdminLoginMixin, View):
 
 
 class AdminDeductMoneyView(AdminLoginMixin, View):
-    """Admin deducts money from user wallet"""
     
     def post(self, request, wallet_id):
         wallet = get_object_or_404(Wallet, pk=wallet_id)
@@ -569,7 +529,6 @@ class AdminDeductMoneyView(AdminLoginMixin, View):
                 messages.error(request, 'Amount must be positive')
                 return redirect('admin_wallet_detail', wallet_id=wallet_id)
             
-            # Deduct money
             wallet.deduct_money(
                 amount=amount,
                 transaction_type=WalletTransaction.DEBIT_ADMIN,
@@ -589,7 +548,6 @@ class AdminDeductMoneyView(AdminLoginMixin, View):
 
 
 class AdminWithdrawalRequestsView(AdminLoginMixin, View):
-    """Manage withdrawal requests"""
     
     def get(self, request):
         status_filter = request.GET.get('status', 'pending')
@@ -603,7 +561,6 @@ class AdminWithdrawalRequestsView(AdminLoginMixin, View):
         
         requests = requests.order_by('-requested_at')
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(requests, 10)
         requests = paginator.get_page(page)
@@ -617,7 +574,6 @@ class AdminWithdrawalRequestsView(AdminLoginMixin, View):
 
 
 class AdminApproveWithdrawalView(AdminLoginMixin, View):
-    """Approve withdrawal request"""   
     
     def post(self, request, request_id):
         withdrawal = get_object_or_404(WalletWithdrawalRequest, pk=request_id)
@@ -637,7 +593,6 @@ class AdminApproveWithdrawalView(AdminLoginMixin, View):
 
 
 class AdminRejectWithdrawalView(AdminLoginMixin, View):
-    """Reject withdrawal request"""
     
     def post(self, request, request_id):
         withdrawal = get_object_or_404(WalletWithdrawalRequest, pk=request_id)
@@ -659,7 +614,6 @@ class AdminRejectWithdrawalView(AdminLoginMixin, View):
 
 
 class AdminTransactionListView(AdminLoginMixin, View):
-    """View all wallet transactions"""
     
     def get(self, request):
         search = request.GET.get('search', '')
@@ -681,7 +635,6 @@ class AdminTransactionListView(AdminLoginMixin, View):
         
         transactions = transactions.order_by('-created_at')
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(transactions, 30)
         transactions = paginator.get_page(page)
@@ -696,22 +649,18 @@ class AdminTransactionListView(AdminLoginMixin, View):
     
     
 class SalesReportView(AdminLoginMixin, View):
-    """Main Sales Report Dashboard"""
     
     def get(self, request):
-        # Get filter parameters
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-        period = request.GET.get('period', 'all')  # daily, weekly, monthly, yearly, custom, all
+        period = request.GET.get('period', 'all')  
         payment_method = request.GET.get('payment_method', '')
         order_status = request.GET.get('order_status', '')
         
-        # Base queryset - only confirmed and delivered orders
         orders = Orders.objects.filter(
             order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
         )
         
-        # Apply date filters based on period
         now = timezone.now()
         if period == 'daily':
             start_date = now.date()
@@ -731,7 +680,6 @@ class SalesReportView(AdminLoginMixin, View):
             if end_date:
                 end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         
-        # Apply date range filter
         if start_date and end_date:
             orders = orders.filter(created_at__date__gte=start_date, created_at__date__lte=end_date)
         elif start_date:
@@ -739,33 +687,27 @@ class SalesReportView(AdminLoginMixin, View):
         elif end_date:
             orders = orders.filter(created_at__date__lte=end_date)
         
-        # Apply additional filters
         if payment_method:
             orders = orders.filter(payment_method=payment_method)
         
         if order_status:
             orders = orders.filter(order_status=order_status)
         
-        # Calculate overall statistics
         total_orders = orders.count()
         total_revenue = orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         
-        # Calculate average order value
         avg_order_value = orders.aggregate(avg=Avg('total_amount'))['avg'] or Decimal('0')
         
-        # Payment method breakdown
         payment_breakdown = orders.values('payment_method').annotate(
             count=Count('id'),
             total=Sum('total_amount')
         )
         
-        # Order status breakdown
         status_breakdown = orders.values('order_status').annotate(
             count=Count('id'),
             total=Sum('total_amount')
         )
         
-        # Top selling products
         top_products = OrderItem.objects.filter(
             order__in=orders
         ).values(
@@ -776,7 +718,6 @@ class SalesReportView(AdminLoginMixin, View):
             revenue=Sum(F('quantity') * F('unit_price'))
         ).order_by('-quantity_sold')[:10]
         
-        # Daily sales trend (for chart)
         daily_sales = orders.annotate(
             date=TruncDate('created_at')
         ).values('date').annotate(
@@ -784,7 +725,6 @@ class SalesReportView(AdminLoginMixin, View):
             count=Count('id')
         ).order_by('date')
         
-        # Top customers
         top_customers = orders.values(
             'user__full_name',
             'user__email'
@@ -793,7 +733,6 @@ class SalesReportView(AdminLoginMixin, View):
             order_count=Count('id')
         ).order_by('-total_spent')[:10]
         
-        # Pagination for order list
         page = request.GET.get('page', 1)
         paginator = Paginator(orders.order_by('-created_at'), 20)
         orders_page = paginator.get_page(page)
@@ -821,16 +760,13 @@ class SalesReportView(AdminLoginMixin, View):
 
 
 class ExportSalesReportCSV(AdminLoginMixin, View):
-    """Export Sales Report as CSV"""
     
     def get(self, request):
-        # Get same filters as main report
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         payment_method = request.GET.get('payment_method', '')
         order_status = request.GET.get('order_status', '')
         
-        # Get filtered orders
         orders = Orders.objects.filter(
             order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
         )
@@ -844,13 +780,11 @@ class ExportSalesReportCSV(AdminLoginMixin, View):
         if order_status:
             orders = orders.filter(order_status=order_status)
         
-        # Create CSV response
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="sales_report_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
         
         writer = csv.writer(response)
         
-        # Write header
         writer.writerow([
             'Order ID',
             'Date',
@@ -862,7 +796,6 @@ class ExportSalesReportCSV(AdminLoginMixin, View):
             'Items Count'
         ])
         
-        # Write data
         for order in orders:
             writer.writerow([
                 order.order_Id,
@@ -875,7 +808,6 @@ class ExportSalesReportCSV(AdminLoginMixin, View):
                 order.items.count()
             ])
         
-        # Write summary
         writer.writerow([])
         writer.writerow(['Summary'])
         writer.writerow(['Total Orders', orders.count()])
@@ -886,16 +818,13 @@ class ExportSalesReportCSV(AdminLoginMixin, View):
 
 
 class ExportSalesReportPDF(AdminLoginMixin, View):
-    """Export Sales Report as PDF"""
     
     def get(self, request):
-        # Get same filters
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         payment_method = request.GET.get('payment_method', '')
         order_status = request.GET.get('order_status', '')
         
-        # Get filtered orders
         orders = Orders.objects.filter(
             order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
         )
@@ -909,31 +838,27 @@ class ExportSalesReportPDF(AdminLoginMixin, View):
         if order_status:
             orders = orders.filter(order_status=order_status)
         
-        # Create PDF
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
         styles = getSampleStyleSheet()
         story = []
         
-        # Title
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=24,
             textColor=colors.HexColor('#1a202c'),
             spaceAfter=30,
-            alignment=1  # Center
+            alignment=1  
         )
         story.append(Paragraph("Sales Report", title_style))
         
-        # Date range
         if start_date or end_date:
             date_text = f"Period: {start_date or 'Start'} to {end_date or 'End'}"
             story.append(Paragraph(date_text, styles['Normal']))
         
         story.append(Spacer(1, 20))
         
-        # Summary statistics
         total_orders = orders.count()
         total_revenue = orders.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         avg_order = orders.aggregate(avg=Avg('total_amount'))['avg'] or Decimal('0')
@@ -960,13 +885,12 @@ class ExportSalesReportPDF(AdminLoginMixin, View):
         story.append(summary_table)
         story.append(Spacer(1, 30))
         
-        # Orders table
         story.append(Paragraph("Order Details", styles['Heading2']))
         story.append(Spacer(1, 10))
         
         order_data = [['Order ID', 'Date', 'Customer', 'Payment', 'Status', 'Amount']]
         
-        for order in orders[:50]:  # Limit to 50 orders for PDF
+        for order in orders[:50]:  
             order_data.append([
                 str(order.order_Id)[:8],
                 order.created_at.strftime('%Y-%m-%d'),
@@ -995,7 +919,6 @@ class ExportSalesReportPDF(AdminLoginMixin, View):
             story.append(Spacer(1, 10))
             story.append(Paragraph(f"Showing 50 of {orders.count()} orders", styles['Italic']))
         
-        # Build PDF
         doc.build(story)
         buffer.seek(0)
         
@@ -1006,24 +929,20 @@ class ExportSalesReportPDF(AdminLoginMixin, View):
 
 
 class ProductSalesReportView(AdminLoginMixin, View):
-    """Detailed Product Sales Report"""
     
     def get(self, request):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         
-        # Base queryset
         order_items = OrderItem.objects.filter(
             order__order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
         )
         
-        # Apply date filters
         if start_date:
             order_items = order_items.filter(order__created_at__date__gte=datetime.strptime(start_date, '%Y-%m-%d').date())
         if end_date:
             order_items = order_items.filter(order__created_at__date__lte=datetime.strptime(end_date, '%Y-%m-%d').date())
         
-        # Product-wise sales
         product_sales = order_items.values(
             'product__id',
             'product__name',
@@ -1034,7 +953,6 @@ class ProductSalesReportView(AdminLoginMixin, View):
             order_count=Count('order', distinct=True)
         ).order_by('-total_revenue')
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(product_sales, 20)
         products_page = paginator.get_page(page)

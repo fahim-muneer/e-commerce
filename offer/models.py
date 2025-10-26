@@ -72,7 +72,6 @@ class Offers(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def is_valid(self):
-        """Check if offer is currently active and within date range"""
         now = timezone.now()
         return self.active and self.start_date <= now <= self.end_date
 

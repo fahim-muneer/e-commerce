@@ -375,7 +375,6 @@ def cancel_item(request, oid, pid):
                     print(f"   Discount: ₹{coupon_value}")
                     print(f"   Minimum: ₹{coupon_min}")
                 
-                # Cancel item and restore stock
                 item.order_status = 4
                 item.item_cancel_reason = reason
                 item.save(update_fields=['order_status', 'item_cancel_reason'])
@@ -405,7 +404,6 @@ def cancel_item(request, oid, pid):
                 coupon_removed = False
                 
                 if remaining_count == 0:
-                    # All items cancelled - refund everything
                     print("\nNo items remaining - full refund")
                     refund_amount = original_order_total
                     new_order_total = Decimal('0')
@@ -536,7 +534,7 @@ def cancel_entire_order(request, oid):
                     coupon_discount = Decimal(str(coupon.discount_value))
                     print(f"Coupon applied: {coupon.coupon_code}, Discount: ₹{coupon_discount}")
 
-                    refund_amount = original_total  # - coupon_discount
+                    refund_amount = original_total  
                                                        
 
                     # coupon.use_limit = F('use_limit') + 1
@@ -551,7 +549,6 @@ def cancel_entire_order(request, oid):
                 order.total_amount = Decimal('0.00')
                 order.save(update_fields=['order_status', 'return_reason', 'coupon_code', 'total_amount'])
 
-                # --- Refund to wallet if paid ---
                 if order.payment_status == Orders.PAYMENT_PAID and refund_amount > 0:
                     from wallet.models import Wallet, WalletTransaction
 
@@ -639,14 +636,7 @@ def approve_return_admin(request, order_id, item_id):
 
 @login_required
 def complete_return_admin(request, order_id, item_id):
-    """
-    ADMIN: Mark return as complete after receiving product.
-    
-    Refund Logic (same as cancel_item):
-    - If coupon remains valid: Refund = item price - item's coupon share
-    - If coupon becomes invalid: Refund = original amount paid - new total without coupon
-    - If all items returned: Refund full amount user paid (ignore coupon discount)
-    """
+
     order = get_object_or_404(Orders, id=order_id)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
 

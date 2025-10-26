@@ -40,7 +40,7 @@ class CategoryAdd(LoginRequiredMixin,View):
             form.save()
             
             return redirect('category_list')
-        messages.add_message(request, messages.ERROR, "This name is already there.", extra_tags='category_add')
+        messages.message(request, messages.ERROR, "This name is already there.", extra_tags='category_add')
         return render(request ,'category/category_add.html',{'form':form})
 
 

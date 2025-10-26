@@ -29,6 +29,15 @@ from datetime import timedelta
 from .utils import create_referral_on_signup
 
 
+from allauth.socialaccount.models import SocialAccount
+
+
+
+def is_google_user(user):
+    return SocialAccount.objects.filter(user=user, provider='google').exists()
+
+
+
 
 
 
@@ -91,7 +100,6 @@ class ResendOtp(View):
 
 @method_decorator(never_cache, name='dispatch')
 class SignUp(View):
-    """User signup view with referral support"""
     
     def get(self, request):
         if request.user.is_authenticated:
@@ -99,10 +107,8 @@ class SignUp(View):
         
         form = SignUpForm()
         
-        # Get referral code from URL parameter
         referral_code = request.GET.get('ref', '').strip().upper()
         
-        # Validate and pre-fill referral code
         if referral_code:
             try:
                 referral_code_obj = ReferralCode.objects.get(code=referral_code)
@@ -151,7 +157,7 @@ class SignUp(View):
                         messages.success(
                             request,
                             'Account created! Check your email for verification code. '
-                            'You\'ll receive special rewards after your first purchase! 🎉'
+                            'You\'ll receive special rewards after your first purchase! '
                         )
                     else:
                         messages.success(
@@ -170,32 +176,25 @@ class SignUp(View):
             return render(request, 'customer/signup.html', {'form': form})
 
 def process_referral_signup(new_user, referral_code):
-    """
-    Process referral when a new user signs up with a referral code
-    Creates referral record and immediate signup rewards
-    """
+
     print("="*80)
     print(f" Starting referral signup process for: {new_user.email}")
     print(f" Referral code: {referral_code}")
     
     try:
-        # Validate referral code
         referral_code_obj = ReferralCode.objects.get(code=referral_code)
         referrer = referral_code_obj.user
         
         print(f" Referral code found. Referrer: {referrer.email}")
         
-        # Prevent self-referral
         if referrer == new_user:
             print(" Self-referral not allowed")
             return False
         
-        # Check if user was already referred
         if Referral.objects.filter(referred=new_user).exists():
-            print("❌ User was already referred")
+            print(" User was already referred")
             return False
         
-        # Create referral record
         referral = Referral.objects.create(
             referrer=referrer,
             referred=new_user,
@@ -203,9 +202,8 @@ def process_referral_signup(new_user, referral_code):
             status=Referral.PENDING
         )
         
-        print(f"✅ Referral record created: ID {referral.id}")
+        print(f" Referral record created: ID {referral.id}")
         
-        # Get active referral offers
         now = timezone.now()
         referral_offers = Offers.objects.filter(
             offer_type='referral',
@@ -214,22 +212,20 @@ def process_referral_signup(new_user, referral_code):
             end_date__gte=now
         )
         
-        print(f"📦 Found {referral_offers.count()} active referral offers")
+        print(f"Found {referral_offers.count()} active referral offers")
         
         if not referral_offers.exists():
-            print("⚠️ No active referral offers found - Referral created but no rewards")
+            print("No active referral offers found - Referral created but no rewards")
             return True
         
-        # Create immediate signup rewards for referee
         rewards_created = 0
         for offer in referral_offers:
-            print(f"\n📌 Processing offer: {offer.name}")
+            print(f"\n Processing offer: {offer.name}")
             print(f"   - Applies to: {offer.applies_to}")
             print(f"   - Fixed amount: ₹{offer.fixed_discount_amount}")
             print(f"   - Percentage: {offer.percentage_discount}%")
             
-            # Check if this offer applies to referee (new user)
-            # Handle both 'referee' and 'both' cases
+
             if offer.applies_to in ['referee', 'both', 'Referee', 'Both']:
                 validity_days = getattr(offer, 'validity_days', 30) or 30
                 
@@ -244,22 +240,22 @@ def process_referral_signup(new_user, referral_code):
                 )
                 
                 rewards_created += 1
-                print(f"   ✅ Referee reward created: ID {reward.id}")
+                print(f"    Referee reward created: ID {reward.id}")
                 print(f"      Amount: ₹{reward.discount_amount}")
                 print(f"      Valid until: {reward.valid_until.strftime('%Y-%m-%d')}")
             else:
-                print(f"   ⏭️ Skipping - offer applies to: {offer.applies_to}")
+                print(f"    Skipping - offer applies to: {offer.applies_to}")
         
-        print(f"\n✅ Process complete: {rewards_created} rewards created for referee")
+        print(f"\n Process complete: {rewards_created} rewards created for referee")
         print("="*80)
         return True
         
     except ReferralCode.DoesNotExist:
-        print("❌ Invalid referral code")
+        print(" Invalid referral code")
         print("="*80)
         return False
     except Exception as e:
-        print(f"❌ Error processing referral: {e}")
+        print(f" Error processing referral: {e}")
         import traceback
         traceback.print_exc()
         print("="*80)
@@ -267,13 +263,10 @@ def process_referral_signup(new_user, referral_code):
 
 
 def process_first_purchase(user, order):
-    """
-    Process referral rewards when referred user makes their first purchase
-    Credits wallets and creates reward records for both referrer and referee
-    """
+
     print("="*80)
-    print(f"🎯 Processing first purchase for: {user.email}")
-    print(f"📦 Order ID: {order.order_Id}")
+    print(f" Processing first purchase for: {user.email}")
+    print(f" Order ID: {order.order_Id}")
     
     try:
         # Check if this user was referred and hasn't made first purchase yet
@@ -283,7 +276,7 @@ def process_first_purchase(user, order):
         ).first()
         
         if not referral:
-            print(f"ℹ️ No pending referral found for user {user.email}")
+            print(f"ℹ No pending referral found for user {user.email}")
             print("="*80)
             return None, None
         
@@ -291,23 +284,20 @@ def process_first_purchase(user, order):
         print(f"   Referrer: {referral.referrer.email}")
         print(f"   Referred: {referral.referred.email}")
         
-        # Update referral record with first purchase info
         referral.first_purchase_at = timezone.now()
         referral.first_order = order
         referral.save()
         
-        print(f"✅ Referral updated with first purchase timestamp")
+        print(f" Referral updated with first purchase timestamp")
         
-        # The signal will handle wallet credits and reward creation
-        # But we can return the referral info
-        print(f"📡 Signal will process wallet credits automatically")
+
+        print(f"Signal will process wallet credits automatically")
         print("="*80)
         
-        # Return referral object for any additional processing
         return referral, None
         
     except Exception as e:
-        print(f"❌ Error processing first purchase: {e}")
+        print(f" Error processing first purchase: {e}")
         import traceback
         traceback.print_exc()
         print("="*80)
@@ -329,12 +319,15 @@ class LogIn(View):
             
             if user is not None:
                 if user.is_superuser:
-                    messages.error(request, "Admin accounts cannot login here.",extra_tags='login-user')
+                    messages.error(request, "Admin accounts cannot login from  here.",extra_tags='login-user')
                     return render(request, 'customer/login.html', {"form": form})
-                
-                login(request, user)
-                messages.success(request, f"Welcome back, {user.email}!")
-                return redirect('home')
+                if user.is_active:
+                    login(request, user)
+                    messages.success(request, f"Welcome back, {user.email}!")
+                    return redirect('index')
+                else:
+                    messages.error(request,'The user is not active ',extra_tags="login-user")
+                    return render(request, 'customer/login.html', {"form": form})
             else:
                 messages.error(request, "The user is not exist.\n Please create an account",extra_tags='login-user')
         
@@ -483,6 +476,7 @@ class UserProfile(MyLoginRequiredMixin,View):
     redirect_field_name = 'next'
     
     def get(self, request):
+        
         if not request.user.is_authenticated:
             return redirect('login')
 
@@ -498,11 +492,14 @@ class UserProfile(MyLoginRequiredMixin,View):
         except Customer.DoesNotExist:  #pylint: disable=no-member
               profile=Customer.objects.create(user=request.user) #pylint: disable=no-member
               messages.warning(request, "Add a profile picture.",extra_tags='customer-profile')
-
+              
+        google_user = SocialAccount.objects.filter(user=request.user, provider='google').exists() if request.user.is_authenticated else False
+        
         form = UserProfileForm(instance=profile)
         return render(request, 'customer/customer_profile.html', {
             'profile': profile,
             'form': form,
+            'google_user':google_user
         })
 
 

@@ -15,23 +15,19 @@ from decimal import Decimal
 
 @method_decorator(never_cache, name='dispatch')
 class ReferralDashboard(MyLoginRequiredMixin, View):
-    """User's referral dashboard"""
     
     def get(self, request):
         user = request.user
         
-        # Get or create referral code
         referral_code_obj, created = ReferralCode.objects.get_or_create(
             user=user,
             defaults={'code': ReferralCode.generate_unique_code(user)}
         )
         
-        # Get referrals made by this user
         referrals_made = Referral.objects.filter(
             referrer=user
         ).select_related('referred').order_by('-signed_up_at')
         
-        # Get available rewards
         available_rewards = ReferralReward.objects.filter(
             user=user,
             is_used=False,
@@ -39,18 +35,15 @@ class ReferralDashboard(MyLoginRequiredMixin, View):
             valid_until__gte=timezone.now()
         ).select_related('offer')
         
-        # Get used rewards
         used_rewards = ReferralReward.objects.filter(
             user=user,
             is_used=True
         ).select_related('offer', 'order').order_by('-used_at')
         
-        # Build referral URL
         referral_url = request.build_absolute_uri(
             f'/customer/signup/?ref={referral_code_obj.code}'
         )
         
-        # Calculate stats
         try:
             register = Register.objects.get(email=user.email)
             total_earnings = register.total_referral_earnings or Decimal('0')
@@ -59,13 +52,11 @@ class ReferralDashboard(MyLoginRequiredMixin, View):
             total_earnings = Decimal('0')
             successful_referrals = 0
         
-        # Get profile for sidebar
         try:
             profile = Customer.objects.get(user=request.user)
         except Customer.DoesNotExist:
             profile = None
         
-        # Count pending referrals (signed up but no purchase yet)
         pending_referrals = referrals_made.filter(
             first_purchase_at__isnull=True
         ).count()
@@ -86,22 +77,18 @@ class ReferralDashboard(MyLoginRequiredMixin, View):
 
 
 class ReferralDashboardView(AdminLoginMixin, View):
-    """Admin referral dashboard"""
     
     def get(self, request):
-        # Overall statistics
         total_referrals = Referral.objects.count()
         successful_referrals = Referral.objects.filter(
             first_purchase_at__isnull=False
         ).count()
         pending_referrals = total_referrals - successful_referrals
         
-        # Calculate conversion rate safely
         conversion_rate = 0
         if total_referrals > 0:
             conversion_rate = (successful_referrals / total_referrals) * 100
         
-        # Reward statistics
         total_rewards = ReferralReward.objects.count()
         used_rewards = ReferralReward.objects.filter(is_used=True).count()
         available_rewards = total_rewards - used_rewards
@@ -110,7 +97,6 @@ class ReferralDashboardView(AdminLoginMixin, View):
             is_used=True
         ).aggregate(total=Sum('discount_amount'))['total'] or Decimal('0')
         
-        # Top referrers
         top_referrers = Referral.objects.values(
             'referrer__email', 
             'referrer__full_name'
@@ -122,12 +108,10 @@ class ReferralDashboardView(AdminLoginMixin, View):
             )
         ).order_by('-referral_count')[:10]
         
-        # Recent referrals
         recent_referrals = Referral.objects.select_related(
             'referrer', 'referred'
         ).order_by('-signed_up_at')[:10]
         
-        # Active referral offers
         now = timezone.now()
         active_offers = Offers.objects.filter(
             offer_type='referral',
@@ -156,18 +140,15 @@ class ReferralDashboardView(AdminLoginMixin, View):
 
 
 class ReferralListView(AdminLoginMixin, View):
-    """List all referrals with filters - admin side"""
     
     def get(self, request):
         search = request.GET.get('search', '').strip()
         status_filter = request.GET.get('status', '')
         
-        # Base queryset
         referrals = Referral.objects.select_related(
             'referrer', 'referred', 'referral_code'
         ).order_by('-signed_up_at')
         
-        # Apply search filter
         if search:
             referrals = referrals.filter(
                 Q(referrer__email__icontains=search) |
@@ -177,7 +158,6 @@ class ReferralListView(AdminLoginMixin, View):
                 Q(referral_code__code__icontains=search)
             )
         
-        # Apply status filter
         if status_filter == 'pending':
             referrals = referrals.filter(first_purchase_at__isnull=True)
         elif status_filter == 'completed':
@@ -185,7 +165,6 @@ class ReferralListView(AdminLoginMixin, View):
         elif status_filter == 'rewarded':
             referrals = referrals.filter(status=Referral.BOTH_REWARDED)
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(referrals, 20)
         referrals_page = paginator.get_page(page)
@@ -200,19 +179,16 @@ class ReferralListView(AdminLoginMixin, View):
 
 
 class ReferralRewardListView(AdminLoginMixin, View):
-    """List all referral rewards"""
     
     def get(self, request):
         search = request.GET.get('search', '').strip()
         status_filter = request.GET.get('status', '')
         reward_type = request.GET.get('type', '')
         
-        # Base queryset
         rewards = ReferralReward.objects.select_related(
             'user', 'referral', 'offer', 'order'
         ).order_by('-created_at')
         
-        # Apply search filter
         if search:
             rewards = rewards.filter(
                 Q(user__email__icontains=search) |
@@ -220,7 +196,6 @@ class ReferralRewardListView(AdminLoginMixin, View):
                 Q(referral__referrer__email__icontains=search)
             )
         
-        # Apply status filter
         now = timezone.now()
         if status_filter == 'available':
             rewards = rewards.filter(
@@ -236,11 +211,9 @@ class ReferralRewardListView(AdminLoginMixin, View):
                 valid_until__lt=now
             )
         
-        # Apply reward type filter
         if reward_type:
             rewards = rewards.filter(reward_type=reward_type)
         
-        # Pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(rewards, 20)
         rewards_page = paginator.get_page(page)
@@ -256,35 +229,29 @@ class ReferralRewardListView(AdminLoginMixin, View):
 
 
 class UserReferralDetailView(AdminLoginMixin, View):
-    """View detailed referral information for a specific user"""
     
     def get(self, request, user_id):
         user = get_object_or_404(Register, pk=user_id)
         
-        # Get referral code
         try:
             referral_code = ReferralCode.objects.get(user=user)
         except ReferralCode.DoesNotExist:
             referral_code = None
         
-        # Referrals made by this user
         referrals_made = Referral.objects.filter(
             referrer=user
         ).select_related('referred').order_by('-signed_up_at')
         
-        # If this user was referred
         referred_by = None
         try:
             referred_by = Referral.objects.get(referred=user)
         except Referral.DoesNotExist:
             pass
         
-        # Rewards earned
         rewards_earned = ReferralReward.objects.filter(
             user=user
         ).select_related('offer', 'order').order_by('-created_at')
         
-        # Statistics
         successful_count = referrals_made.filter(
             first_purchase_at__isnull=False
         ).count()
