@@ -1,6 +1,6 @@
 from django.urls import path,include
 from .views import home,ProdectDetails,Index,show_cart,add_to_cart,remove_from_cart,update_cart_item,CheckoutList,order_success
-from .views import unlike,about,contact_us,add_review
+from .views import unlike,about,contact_us,add_review,OrderFailed
 from django.contrib.auth.decorators import login_required
 
 urlpatterns = [
@@ -17,6 +17,7 @@ urlpatterns = [
     path('about/',about,name="about"),
     path('contact_us/',contact_us,name="contact_us"),
     path('add-review/<int:variant_id>/',add_review, name='add_review'),
+    path('order_failed/',login_required(OrderFailed.as_view()),name="order_failed")
 
 
     

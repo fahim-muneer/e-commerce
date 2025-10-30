@@ -1,0 +1,167 @@
+{% extends "base_category.html" %}
+{% block context %}
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Add Banner</h2>
+            <button class="text-gray-400 hover:text-gray-600">
+                <a href="{% url 'banner_view' %}"><i class="fa-solid fa-times text-xl"></i></a>
+            </button>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Banner Name -->
+            <div class="mb-4">
+                <label class="block text-lg font-semibold text-gray-800 mb-4" for="{{ form.name.id_for_label }}">Banner Name</label>
+
+                <input
+                    type="text"
+                    name="{{ form.name.html_name }}"
+                    id="{{ form.name.id_for_label }}"
+                    value="{% if form.name.value %}{{ form.name.value }}{% endif %}"
+                    placeholder="e.g., Summer Sale Banner"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    {% if form.name.field.required %}required{% endif %}
+                >
+
+                {% if form.name.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.name.errors }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Banner Image -->
+            <div class="mb-6">
+                <label class="block text-lg font-semibold text-gray-800 mb-4" for="{{ form.image.id_for_label }}">Banner Image</label>
+
+                <!-- Image Preview Section -->
+                <div id="preview-section" class="mb-4 hidden">
+                    <p class="text-sm text-gray-600 mb-2">Preview:</p>
+                    <div class="relative inline-block">
+                        <img id="image-preview" 
+                             src="" 
+                             alt="Banner Preview" 
+                             class="w-64 h-auto object-cover rounded-md border-2 border-gray-300 shadow-sm">
+                        <!-- Remove Button -->
+                        <button type="button" 
+                                id="remove-image" 
+                                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <p id="file-name" class="text-sm text-gray-600 mt-2"></p>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <label for="{{ form.image.id_for_label }}" 
+                           id="upload-label"
+                           class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
+                        <div class="text-center text-gray-400">
+                            <i class="fa-solid fa-image text-3xl mb-2"></i>
+                            <p class="text-sm">Click to Upload</p>
+                        </div>
+                    </label>
+
+                    <input
+                        type="file"
+                        name="{{ form.image.html_name }}"
+                        id="{{ form.image.id_for_label }}"
+                        accept="image/*"
+                        class="hidden"
+                        {% if form.image.field.required %}required{% endif %}
+                    >
+
+                    {% if form.image.errors %}
+                        <p class="mt-2 text-sm text-red-600 col-span-full">{{ form.image.errors }}</p>
+                    {% endif %}
+                </div>
+
+                {% if form.image.value %}
+                    <p class="mt-2 text-sm text-gray-500">
+                        Current file: <a href="{{ form.image.value.url }}" target="_blank" class="text-blue-500 hover:underline">{{ form.image.value.name }}</a>
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
+                    <span>ADD TO BANNER</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('{{ form.image.id_for_label }}');
+        const imagePreview = document.getElementById('image-preview');
+        const previewSection = document.getElementById('preview-section');
+        const fileName = document.getElementById('file-name');
+        const removeButton = document.getElementById('remove-image');
+        const uploadLabel = document.getElementById('upload-label');
+
+        // Handle file selection
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select a valid image file');
+                    fileInput.value = '';
+                    return;
+                }
+
+                // Show file name
+                fileName.textContent = `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                
+                // Create and show preview
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.src = event.target.result;
+                    previewSection.classList.remove('hidden');
+                    uploadLabel.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle remove button
+        removeButton.addEventListener('click', function() {
+            fileInput.value = '';
+            imagePreview.src = '';
+            fileName.textContent = '';
+            previewSection.classList.add('hidden');
+            uploadLabel.classList.remove('hidden');
+        });
+
+        // Optional: Drag and drop functionality
+        uploadLabel.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('border-blue-500', 'bg-blue-50');
+        });
+
+        uploadLabel.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+
+        uploadLabel.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-blue-500', 'bg-blue-50');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+
+</body>
+{% endblock context %}

@@ -1,0 +1,116 @@
+{% extends "adminbase.html" %}
+
+{% block context %}
+{% load static %}
+<div class="p-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">🏆 Referral Rewards</h1>
+    
+    <div class="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-wrap gap-4 items-center">
+        <form method="GET" class="flex flex-wrap gap-4 w-full">
+            <div class="flex-grow">
+                <label for="search" class="sr-only">Search</label>
+                <input type="search" name="search" id="search" value="{{ search }}"
+                       placeholder="Search by user or referrer email..."
+                       class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+            </div>
+
+            <div>
+                <label for="status" class="sr-only">Status</label>
+                <select name="status" id="status"
+                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                    <option value="">All Statuses</option>
+                    <option value="available" {% if status_filter == 'available' %}selected{% endif %}>Available</option>
+                    <option value="used" {% if status_filter == 'used' %}selected{% endif %}>Used</option>
+                    <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="type" class="sr-only">Reward Type</label>
+                <select name="type" id="type"
+                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                    <option value="">All Types</option>
+                    <option value="DISCOUNT" {% if reward_type == 'DISCOUNT' %}selected{% endif %}>Discount Coupon</option>
+                    <option value="CREDIT" {% if reward_type == 'CREDIT' %}selected{% endif %}>Account Credit</option>
+                </select>
+            </div>
+
+            <div class="flex space-x-2">
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-150">
+                    Filter
+                </button>
+                <a href="{% url 'admin_reward_list' %}" 
+                   class="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition duration-150 flex items-center justify-center">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reward Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value/Offer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Granted Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires On</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Used On Order</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for reward in rewards %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <a href="{% url 'admin_user_referral_detail' user_id=reward.user.pk %}" class="text-blue-600 hover:text-blue-800">
+                            {{ reward.user.full_name|default:reward.user.email }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ reward.get_reward_type_display }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if reward.offer %}
+                            {{ reward.offer.name }}
+                        {% else %}
+                            {{ reward.value }}
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ reward.created_at|date:"M d, Y" }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if reward.valid_until %}
+                            {{ reward.valid_until|date:"M d, Y" }}
+                        {% else %}
+                            <span class="text-gray-400">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if reward.is_used %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Used</span>
+                        {% elif reward.valid_until and reward.valid_until < now %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Expired</span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Available</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if reward.order %}
+                            <a href="{% url 'admin_order_detail' reward.order.pk %}" class="text-indigo-600 hover:text-indigo-900">Order #{{ reward.order.pk }}</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">No referral rewards found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% comment %} {% include 'admin_panel/components/pagination.html' with page_obj=rewards %} {% endcomment %}
+</div>
+{% endblock %}

@@ -33,6 +33,115 @@ from products.models import ProductPage
 from customer.models import Register
 
 
+from orders.models import Orders, OrderItem
+from category.models import CategoryPage
+from customer.models import Register
+from datetime import datetime, timedelta
+from django.utils import timezone
+import json
+
+
+class AdminDashboardView(AdminLoginMixin, View):
+    def get(self, request):
+        # Get current date
+        now = timezone.now()
+        current_year = now.year
+        
+        # Basic Statistics
+        total_user = Register.objects.filter(is_superuser=False).count()
+        total_orders = Orders.objects.count()
+        total_products = ProductPage.objects.count()
+        total_category = CategoryPage.objects.count()
+        
+        # Get sales data for the current year (monthly)
+        monthly_sales = Orders.objects.filter(
+            created_at__year=current_year,
+            order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
+        ).annotate(
+            month=TruncMonth('created_at')
+        ).values('month').annotate(
+            total_sales=Sum('total_amount'),
+            order_count=Count('id')
+        ).order_by('month')
+        
+        # Get user registration data for the current year (monthly)
+        monthly_users = Register.objects.filter(
+            date_joined__year=current_year,
+            is_superuser=False
+        ).annotate(
+            month=TruncMonth('date_joined')
+        ).values('month').annotate(
+            user_count=Count('id')
+        ).order_by('month')
+        
+        # Prepare data for charts (12 months)
+        months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+        
+        # Initialize arrays with zeros
+        sales_data = [0] * 12
+        users_data = [0] * 12
+        
+        # Fill in actual data
+        for item in monthly_sales:
+            month_index = item['month'].month - 1
+            sales_data[month_index] = float(item['total_sales'] or 0)
+        
+        for item in monthly_users:
+            month_index = item['month'].month - 1
+            users_data[month_index] = item['user_count']
+        
+        # Get top selling products
+        top_products = OrderItem.objects.filter(
+            order__order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
+        ).values(
+            'product__name',
+            'product__id'
+        ).annotate(
+            total_quantity=Sum('quantity'),
+            total_revenue=Sum('quantity') * Sum('unit_price')
+        ).order_by('-total_quantity')[:10]
+        
+        # Get top selling categories
+        top_categories = OrderItem.objects.filter(
+            order__order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
+        ).values(
+            'product__category__name'
+        ).annotate(
+            total_quantity=Sum('quantity'),
+            total_revenue=Sum('quantity') * Sum('unit_price'),
+            order_count=Count('order', distinct=True)
+        ).order_by('-total_quantity')[:10]
+        
+        # Recent orders
+        recent_orders = Orders.objects.select_related('user').order_by('-created_at')[:10]
+        
+        # Total revenue
+        total_revenue = Orders.objects.filter(
+            order_status__in=[Orders.STATUS_CONFIRMED, Orders.STATUS_PROCESSED, Orders.STATUS_DELIVERED]
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+        
+        context = {
+            'total_user': total_user,
+            'total_orders': total_orders,
+            'total_products': total_products,
+            'total_category': total_category,
+            'total_revenue': total_revenue,
+            
+            # Chart data
+            'months': json.dumps(months),
+            'sales_data': json.dumps(sales_data),
+            'users_data': json.dumps(users_data),
+            
+            # Tables data
+            'top_products': top_products,
+            'top_categories': top_categories,
+            'recent_orders': recent_orders,
+        }
+        
+        return render(request, 'custom_admin/dashboard.html', context)
+
+
 razorpay_client = razorpay.Client(
     auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
 )

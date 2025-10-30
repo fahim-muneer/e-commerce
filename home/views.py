@@ -37,6 +37,7 @@ from datetime import date
 from wallet.models import Wallet
 from django.db.models import Min, Max, Q
 from products.forms import ReviewForm
+from banner.models import Banner
 
 razorpay_client = razorpay.Client(
     auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
@@ -49,12 +50,23 @@ class Index(View):
         featured_product = ProductPage.objects.order_by('-priority')[:5]
         popular_product = ProductPage.objects.order_by('old_price')[:10]
         category = CategoryPage.objects.all()[:4]
+        banner = Banner.objects.order_by('-pk')[:4]
+        banner_main=banner[0] if len(banner) >0 else None
+        banner1 = banner[1] if len(banner) > 1 else None
+        banner2 = banner[2] if len(banner) > 2 else None
+        banner3 = banner[3] if len(banner) > 3 else None
+        
+
 
         context = {
             'latest_products': latest_products,
             'featured_product': featured_product,
             'popular_product': popular_product,
             'category': category,
+            'banner_main':banner_main,
+            'banner1':banner1,
+            'banner2':banner2,
+            'banner3':banner3,
         }
         
         return render(request, 'home/index.html', context)
@@ -179,6 +191,7 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
         if variant_id:
             try:
                 selected_variant = variants.get(id=variant_id)
+                context["selected_variant"] = selected_variant
                 context["variant_product"] = selected_variant
                 context["is_variant_selected"] = True
                 context["variant_original_price"] = selected_variant.get_original_price()
@@ -189,15 +202,20 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
         else:
             if variants.exists():
                 selected_variant = variants.first()
+                context["selected_variant"] = selected_variant
                 context["variant_product"] = selected_variant
                 context["is_variant_selected"] = True
                 context["variant_original_price"] = selected_variant.get_original_price()
                 context["variant_discounted_price"] = selected_variant.get_discounted_price()
             else:
                 context["variant_product"] = product
+                context["selected_variant"] = None
                 context["is_variant_selected"] = False
 
-        context["variant_form"] = VarientSelectforms(queryset=variants)
+        context["variant_form"] = VarientSelectforms(
+                queryset=variants,
+                initial={'variant': selected_variant.id if selected_variant else None}
+            )
         active_offer = product.get_active_offer()
         context["active_offer"] = active_offer
         context["has_offer"] = active_offer is not None
@@ -693,9 +711,9 @@ class CheckoutList(MyLoginRequiredMixin, View):
             razorpay_signature = request.POST.get('razorpay_signature', '').strip()
 
             if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
-                messages.error(request, "Payment failed or missing details.")
+                messages.error(request, "Payment failed or missing details.",extra_tags='order_failed')
                 print("pyment failed and redirected")
-                return redirect('checkout')
+                return redirect('order_failed')
 
             try:
                 params_dict = {
@@ -722,10 +740,10 @@ class CheckoutList(MyLoginRequiredMixin, View):
                 return redirect(reverse('order_success', kwargs={'uid': order.pk}))
 
             except Exception as e:
-                messages.error(request, "Payment verification failed. Please try again.")
+                messages.error(request, "Payment verification failed. Please try again.",extra_tags='order_failed')
                 logger.exception(f"Razorpay payment error for user {user.pk}: {e}")
                 print(f"the error is {str(e)}")
-                return redirect('checkout')
+                return redirect('order_failed')
 
         elif payment_method == 'wallet':
             try:
@@ -734,7 +752,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
 
                 if not wallet.has_sufficient_balance(total_amount):
                     messages.error(request, f'Insufficient wallet balance. Your balance: ₹{wallet.balance}, Required: ₹{total_amount}')
-                    return redirect('checkout')
+                    return redirect('order_failed')
 
                 wallet.deduct_money(
                     amount=total_amount,
@@ -773,7 +791,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
             except Exception as e:
                 messages.error(request, "Error processing wallet payment.")
                 logger.exception(f"Wallet payment error for user {user.pk}: {e}")
-                return redirect('checkout')
+                return redirect('order_failed')
 
         elif payment_method == 'cod':
             try:
@@ -792,11 +810,11 @@ class CheckoutList(MyLoginRequiredMixin, View):
             except Exception as e:
                 messages.error(request, "Error processing order.")
                 logger.exception(f"Order processing error for user {user.pk}: {e}")
-                return redirect('checkout')
+                return redirect('order_failed')
 
         else:
-            messages.error(request, 'Invalid payment method.')
-            return redirect('checkout')
+            messages.error(request, 'Invalid payment method.',extra_tags='order_failed')
+            return redirect('order_failed')
 
         
         
@@ -918,3 +936,8 @@ def about(request):
 
 def contact_us(request):
     return render(request,'contact_us.html')
+
+
+class OrderFailed(View):
+    def get(self,request):
+        return render(request,'home/order_failed.html')

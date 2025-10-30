@@ -81,18 +81,34 @@ class UpdateOffer(UpdateView):
             offer.save()
             form.save_m2m()  
 
-            messages.success(self.request, f'Offer "{offer.name}" updated successfully.')
+
+            messages.success(
+                self.request, 
+                f'Offer "{offer.name}" updated successfully.',
+                extra_tags='offer_update' 
+            )
             
             return redirect(self.success_url)
 
         except ValidationError as e:
+
             for error in e.messages:
-                messages.error(self.request, error)
+                messages.error(
+                    self.request, 
+                    error,
+                    extra_tags='offer_update'
+                )
                 print(f"error is {str(e)}")
             return self.form_invalid(form)
 
         except Exception as e:
-            messages.error(self.request, f'Error updating offer: {str(e)}')
+            # --- FIX APPLIED HERE ---
+            # Pass 'offer_update' as an extra tag along with the default 'error' tag.
+            messages.error(
+                self.request, 
+                f'Error updating offer: {str(e)}',
+                extra_tags='offer_update'
+            )
             print(f"error is {str(e)}")
             return self.form_invalid(form)
 

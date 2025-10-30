@@ -1,14 +1,12 @@
+{% load widget_tweaks %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Product</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Update Product</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Inter Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <style>
         body {
@@ -18,8 +16,7 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
-          <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
-        <!-- Header -->
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
         <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Update Product</h2>
             <a href=" {% url 'product_list' %} " class="text-gray-400 hover:text-gray-600">
@@ -27,8 +24,7 @@
             </a>
         </div>
 
-         <!-- Form Layout -->
-        <form method="post" enctype="multipart/form-data" class="space-y-6">
+         <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
 
             {% if form.non_field_errors %}
@@ -37,133 +33,227 @@
                 </div>
             {% endif %}
 
-            {% comment %} {% if messages %}
-                <ul class="space-y-2">
-                    {% for message in messages %}
-                        <li class="p-3 rounded-md text-sm {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
-                            {{ message }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %} {% endcomment %}
-
-            <!-- Product Name -->
+            {% comment %} Helper block to apply common Tailwind styling to form fields {% endcomment %}
+            {% with input_class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %}
+            
             <div class="mb-4">
                 <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                {{ form.name }}
+                {{ form.name|add_class:input_class }}
                 {{ form.name.errors }}
             </div>
 
-            <!-- Product Description -->
             <div class="mb-4">
                 <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Description</label>
-                {{ form.description }}
+                {{ form.description|add_class:input_class }}
                 {{ form.description.errors }}
             </div>
 
-            <!-- Product Details Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 <div>     
                     <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    {{ form.category }}
+                    {{ form.category|add_class:input_class }}
                     {{ form.category.errors }}
                 </div>
                 
                 <div>
                     <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Price</label>
-                    {{ form.price }}
+                    {{ form.price|add_class:input_class }}
                     {{ form.price.errors }}
                 </div>
                 <div>
                     <label for="{{ form.old_price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Old Price</label>
-                    {{ form.old_price }}
+                    {{ form.old_price|add_class:input_class }}
                     {{ form.old_price.errors }}
                 </div>
             </div>
 
-            <!-- Product Stock and Brand Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                     <label for="{{ form.stock.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Stock</label>
-                    {{ form.stock }}
+                    {{ form.stock|add_class:input_class }}
                     {{ form.stock.errors }}
                 </div>
                 
                 <div>
                     <label for="{{ form.block.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Block Product</label>
-                    {{ form.block }}
+                    <div class="mt-2">{{ form.block }}</div>
                     {{ form.block.errors }}
                 </div>
-                    <div>
+                <div>
                     <label for="{{ form.priority.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Product Priority</label>
-                    {{ form.priority }}
+                    {{ form.priority|add_class:input_class }}
                     {{ form.priority.errors }}
                 </div>
             </div>
 
-            <!-- Media & Images -->
+            {% endwith %}
+
             <div class="mb-6">
                 <label class="block text-lg font-semibold text-gray-800 mb-4">Media & Images</label>
                 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <!-- Image Field 1 -->
-                    <label for="{{ form.image1.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 1</p>
-                        </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image1 }}
-                    </div>
                     
-                    <!-- Image Field 2 -->
-                    <label for="{{ form.image2.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 2</p>
+                    {% with i="1" image_field=form.image1 %}
+                    <div class="image-upload-slot" data-slot-id="{{ i }}">
+                        <label for="{{ image_field.id_for_label }}" 
+                               class="upload-label flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors 
+                               {% if image_field.value and image_field.value.url %} hidden {% endif %}">
+                            <div class="text-center text-gray-400">
+                                <i class="fa-solid fa-image text-3xl mb-2"></i>
+                                <p class="text-sm">Image Upload {{ i }}</p>
+                            </div>
+                        </label>
+                        
+                        <div id="preview-slot-{{ i }}" 
+                             class="image-preview w-36 h-36 border-2 border-gray-300 rounded-md overflow-hidden relative 
+                             {% if not image_field.value or not image_field.value.url %} hidden {% endif %}">
+                            
+                            <img id="image-tag-{{ i }}" 
+                                 class="w-full h-full object-cover" 
+                                 src="{% if image_field.value and image_field.value.url %} {{ image_field.value.url }} {% else %} # {% endif %}" 
+                                 alt="Image {{ i }} Preview">
+                            
+                            <button type="button" class="remove-image-button absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 leading-none shadow-md hover:bg-red-600 transition-colors z-10" data-slot-id="{{ i }}">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
                         </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image2 }}
-                    </div>
 
-                    <!-- Image Field 3 -->
-                    <label for="{{ form.image3.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 3</p>
+                        <div class="hidden">
+                            {{ image_field }}
+                            {% if image_field.field.required == False and image_field.value and image_field.value.url %}
+                                {{ form.image1.clear }}
+                                {{ form.image1.clear_checkbox_label }}
+                            {% endif %}
                         </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image3 }}
                     </div>
+                    {% endwith %}
+                    
+                    {% with i="2" image_field=form.image2 %}
+                    <div class="image-upload-slot" data-slot-id="{{ i }}">
+                        <label for="{{ image_field.id_for_label }}" 
+                               class="upload-label flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors 
+                               {% if image_field.value and image_field.value.url %} hidden {% endif %}">
+                            <div class="text-center text-gray-400">
+                                <i class="fa-solid fa-image text-3xl mb-2"></i>
+                                <p class="text-sm">Image Upload {{ i }}</p>
+                            </div>
+                        </label>
+                        <div id="preview-slot-{{ i }}" 
+                             class="image-preview w-36 h-36 border-2 border-gray-300 rounded-md overflow-hidden relative 
+                             {% if not image_field.value or not image_field.value.url %} hidden {% endif %}">
+                            <img id="image-tag-{{ i }}" 
+                                 class="w-full h-full object-cover" 
+                                 src="{% if image_field.value and image_field.value.url %} {{ image_field.value.url }} {% else %} # {% endif %}" 
+                                 alt="Image {{ i }} Preview">
+                            <button type="button" class="remove-image-button absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 leading-none shadow-md hover:bg-red-600 transition-colors z-10" data-slot-id="{{ i }}">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="hidden">
+                            {{ image_field }}
+                            {% if image_field.field.required == False and image_field.value and image_field.value.url %}
+                                {{ form.image2.clear }}
+                                {{ form.image2.clear_checkbox_label }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
 
-                    <!-- Image Field 4 -->
-                    <label for="{{ form.image4.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 4</p>
+                    {% with i="3" image_field=form.image3 %}
+                    <div class="image-upload-slot" data-slot-id="{{ i }}">
+                        <label for="{{ image_field.id_for_label }}" 
+                               class="upload-label flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors 
+                               {% if image_field.value and image_field.value.url %} hidden {% endif %}">
+                            <div class="text-center text-gray-400">
+                                <i class="fa-solid fa-image text-3xl mb-2"></i>
+                                <p class="text-sm">Image Upload {{ i }}</p>
+                            </div>
+                        </label>
+                        <div id="preview-slot-{{ i }}" 
+                             class="image-preview w-36 h-36 border-2 border-gray-300 rounded-md overflow-hidden relative 
+                             {% if not image_field.value or not image_field.value.url %} hidden {% endif %}">
+                            <img id="image-tag-{{ i }}" 
+                                 class="w-full h-full object-cover" 
+                                 src="{% if image_field.value and image_field.value.url %} {{ image_field.value.url }} {% else %} # {% endif %}" 
+                                 alt="Image {{ i }} Preview">
+                            <button type="button" class="remove-image-button absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 leading-none shadow-md hover:bg-red-600 transition-colors z-10" data-slot-id="{{ i }}">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
                         </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image4 }}
+                        <div class="hidden">
+                            {{ image_field }}
+                            {% if image_field.field.required == False and image_field.value and image_field.value.url %}
+                                {{ form.image3.clear }}
+                                {{ form.image3.clear_checkbox_label }}
+                            {% endif %}
+                        </div>
                     </div>
+                    {% endwith %}
 
-                    <!-- Image Field 5 -->
-                    <label for="{{ form.image5.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
-                        <div class="text-center text-gray-400">
-                            <i class="fa-solid fa-image text-3xl mb-2"></i>
-                            <p class="text-sm">Image Upload 5</p>
+                    {% with i="4" image_field=form.image4 %}
+                    <div class="image-upload-slot" data-slot-id="{{ i }}">
+                        <label for="{{ image_field.id_for_label }}" 
+                               class="upload-label flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors 
+                               {% if image_field.value and image_field.value.url %} hidden {% endif %}">
+                            <div class="text-center text-gray-400">
+                                <i class="fa-solid fa-image text-3xl mb-2"></i>
+                                <p class="text-sm">Image Upload {{ i }}</p>
+                            </div>
+                        </label>
+                        <div id="preview-slot-{{ i }}" 
+                             class="image-preview w-36 h-36 border-2 border-gray-300 rounded-md overflow-hidden relative 
+                             {% if not image_field.value or not image_field.value.url %} hidden {% endif %}">
+                            <img id="image-tag-{{ i }}" 
+                                 class="w-full h-full object-cover" 
+                                 src="{% if image_field.value and image_field.value.url %} {{ image_field.value.url }} {% else %} # {% endif %}" 
+                                 alt="Image {{ i }} Preview">
+                            <button type="button" class="remove-image-button absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 leading-none shadow-md hover:bg-red-600 transition-colors z-10" data-slot-id="{{ i }}">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
                         </div>
-                    </label>
-                    <div class="hidden">
-                        {{ form.image5 }}
+                        <div class="hidden">
+                            {{ image_field }}
+                            {% if image_field.field.required == False and image_field.value and image_field.value.url %}
+                                {{ form.image4.clear }}
+                                {{ form.image4.clear_checkbox_label }}
+                            {% endif %}
+                        </div>
                     </div>
+                    {% endwith %}
+
+                    {% with i="5" image_field=form.image5 %}
+                    <div class="image-upload-slot" data-slot-id="{{ i }}">
+                        <label for="{{ image_field.id_for_label }}" 
+                               class="upload-label flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors 
+                               {% if image_field.value and image_field.value.url %} hidden {% endif %}">
+                            <div class="text-center text-gray-400">
+                                <i class="fa-solid fa-image text-3xl mb-2"></i>
+                                <p class="text-sm">Image Upload {{ i }}</p>
+                            </div>
+                        </label>
+                        <div id="preview-slot-{{ i }}" 
+                             class="image-preview w-36 h-36 border-2 border-gray-300 rounded-md overflow-hidden relative 
+                             {% if not image_field.value or not image_field.value.url %} hidden {% endif %}">
+                            <img id="image-tag-{{ i }}" 
+                                 class="w-full h-full object-cover" 
+                                 src="{% if image_field.value and image_field.value.url %} {{ image_field.value.url }} {% else %} # {% endif %}" 
+                                 alt="Image {{ i }} Preview">
+                            <button type="button" class="remove-image-button absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 leading-none shadow-md hover:bg-red-600 transition-colors z-10" data-slot-id="{{ i }}">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="hidden">
+                            {{ image_field }}
+                            {% if image_field.field.required == False and image_field.value and image_field.value.url %}
+                                {{ form.image5.clear }}
+                                {{ form.image5.clear_checkbox_label }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
                 </div>
             </div>
 
-            <!-- Publish Button -->
             <div class="flex justify-end">
                 <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
@@ -172,5 +262,138 @@
             </div>
         </form>
     </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find all file inputs and remove buttons
+        const fileInputs = document.querySelectorAll('input[type="file"][name^="image"]');
+        const removeButtons = document.querySelectorAll('.remove-image-button');
+        
+        // Store initial image URLs for reset functionality
+        const initialImageUrls = {};
+        
+        // Function to extract slot ID from input ID (e.g., 'id_image1' -> '1', 'id_image10' -> '10')
+        function getSlotId(inputId) {
+            const match = inputId.match(/image(\d+)$/);
+            return match ? match[1] : null;
+        }
+        
+        // Function to handle reading and displaying the image
+        function handleFileSelect(event) {
+            const fileInput = event.target;
+            const slotId = getSlotId(fileInput.id);
+            
+            if (!slotId) return;
+            
+            const previewContainer = document.getElementById(`preview-slot-${slotId}`);
+            const previewImage = document.getElementById(`image-tag-${slotId}`);
+            const uploadLabel = document.querySelector(`label[for="${fileInput.id}"]`);
+            const clearCheckbox = document.getElementById(`id_image${slotId}-clear`);
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select a valid image file');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                    uploadLabel.classList.add('hidden');
+                    
+                    // Uncheck clear checkbox if it exists
+                    if (clearCheckbox) {
+                        clearCheckbox.checked = false;
+                    }
+                }
+
+                reader.onerror = function() {
+                    alert('Error reading file');
+                    fileInput.value = '';
+                }
+
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Function to reset or clear the image slot
+        function handleRemoveClick(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const button = event.currentTarget;
+            const slotId = button.dataset.slotId;
+            const fileInput = document.getElementById(`id_image${slotId}`);
+            const previewContainer = document.getElementById(`preview-slot-${slotId}`);
+            const previewImage = document.getElementById(`image-tag-${slotId}`);
+            const uploadLabel = document.querySelector(`label[for="id_image${slotId}"]`);
+            const clearCheckbox = document.getElementById(`id_image${slotId}-clear`);
+            
+            // Clear the file input
+            fileInput.value = '';
+
+            // If there's an existing image (clear checkbox exists), mark it for deletion
+            if (clearCheckbox) {
+                clearCheckbox.checked = true;
+                previewContainer.classList.add('hidden');
+                uploadLabel.classList.remove('hidden');
+                previewImage.src = '#';
+            } 
+            // If it was a newly uploaded image (no clear checkbox), just hide preview
+            else {
+                previewContainer.classList.add('hidden');
+                uploadLabel.classList.remove('hidden');
+                previewImage.src = '#';
+            }
+        }
+        
+        // --- Initialization ---
+        fileInputs.forEach(input => {
+            input.addEventListener('change', handleFileSelect);
+            
+            const slotId = getSlotId(input.id);
+            if (!slotId) return;
+            
+            const previewImage = document.getElementById(`image-tag-${slotId}`);
+            const previewContainer = document.getElementById(`preview-slot-${slotId}`);
+            const uploadLabel = document.querySelector(`label[for="${input.id}"]`);
+            
+            // Store initial image URL if it exists and is valid
+            if (previewImage && previewImage.src && 
+                previewImage.src !== window.location.href && 
+                previewImage.src !== '#' &&
+                !previewImage.src.endsWith('#')) {
+                initialImageUrls[slotId] = previewImage.src;
+            }
+            
+            // Handle initial state if clear checkbox is already checked (e.g., form validation failed)
+            const clearCheckbox = document.getElementById(`id_image${slotId}-clear`);
+            if (clearCheckbox && clearCheckbox.checked) {
+                previewContainer.classList.add('hidden');
+                uploadLabel.classList.remove('hidden');
+            }
+        });
+
+        removeButtons.forEach(button => {
+            button.addEventListener('click', handleRemoveClick);
+        });
+        
+        // Prevent form submission if there are validation errors
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // You can add additional validation here if needed
+                console.log('Form submitting...');
+            });
+        }
+    });
+</script>
 </body>
+</html
 </html>

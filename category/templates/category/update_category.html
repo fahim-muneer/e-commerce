@@ -1,73 +1,142 @@
 {% extends "base_category.html" %}
 {% block context %}
 
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
 
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
     <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
-        <!-- Header -->
-         <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
-            <h2 class="text-2xl font-bold text-gray-800"> Delete Category</h2>
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800"> Update Category</h2>
           <button class="text-gray-400 hover:text-gray-600">
                  <a href=" {% url 'category_list' %} "><i class="fa-solid fa-times text-xl"></i> </a>
             </button>
         </div>
-                 {% if messages %}
-            {% for message in messages %}
-            {% if 'category_update' in message.tags %}
-                <div 
-                                    class="p-3 mb-2 rounded-md
-                        {% if message.level_tag == 'success' %} bg-green-100 text-green-700
-                        {% elif message.level_tag == 'error' %} bg-red-100 text-red-700
-                        {% endif %}
-                    ">
-                    
-                    {{ message }}
-
-                    <!-- Close Button -->
-                    <button 
-                        onclick="document.getElementById('message-{{ forloop.counter }}').style.display='none'" 
-                        class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
-                        ✕
-                    </button>
-                </div>
+{% if messages %}
+<div class="space-y-3 mb-4"> 
+    {% for message in messages %}
+        {% if 'update_category' in message.tags %}
+            <div 
+                x-data="{ show: true }" 
+                x-init="setTimeout(() => { show = false }, 5000)" 
+                x-show="show" 
+                x-transition:enter="transition ease-out duration-300" 
+                x-transition:leave="transition ease-in duration-200" 
+                
+                {% if message.tags == 'success' %}
+                    class="flex items-start justify-between p-3 bg-green-100 text-green-800 border border-green-300 rounded-lg shadow-sm"
+                {% elif message.tags == 'error' %}
+                    class="flex items-start justify-between p-3 bg-red-100 text-red-800 border border-red-300 rounded-lg shadow-sm"
+                {% elif message.tags == 'warning' %}
+                    class="flex items-start justify-between p-3 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-lg shadow-sm"
+                {% else %}
+                    class="flex items-start justify-between p-3 bg-blue-100 text-blue-800 border border-blue-300 rounded-lg shadow-sm"
                 {% endif %}
-            {% endfor %}
+                
+                role="alert"
+            >
+                <div class="flex items-start space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 flex-shrink-0" 
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-medium text-sm">{{ message }}</span>
+                </div>
+
+                <button 
+                    @click="show = false" 
+                    class="ml-3 hover:text-black text-xl font-bold leading-none focus:outline-none"
+                    title="Close"
+                >
+                    &times;
+                </button>
+            </div>
         {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
 
 
 
-        <!-- Form Layout -->
         <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
             
             
-            <!-- Category Name -->
-            <div class="mb-4">
-                <label for={{form.name.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.name}}</label>
+<div class="mb-4">
+                <label for="{{ form.name.id_label }}" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 
+                {% comment %} 
+                    Rendering the form field with a common class pattern. 
+                    If this doesn't apply classes, you must use django-widget-tweaks or update forms.py.
+                    If using django-widget-tweaks: {% load widget_tweaks %} and then: 
+                    {% render_field form.name class='w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500' %}
+                {% endcomment %}
+
+                <input type="text" 
+                       name="{{ form.name.name }}" 
+                       id="{{ form.name.id_for_label }}"
+                       value="{% if form.instance.name %}{{ form.instance.name }}{% endif %}" 
+                       class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                       placeholder="Enter category name"
+                       {% if form.name.field.max_length %} maxlength="{{ form.name.field.max_length }}"{% endif %}
+                       {% if form.name.field.required %} required{% endif %}>
+                
+                 {{ form.name.errors }}
             </div>
 
-             <!-- Category Icon -->
-            <div class="mb-6">
+             <div class="mb-6">
                 <label class="block text-lg font-semibold text-gray-800 mb-4">Category Icon</label>
                 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <label for="{{ form.image.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
+                    
+                    <label for="{{ form.image.id_for_label }}" class="flex flex-col items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors p-2">
                         <div class="text-center text-gray-400">
                             <i class="fa-solid fa-image text-3xl mb-2"></i>
                             <p class="text-sm">Icon Upload</p>
+                            <p class="text-xs mt-1">(Click to replace)</p>
                         </div>
                     </label>
+                    
+                    <div id="image-preview" 
+                         class="w-36 h-36 border-2 border-gray-300 rounded-md overflow-hidden relative 
+                         {% if not form.instance.image %} hidden {% endif %}">
+                        
+                        <img id="preview-image-tag" 
+                             class="w-full h-full object-cover" 
+                             src="{% if form.instance.image %} {{ form.instance.image.url }} {% else %} # {% endif %}" 
+                             alt="Icon Preview">
+                        
+                        <button type="button" id="remove-image-button" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 leading-none shadow-md hover:bg-red-600 transition-colors z-10">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+
                     <div class="hidden">
                         {{ form.image }}
                         {{ form.image.errors }}
                     </div>
                 </div>
+                
+                {% comment %} Display 'Currently' text if image exists and is not being replaced {% endcomment %}
+                {% if form.instance.image %}
+                    <p id="current-image-text" class="text-sm text-gray-500 mt-2">
+                        Currently: <a href="{{ form.instance.image.url }}" target="_blank" class="text-blue-500 hover:underline">View Current Image</a>
+                    </p>
+                {% endif %}
+
+                {% comment %} Checkbox for clearing the image (Django-specific handling) {% endcomment %}
+                {% if form.image.field.required == False and form.instance.image %}
+                    <div class="flex items-center mt-2">
+                        {{ form.image.field.widget.clear_checkbox_label }}
+                        {{ form.image.clear }}
+                    </div>
+                {% endif %}
+
             </div>
 
 
-            <!-- Publish Button -->
             <div class="flex justify-end">
                 <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
@@ -75,10 +144,106 @@
                 </button>
             </div>
         </form>
-
-
-
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the file input, preview elements, and remove button
+            const fileInput = document.getElementById('{{ form.image.id_for_label }}');
+            const previewContainer = document.getElementById('image-preview');
+            const previewImage = document.getElementById('preview-image-tag');
+            const removeButton = document.getElementById('remove-image-button');
+            const currentImageText = document.getElementById('current-image-text');
+            
+            // Get the Django-generated clear checkbox (if it exists)
+            const clearCheckbox = document.getElementById('{{ form.image.id_for_label }}-clear'); 
+
+            // Store the initial image URL for reference
+            const initialImageUrl = previewImage.src !== '#' ? previewImage.src : null;
+
+
+            // --- Helper Functions ---
+            
+            // Displays a new file selected by the user
+            function readURL(input) {
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewContainer.classList.remove('hidden'); // Show the preview container
+                        if (currentImageText) currentImageText.classList.add('hidden'); // Hide "Current Image" text
+                        if (clearCheckbox) clearCheckbox.checked = false; // Uncheck clear checkbox if new file is selected
+                    }
+
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    // This case handles selection being cancelled/cleared by browser
+                    // If no file, revert to initial state
+                    resetPreview();
+                }
+            }
+            
+            // Resets the preview to the initial saved image or hides it completely
+            function resetPreview() {
+                if (initialImageUrl) {
+                    previewImage.src = initialImageUrl;
+                    previewContainer.classList.remove('hidden');
+                    if (currentImageText) currentImageText.classList.remove('hidden');
+                } else {
+                    previewImage.src = '#';
+                    previewContainer.classList.add('hidden');
+                    if (currentImageText) currentImageText.classList.add('hidden');
+                }
+            }
+
+
+            // --- Event Listeners ---
+
+            // 1. New file selection
+            fileInput.addEventListener('change', function() {
+                readURL(this);
+            });
+
+            // 2. Remove button clicked (User wants to keep the field empty or use the Django clear function)
+            removeButton.addEventListener('click', function() {
+                // Clear the file input's value (resets the preview to initial state)
+                fileInput.value = ''; 
+                
+                // If a clear checkbox exists, check it to tell Django to delete the image
+                if (clearCheckbox) {
+                    clearCheckbox.checked = true;
+                    // Hide everything since the user explicitly cleared it
+                    previewImage.src = '#';
+                    previewContainer.classList.add('hidden');
+                    if (currentImageText) currentImageText.classList.add('hidden');
+                } else {
+                    // If no clear checkbox, just reset to initial state (no change unless a new file was selected)
+                    resetPreview();
+                }
+            });
+            
+            // 3. Clear checkbox interaction (if it exists)
+            if (clearCheckbox) {
+                clearCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        // If checking clear box, visually clear the preview and file input
+                        fileInput.value = ''; 
+                        previewImage.src = '#';
+                        previewContainer.classList.add('hidden');
+                        if (currentImageText) currentImageText.classList.add('hidden');
+                    } else {
+                        // If unchecking clear box, revert to the initially saved image
+                        resetPreview();
+                    }
+                });
+            }
+            
+            // Initial state fix: If image is present and clear checkbox is checked (e.g., from form errors), visually clear it
+            if (clearCheckbox && clearCheckbox.checked) {
+                previewContainer.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 {% endblock context %}

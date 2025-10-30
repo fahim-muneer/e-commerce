@@ -523,6 +523,9 @@ class EditPicture(MyLoginRequiredMixin,View):
         print("redirecting to here and should show the message")
         return render(request ,'customer/update_picture.html',{'form':form})
 
+
+
+
 @method_decorator(never_cache, name='dispatch') 
 class UpdateEmailAndFullName(MyLoginRequiredMixin, View):
     login_url = 'login'
@@ -535,62 +538,249 @@ class UpdateEmailAndFullName(MyLoginRequiredMixin, View):
 
     def post(self, request):
         user = request.user
+        old_email = user.email 
+        
         form = UpdateEmailForm(request.POST, instance=user)
        
         if form.is_valid():
-            old_email = user.email
-            updated_user = form.save(commit=False)
-            updated_user.is_active = False
-            updated_user.save()
-            generate_and_send_otp(updated_user)
-            request.session["email"] = old_email
-            messages.info(request, "Your email has been changed. A verification code has been sent to your new email. Please verify to continue.",extra_tags='update-email')
-            return redirect('email_otp')                   
+            new_email = form.cleaned_data.get('email')
+            new_full_name = form.cleaned_data.get('full_name')
+            
+            if new_email and new_email != old_email:
+                print(f"Email change detected: {old_email} → {new_email}")
+                
+                from customer.models import Register
+                if Register.objects.filter(email=new_email).exclude(id=user.id).exists():
+                    messages.error(request, "This email is already in use by another account.",extra_tags='otp-verification')
+                    return render(request, 'customer/update_email.html', {'form': form, 'user': user})
+                
+                request.session['old_email'] = old_email
+                request.session['new_email'] = new_email
+                request.session['user_id'] = user.id
+                
+                if new_full_name and new_full_name != user.full_name:
+                    request.session['pending_full_name'] = new_full_name
+                
+                try:
+                    generate_and_send_otp(old_email)  
+                    messages.info(
+                        request, 
+                        f"We've sent a verification code to your current email ({old_email}). Please enter it to confirm the email change."
+                        ,extra_tags='otp-verification'
+                    )
+                    print(f"OTP sent to old email: {old_email}")
+                    return redirect('email_otp')
+                except Exception as e:
+                    messages.error(request, f"Failed to send verification code: {str(e)}")
+                    print(f"Error sending OTP: {str(e)}")
+                    return render(request, 'customer/update_email.html', {'form': form, 'user': user})
+            
+            else:
+                print("No email change, updating full name only")
+                if new_full_name and new_full_name != user.full_name:
+                    user.full_name = new_full_name
+                    user.save()
+                    messages.success(request, "Your profile has been updated successfully!")
+                else:
+                    messages.info(request, "No changes were made.")
+                return redirect('profile') 
         else:
             messages.error(request, "Please correct the errors in the form.")
-            return render(request, 'customer/update_email.html', {'form': form, 'user': user})
-                
+            return render(request, 'customer/update_email.html', {'form': form, 'user': user})            
 
-@method_decorator(never_cache, name='dispatch')             
-class ChangeEmailOtpVerification(View):
+
+
+
+
+@method_decorator(never_cache, name='dispatch')
+class VerifyEmailOTP(MyLoginRequiredMixin, View):
+    """Handle OTP verification for email change"""
+    
     def get(self, request):
+        # Check if session data exists
+        old_email = request.session.get('old_email')
+        new_email = request.session.get('new_email')
+        
+        if not (old_email and new_email):
+            messages.error(request, "Session expired. Please try updating your email again.")
+            return redirect('user_profile')
+        
         form = OtpVerificationForm()
-        return render(request, 'customer/otp_verification.html', {'form': form})
+        return render(request, 'customer/otp_verification.html', {
+            'form': form,
+            'old_email': old_email,
+            'new_email': new_email
+        })
     
     def post(self, request):
         form = OtpVerificationForm(request.POST)
-        if form.is_valid():
-            entered_otp = form.cleaned_data['otp_code']
-            email = request.session.get('email')
-
-            if not email:
-                messages.error(request, "Session expired. Please sign up again.")
-                return redirect('user_profile')
-
-            try:
-                user = Register.objects.get(email=email)
-                otp_instance = OTP.objects.get(user=user) #pylint: disable=no-member
-
-                if otp_instance.code == entered_otp and otp_instance.is_valid():
-                    user.is_active = True
-                    user.save()
-                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-
-                    
-                    otp_instance.delete()
-
-                    messages.success(request, 'Account Updated successfully!')
+        
+        if not form.is_valid():
+            messages.error(request, "Please enter a valid OTP.")
+            return render(request, 'customer/otp_verification.html', {'form': form})
+        
+        entered_otp = form.cleaned_data['otp_code']
+        old_email = request.session.get('old_email')
+        new_email = request.session.get('new_email')
+        user_id = request.session.get('user_id')
+        pending_full_name = request.session.get('pending_full_name')
+        
+        print(f"OTP Verification - Entered: {entered_otp}")
+        print(f"Session - Old: {old_email}, New: {new_email}, User ID: {user_id}")
+        
+        # Validate session data
+        if not all([old_email, new_email, user_id]):
+            messages.error(request, "Session expired. Please try again.")
+            return redirect('user_profile')
+        
+        # Validate OTP length
+        if len(entered_otp) != 6:
+            messages.error(request, "Please enter a valid 6-digit code.")
+            return render(request, 'customer/otp_verification.html', {
+                'form': form,
+                'old_email': old_email,
+                'new_email': new_email
+            })
+        
+        try:
+            # Get user by ID and verify old email matches
+            user = Register.objects.get(id=user_id, email=old_email)
+            print(f"User found: {user.email}")
+            
+            # Get the most recent OTP for this user
+            otp_obj = OTP.objects.filter(user=user).order_by('-created_at').first()
+            
+            if not otp_obj:
+                messages.error(request, "No OTP found. Please request a new one.")
+                print("No OTP found in database")
+                return render(request, 'customer/otp_verification.html', {
+                    'form': form,
+                    'old_email': old_email,
+                    'new_email': new_email
+                })
+            
+            print(f"OTP from DB: {otp_obj.code}, Entered: {entered_otp}")
+            
+            # Check if OTP is still valid (not expired)
+            if not otp_obj.is_valid():
+                messages.error(request, "OTP has expired. Please request a new one.")
+                print("OTP expired")
+                return render(request, 'customer/otp_verification.html', {
+                    'form': form,
+                    'old_email': old_email,
+                    'new_email': new_email
+                })
+            
+            # Verify OTP matches
+            if otp_obj.code == entered_otp:
+                print("OTP verified successfully!")
+                
+                # Double-check new email is still available
+                if Register.objects.filter(email=new_email).exclude(id=user.id).exists():
+                    messages.error(request, "This email is now taken by another user. Please try a different email.")
+                    self.clear_session_data(request)
                     return redirect('user_profile')
-                else:
-                    messages.error(request, 'Invalid or expired OTP.')
-            except User.DoesNotExist:
-                messages.error(request, 'User not found. Please try again.')
-                return redirect('user_profile') 
+                
+                # Update email
+                user.email = new_email
+                user.username = new_email  # Update username if based on email
+                
+                # Update full name if it was pending
+                if pending_full_name and pending_full_name != user.full_name:
+                    user.full_name = pending_full_name
+                    print(f"Full name updated to: {pending_full_name}")
+                
+                user.save()
+                print(f"Email updated from {old_email} to {new_email}")
+                
+                # Delete used OTP
+                otp_obj.delete()
+                print("OTP deleted")
+                
+                # Clear session data
+                self.clear_session_data(request)
+                
+                # Keep user logged in (update session)
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, user)
+                
+                messages.success(request, "Your email has been updated successfully!")
+                return redirect('user_profile')
+            else:
+                messages.error(request, "Invalid verification code. Please try again.")
+                print("OTP mismatch")
+                return render(request, 'customer/otp_verification.html', {
+                    'form': form,
+                    'old_email': old_email,
+                    'new_email': new_email
+                })
+        
+        except Register.DoesNotExist:
+            messages.error(request, "User not found. Please log in again.")
+            print("User not found")
+            self.clear_session_data(request)
+            return redirect('login')
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            print(f"Exception in VerifyEmailOTP: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return render(request, 'customer/otp_verification.html', {
+                'form': form,
+                'old_email': old_email,
+                'new_email': new_email
+            })
+    
+    def clear_session_data(self, request):
+        """Helper method to clear session data"""
+        session_keys = ['old_email', 'new_email', 'user_id', 'pending_full_name']
+        for key in session_keys:
+            if key in request.session:
+                del request.session[key]
 
-            except OTP.DoesNotExist:                #pylint: disable=no-member
-                messages.error(request, 'No OTP found for this user. Please request a new one.')
 
-        return render(request, 'customer/otp_verification.html', {'form': form})  
+@method_decorator(never_cache, name='dispatch')
+class ResendEmailOTP(MyLoginRequiredMixin, View):
+    """Resend OTP for email verification"""
+    
+    def get(self, request):
+        old_email = request.session.get('old_email')
+        new_email = request.session.get('new_email')
+        user_id = request.session.get('user_id')
+        
+        print(f"ResendEmailOTP - Old: {old_email}, New: {new_email}, User ID: {user_id}")
+        
+        if not all([old_email, user_id]):
+            messages.error(request, "Session expired. Please try updating your email again.")
+            return redirect('user_profile')
+        
+        try:
+            user = Register.objects.get(id=user_id, email=old_email)
+            
+            # Delete old OTPs for this user
+            OTP.objects.filter(user=user).delete()
+            print(f"Old OTPs deleted for user {user.email}")
+            
+            # Generate and send new OTP to OLD email
+            generate_and_send_otp(old_email)
+            messages.success(request, f"A new verification code has been sent to {old_email}.")
+            print(f"New OTP sent to old email: {old_email}")
+            
+            return redirect('email_otp')
+            
+        except Register.DoesNotExist:
+            messages.error(request, "User not found. Please log in again.")
+            print("User not found in ResendEmailOTP")
+            return redirect('login')
+        except Exception as e:
+            messages.error(request, f"Failed to resend code: {str(e)}")
+            print(f"Exception in ResendEmailOTP: {str(e)}")
+            return redirect('email_otp')
+
+
+
+
+
 
 @method_decorator(never_cache, name='dispatch') 
 class CustomerAddress(MyLoginRequiredMixin,View):

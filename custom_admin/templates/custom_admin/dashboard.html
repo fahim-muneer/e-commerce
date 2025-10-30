@@ -1,323 +1,380 @@
 {% extends "adminbase.html" %}
-
+{% block title %} Dashboard {% endblock title %}
+{% block heading %} Dashboard {% endblock heading %}
 {% block context %}
 {% load static %}
 
-        <!-- Dashboard Content -->
-        <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+<!-- Dashboard Content -->
+<div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
 
-            <!-- Stats Cards Section -->
-            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <!-- Card 1: Total Users -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-green-100 p-3 rounded-full text-green-600 flex items-center justify-center">
-                            <i class="fas fa-users text-2xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Total Users</p>
-                            <h3 class="text-3xl font-bold text-gray-800">{{total_user}}</h3>
-                        </div>
-                    </div>
-                    <!-- Placeholder for the small bar chart -->
-                    <div class="w-16 h-10 bg-green-200 rounded-md flex items-end overflow-hidden">
-                        <div class="w-1/4 h-2/3 bg-green-500"></div>
-                        <div class="w-1/4 h-full bg-green-500"></div>
-                        <div class="w-1/4 h-1/2 bg-green-500"></div>
-                        <div class="w-1/4 h-3/4 bg-green-500"></div>
-                    </div>
+    <!-- Stats Cards Section -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Card 1: Total Users -->
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="bg-green-100 p-3 rounded-full text-green-600 flex items-center justify-center">
+                    <i class="fas fa-users text-2xl"></i>
                 </div>
-
-                <!-- Card 2: Total Orders -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-blue-100 p-3 rounded-full text-blue-600 flex items-center justify-center">
-                            <i class="fas fa-shopping-cart text-2xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Total Orders</p>
-                            <h3 class="text-3xl font-bold text-gray-800">{{total_orders}}</h3>
-                        </div>
-                    </div>
-                    <!-- Placeholder for the small bar chart -->
-                    <div class="w-16 h-10 bg-blue-200 rounded-md flex items-end overflow-hidden">
-                        <div class="w-1/4 h-1/2 bg-blue-500"></div>
-                        <div class="w-1/4 h-3/4 bg-blue-500"></div>
-                        <div class="w-1/4 h-1/3 bg-blue-500"></div>
-                        <div class="w-1/4 h-full bg-blue-500"></div>
-                    </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Users</p>
+                    <h3 class="text-3xl font-bold text-gray-800">{{total_user}}</h3>
                 </div>
-
-                <!-- Card 3: Total Products -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-purple-100 p-3 rounded-full text-purple-600 flex items-center justify-center">
-                            <i class="fas fa-box text-2xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Total Products</p>
-                            <h3 class="text-3xl font-bold text-gray-800">{{total_products}}</h3>
-                        </div>
-                    </div>
-                    <!-- Placeholder for the small bar chart -->
-                    <div class="w-16 h-10 bg-purple-200 rounded-md flex items-end overflow-hidden">
-                        <div class="w-1/4 h-2/3 bg-purple-500"></div>
-                        <div class="w-1/4 h-full bg-purple-500"></div>
-                        <div class="w-1/4 h-1/2 bg-purple-500"></div>
-                        <div class="w-1/4 h-3/4 bg-purple-500"></div>
-                    </div>
-                </div>
-
-                <!-- Card 4: Total Category -->
-                <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-red-100 p-3 rounded-full text-red-600 flex items-center justify-center">
-                            <i class="fas fa-th-large text-2xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Total Category</p>
-                            <h3 class="text-3xl font-bold text-gray-800">{{total_category}}</h3>
-                        </div>
-                    </div>
-                    <!-- Placeholder for the small bar chart -->
-                    <div class="w-16 h-10 bg-red-200 rounded-md flex items-end overflow-hidden">
-                        <div class="w-1/4 h-1/3 bg-red-500"></div>
-                        <div class="w-1/4 h-full bg-red-500"></div>
-                        <div class="w-1/4 h-2/3 bg-red-500"></div>
-                        <div class="w-1/4 h-1/2 bg-red-500"></div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Welcome and Image Section -->
-            <section class="bg-white p-8 rounded-xl shadow-md flex flex-col md:flex-row items-center gap-8 mb-6">
-                <div class="flex-1">
-                    <h2 class="text-3xl font-bold text-gray-800">Welcome,{{request.user.full_name}}  </h2>
-                    <p class="text-gray-500 mt-2">Here's what's happening on your store today. See the statistics at once.</p>
-                    <a href="{% url 'sales_report' %}"><button class="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200">
-                        <i class="fas fa-plus mr-2"></i>
-                        Sales Report
-                    </button></a>
-                </div>
-                
-            </section>
-
-            {% comment %} <!-- Top Selling Products Section -->
-            <section class="bg-white p-6 rounded-xl shadow-md mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Top Selling Products</h2>
-                    <div class="flex items-center gap-2 text-gray-500">
-                        <span class="text-sm">Rows per page:</span>
-                        <select class="p-1 border rounded-md text-sm">
-                            <option>50</option>
-                        </select>
-                        <span class="text-sm">1-50 of 50</span>
-                        <div class="flex gap-1">
-                            <button class="w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
-                                <i class="fas fa-chevron-left text-gray-500"></i>
-                            </button>
-                            <button class="w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
-                                <i class="fas fa-chevron-right text-gray-500"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div> {% endcomment %}
-
-                <!-- Table -->
-                {% comment %} <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PRODUCT NAME</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CATEGORY</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL QUANTITY SOLD</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL REVENUE</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ORDER COUNT</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <!-- Example Row -->
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Product A</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Electronics</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">120</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$12,000</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">55</td>
-                            </tr>
-                            <!-- Add more rows here with dynamic data -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Top Selling Categories Section -->
-            <section class="bg-white p-6 rounded-xl shadow-md mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Top Selling Categories</h2>
-                    <div class="flex items-center gap-2 text-gray-500">
-                        <span class="text-sm">Rows per page:</span>
-                        <select class="p-1 border rounded-md text-sm">
-                            <option>50</option>
-                        </select>
-                        <span class="text-sm">1-50 of 50</span>
-                        <div class="flex gap-1">
-                            <button class="w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
-                                <i class="fas fa-chevron-left text-gray-500"></i>
-                            </button>
-                            <button class="w-8 h-8 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
-                                <i class="fas fa-chevron-right text-gray-500"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CATEGORY</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL QUANTITY SOLD</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL REVENUE</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ORDER COUNT</th>
-                            </tr>    </main>
-
-    <script>
-        // JavaScript to toggle the sidebar on mobile
-        document.getElementById('toggleSidebar').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('translate-x-0');
-            sidebar.classList.toggle('-translate-x-full');
-        });
-    </script>
-</body>
-</html>
-
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <!-- Example Row -->
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Category A</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">250</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$25,000</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">100</td>
-                            </tr>
-                            <!-- Add more rows here -->
-                        </tbody>
-                    </table>
-                </div>
-            </section> {% endcomment %}
-            
-            <!-- Total Users & Total Sales Chart -->
-            <section class="bg-white p-6 rounded-xl shadow-md">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Total Users & Total Sales</h2>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-200 transition-colors duration-200">
-                        <i class="fas fa-file-alt mr-2"></i>
-                        Report
-                    </button>
-                </div>
-                
-                <!-- Chart Legend -->
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="flex items-center gap-2 text-sm text-gray-600">
-                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span>Total Users</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm text-gray-600">
-                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>Total Sales</span>
-                    </div>
-                </div>
-                
-                <!-- Chart Placeholder -->
-                <div class="bg-gray-50 p-4 rounded-lg h-80 flex items-end relative">
-                    <!-- Y-Axis Labels -->
-                    <div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between py-4 text-xs text-gray-400">
-                        <span>2500000</span>
-                        <span>2000000</span>
-                        <span>1500000</span>
-                        <span>1000000</span>
-                        <span>500000</span>
-                        <span>0</span>
-                    </div>
-                    
-                    <!-- Chart Bars (using flexbox) -->
-                    <div class="w-full h-full flex items-end gap-2 px-8">
-                        <!-- January -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[5%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[1%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">JAN</span>
-                        </div>
-                        <!-- February -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[2%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[1%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">FEB</span>
-                        </div>
-                        <!-- March -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[20%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[5%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">MAR</span>
-                        </div>
-                        <!-- April -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[50%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[15%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">APR</span>
-                        </div>
-                        <!-- May -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[48%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[14%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">MAY</span>
-                        </div>
-                        <!-- June -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[5%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[2%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">JUN</span>
-                        </div>
-                        <!-- July -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[90%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[25%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">JUL</span>
-                        </div>
-                        <!-- August -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[10%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[3%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">AUG</span>
-                        </div>
-                        <!-- September -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[15%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[5%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">SEP</span>
-                        </div>
-                        <!-- October -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[12%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[4%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">OCT</span>
-                        </div>
-                        <!-- November -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[7%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[2%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">NOV</span>
-                        </div>
-                        <!-- December -->
-                        <div class="flex-1 flex flex-col justify-end">
-                            <div class="w-full h-[15%] bg-green-500 rounded-t-md"></div>
-                            <div class="w-full h-[5%] bg-blue-500 rounded-t-md mt-1"></div>
-                            <span class="text-xs text-gray-500 text-center mt-1">DEC</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </div>
+            <div class="w-16 h-10 bg-green-200 rounded-md flex items-end overflow-hidden">
+                <div class="w-1/4 h-2/3 bg-green-500"></div>
+                <div class="w-1/4 h-full bg-green-500"></div>
+                <div class="w-1/4 h-1/2 bg-green-500"></div>
+                <div class="w-1/4 h-3/4 bg-green-500"></div>
+            </div>
         </div>
+
+        <!-- Card 2: Total Orders -->
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-100 p-3 rounded-full text-blue-600 flex items-center justify-center">
+                    <i class="fas fa-shopping-cart text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Orders</p>
+                    <h3 class="text-3xl font-bold text-gray-800">{{total_orders}}</h3>
+                </div>
+            </div>
+            <div class="w-16 h-10 bg-blue-200 rounded-md flex items-end overflow-hidden">
+                <div class="w-1/4 h-1/2 bg-blue-500"></div>
+                <div class="w-1/4 h-3/4 bg-blue-500"></div>
+                <div class="w-1/4 h-1/3 bg-blue-500"></div>
+                <div class="w-1/4 h-full bg-blue-500"></div>
+            </div>
+        </div>
+
+        <!-- Card 3: Total Products -->
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="bg-purple-100 p-3 rounded-full text-purple-600 flex items-center justify-center">
+                    <i class="fas fa-box text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Products</p>
+                    <h3 class="text-3xl font-bold text-gray-800">{{total_products}}</h3>
+                </div>
+            </div>
+            <div class="w-16 h-10 bg-purple-200 rounded-md flex items-end overflow-hidden">
+                <div class="w-1/4 h-2/3 bg-purple-500"></div>
+                <div class="w-1/4 h-full bg-purple-500"></div>
+                <div class="w-1/4 h-1/2 bg-purple-500"></div>
+                <div class="w-1/4 h-3/4 bg-purple-500"></div>
+            </div>
+        </div>
+
+        <!-- Card 4: Total Revenue -->
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="bg-red-100 p-3 rounded-full text-red-600 flex items-center justify-center">
+                    <i class="fas fa-rupee-sign text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Revenue</p>
+                    <h3 class="text-2xl font-bold text-gray-800">₹{{total_revenue|floatformat:0}}</h3>
+                </div>
+            </div>
+            <div class="w-16 h-10 bg-red-200 rounded-md flex items-end overflow-hidden">
+                <div class="w-1/4 h-1/3 bg-red-500"></div>
+                <div class="w-1/4 h-full bg-red-500"></div>
+                <div class="w-1/4 h-2/3 bg-red-500"></div>
+                <div class="w-1/4 h-1/2 bg-red-500"></div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Welcome and Image Section -->
+    <section class="bg-white p-8 rounded-xl shadow-md flex flex-col md:flex-row items-center gap-8 mb-6">
+        <div class="flex-1">
+            <h2 class="text-3xl font-bold text-gray-800">Welcome, {{request.user.full_name}}</h2>
+            <p class="text-gray-500 mt-2">Here's what's happening on your store today. See the statistics at once.</p>
+            <a href="{% url 'sales_report' %}">
+                <button class="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    View Sales Report
+                </button>
+            </a>
+        </div>
+    </section>
+
+    <!-- Total Users & Total Sales Chart -->
+    <section class="bg-white p-6 rounded-xl shadow-md mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-800">Monthly Sales & User Growth ({{now.year}})</h2>
+            <div class="flex gap-2">
+                <button onclick="changeChartType('bar')" id="barBtn" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-chart-bar mr-1"></i>Bar
+                </button>
+                <button onclick="changeChartType('line')" id="lineBtn" class="px-3 py-1 bg-gray-200 text-gray-600 rounded text-sm hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-chart-line mr-1"></i>Line
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chart Legend -->
+        <div class="flex items-center gap-4 mb-4">
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+                <div class="w-3 h-3 bg-green-500 rounded"></div>
+                <span>Total Sales (₹)</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+                <div class="w-3 h-3 bg-blue-500 rounded"></div>
+                <span>New Users</span>
+            </div>
+        </div>
+        
+        <!-- Chart Canvas -->
+        <div class="relative" style="height: 400px;">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </section>
+
+    <!-- Top Products & Categories -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Top Selling Products -->
+        <section class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-trophy text-yellow-500 mr-2"></i>Top Selling Products
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for product in top_products %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-semibold text-gray-500">{{forloop.counter}}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{product.product__name|truncatewords:5}}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                    {{product.total_quantity}} units
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-4 py-8 text-sm text-gray-500 text-center">
+                                <i class="fas fa-box-open text-3xl text-gray-300 mb-2"></i>
+                                <p>No sales data available</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Top Categories -->
+        <section class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-th-large text-purple-500 mr-2"></i>Top Selling Categories
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for category in top_categories %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-semibold text-gray-500">{{forloop.counter}}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{category.product__category__name}}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                    {{category.order_count}} orders
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-4 py-8 text-sm text-gray-500 text-center">
+                                <i class="fas fa-folder-open text-3xl text-gray-300 mb-2"></i>
+                                <p>No category data available</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Parse data from Django template
+    const months = {{ months|safe }};
+    const salesData = {{ sales_data|safe }};
+    const usersData = {{ users_data|safe }};
+
+    // Chart configuration
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    let currentChartType = 'bar';
+    let salesChart;
+
+    function createChart(type) {
+        // Destroy existing chart if it exists
+        if (salesChart) {
+            salesChart.destroy();
+        }
+
+        // Create new chart
+        salesChart = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Total Sales (₹)',
+                        data: salesData,
+                        backgroundColor: type === 'bar' ? 'rgba(34, 197, 94, 0.7)' : 'rgba(34, 197, 94, 0.2)',
+                        borderColor: 'rgba(34, 197, 94, 1)',
+                        borderWidth: 2,
+                        yAxisID: 'y',
+                        tension: 0.4,
+                        fill: type === 'line'
+                    },
+                    {
+                        label: 'New Users',
+                        data: usersData,
+                        backgroundColor: type === 'bar' ? 'rgba(59, 130, 246, 0.7)' : 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        yAxisID: 'y1',
+                        tension: 0.4,
+                        fill: type === 'line'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.datasetIndex === 0) {
+                                    // Sales - format as Indian Rupee
+                                    label += '₹' + context.parsed.y.toLocaleString('en-IN', {
+                                        maximumFractionDigits: 0
+                                    });
+                                } else {
+                                    // Users - just the number
+                                    label += context.parsed.y.toLocaleString('en-IN');
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Sales (₹)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString('en-IN');
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'New Users',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value;
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        currentChartType = type;
+    }
+
+    function changeChartType(type) {
+        // Update button styles
+        const barBtn = document.getElementById('barBtn');
+        const lineBtn = document.getElementById('lineBtn');
+        
+        if (type === 'bar') {
+            barBtn.className = 'px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors';
+            lineBtn.className = 'px-3 py-1 bg-gray-200 text-gray-600 rounded text-sm hover:bg-gray-300 transition-colors';
+        } else {
+            lineBtn.className = 'px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors';
+            barBtn.className = 'px-3 py-1 bg-gray-200 text-gray-600 rounded text-sm hover:bg-gray-300 transition-colors';
+        }
+        
+        createChart(type);
+    }
+
+    // Initialize chart on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        createChart('bar');
+    });
+</script>
+
 {% endblock context %}

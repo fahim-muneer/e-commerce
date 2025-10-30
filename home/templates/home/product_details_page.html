@@ -163,7 +163,7 @@
           <span class="text-gray-400 line-through text-sm">₹{{ item.old_price }}</span>
           <p class="text-red-500 font-semibold">₹{{ variant_product.price }}</p>
         </div>
-        <p class="text-gray-400 font-semibold">{{ item.description }}</p></a>
+        <p class="text-gray-400 font-semibold">{{ item.description|truncatewords:10 }}</p></a>
       </div>
 
 

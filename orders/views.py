@@ -34,70 +34,137 @@ from decimal import Decimal
 
 
 
-
 def pdf(request, uid):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     story = []
 
-    order = Orders.objects.get(id=uid)    # pylint: disable=no-member
-    items = OrderItem.objects.filter(order_id=order.id)   # pylint: disable=no-member
-    story.append(Paragraph("<b><font size=17>BANUS FURNITUR</font></b>", styles['Title']))
-
+    order = Orders.objects.get(id=uid)
+    items = OrderItem.objects.filter(order_id=order.id)
+    
+    # Header
+    story.append(Paragraph("<b><font size=17>BANUS FURNITURE</font></b>", styles['Title']))
     story.append(Paragraph("<b><font size=14>Invoice</font></b>", styles['Title']))
+    story.append(Spacer(1, 12))
     
-    
-    story.append(Spacer(1, 12))    
-    story.append(Paragraph(f"<b>Customer:</b> {order.user.full_name}", styles['Normal'])) 
+    # Customer Details
+    story.append(Paragraph(f"<b>Customer:</b> {order.user.full_name}", styles['Normal']))
     story.append(Paragraph(f"<b>Order ID:</b> {order.order_Id}", styles['Normal']))
+    story.append(Paragraph(f"<b>Order Date:</b> {order.created_at.strftime('%B %d, %Y')}", styles['Normal']))
+    story.append(Spacer(1, 6))
+    
+    # Delivery Address
+    story.append(Paragraph("<b>Delivery Address:</b>", styles['Normal']))
     story.append(Paragraph(f"<b>Mobile:</b> {order.delivery_address.mobile}", styles['Normal']))
-    story.append(Paragraph(f"<b>second:</b> {order.delivery_address.second_mob}", styles['Normal']))
-    story.append(Paragraph(f"<b>Address:</b> {order.delivery_address.address}", styles['Normal']))  
-    story.append(Paragraph(f"<b>District:</b> {order.delivery_address.city}", styles['Normal']))
+    if order.delivery_address.second_mob:
+        story.append(Paragraph(f"<b>Alternate:</b> {order.delivery_address.second_mob}", styles['Normal']))
+    story.append(Paragraph(f"<b>Address:</b> {order.delivery_address.address}", styles['Normal']))
+    story.append(Paragraph(f"<b>City:</b> {order.delivery_address.city}", styles['Normal']))
     story.append(Paragraph(f"<b>Pin:</b> {order.delivery_address.pin}", styles['Normal']))
     story.append(Paragraph(f"<b>State:</b> {order.delivery_address.state}", styles['Normal']))
-
+    story.append(Spacer(1, 6))
     
-    
+    # Payment Details
     story.append(Paragraph(f"<b>Payment Method:</b> {order.get_payment_method_display()}", styles['Normal']))
+    story.append(Paragraph(f"<b>Payment Status:</b> {order.get_payment_status_display()}", styles['Normal']))
     story.append(Spacer(1, 12))
-
     
-    data = [["Product", "Price", "Quantity", "Total"]]
-
-    grand_total = 0
+    # Items Table
+    data = [["Product", "Price", "Qty", "Total"]]
+    
+    subtotal = Decimal('0')
+    
     for item in items:
-        total = item.unit_price * item.quantity
-        grand_total += total
-        data.append([
-            item.product.name,
-            f"{item.unit_price}",
-            str(item.quantity),
-            f"{total}"
-        ])
-
+        # Only include non-cancelled/non-returned items
+        if item.order_status not in [4, 7]:  # 4=Cancelled, 7=Returned
+            item_total = item.unit_price * item.quantity
+            subtotal += item_total
+            
+            product_name = item.product.name
+            if item.variant:
+                product_name += f" ({item.variant.variant.name})"
+            
+            data.append([
+                product_name,
+                f"₹{item.unit_price}",
+                str(item.quantity),
+                f"₹{item_total}"
+            ])
     
-    data.append(["", "", "Grand Total", f"{grand_total}"])
-
-    table = Table(data, colWidths=[200, 80, 80, 100])
+    # Add Subtotal row
+    data.append(["", "", "Subtotal", f"₹{subtotal}"])
+    
+    # Add Coupon Discount if applicable
+    coupon_discount = Decimal('0')
+    if order.coupon_code:
+        coupon_discount = Decimal(str(order.coupon_code.discount_value))
+        data.append([
+            "", 
+            "", 
+            f"Coupon ({order.coupon_code.coupon_code})", 
+            f"-₹{coupon_discount}"
+        ])
+    
+    # Add Grand Total
+    grand_total = order.total_amount
+    data.append(["", "", "Grand Total", f"₹{grand_total}"])
+    
+    # Create and style table
+    table = Table(data, colWidths=[220, 80, 80, 100])
     table.setStyle(TableStyle([
+        # Header row styling
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("ALIGN", (1, 1), (-1, -1), "CENTER"),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-        ("BACKGROUND", (0, 1), (-1, -2), colors.whitesmoke),
+        
+        # Data rows styling
+        ("ALIGN", (1, 1), (-1, -1), "CENTER"),
+        ("BACKGROUND", (0, 1), (-1, -4), colors.whitesmoke),
         ("GRID", (0, 0), (-1, -1), 1, colors.black),
-        ("BACKGROUND", (0, -1), (-1, -1), colors.lightgrey),
+        
+        # Subtotal row
+        ("BACKGROUND", (0, -3), (-1, -3), colors.lightgrey),
+        ("FONTNAME", (0, -3), (-1, -3), "Helvetica-Bold"),
+        
+        # Coupon row (if exists)
+        ("BACKGROUND", (0, -2), (-1, -2), colors.HexColor("#FFF4E6")),
+        ("TEXTCOLOR", (0, -2), (-1, -2), colors.HexColor("#E65100")),
+        ("FONTNAME", (0, -2), (-1, -2), "Helvetica-Bold"),
+        
+        # Grand Total row
+        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#4CAF50")),
+        ("TEXTCOLOR", (0, -1), (-1, -1), colors.white),
+        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, -1), (-1, -1), 12),
     ]))
-
+    
     story.append(table)
+    story.append(Spacer(1, 20))
+    
+    # Footer Notes
+    if order.coupon_code:
+        story.append(Paragraph(
+            f"<i>* Discount of ₹{coupon_discount} applied using coupon code: {order.coupon_code.coupon_code}</i>", 
+            styles['Normal']
+        ))
+        story.append(Spacer(1, 6))
+    
+    story.append(Paragraph("<i>Thank you for shopping with us!</i>", styles['Normal']))
+    story.append(Paragraph("<i>For any queries, contact: support@banusfurniture.com</i>", styles['Normal']))
+    
+    # Build PDF
     doc.build(story)
     buffer.seek(0)
-    return FileResponse(buffer, as_attachment=True, filename=f"Order_{order.id}.pdf")
-
-
+    
+    return FileResponse(
+        buffer, 
+        as_attachment=True, 
+        filename=f"Invoice_Order_{order.order_Id}.pdf"
+    )
+    
+    
 def CreateOrder(request ,address_id ):
     user = request.user
     selected_address = UserAddress.objects.get(id=address_id , user = user) #pylint: disable=no-member
@@ -317,7 +384,7 @@ class OrderCancellSuccess(MyLoginRequiredMixin, View):
 @method_decorator(never_cache, name='dispatch')          
 class EditOrderAddress(MyLoginRequiredMixin,UpdateView):
     model=OrderAddress
-    fields=['mobile','second_mob','address','city','state','pin','country',]
+    fields=['mobile','second_mob','address','city','state','pin']
     template_name='orders/edit_order_address.html'
     success_url=reverse_lazy('checkout')
   

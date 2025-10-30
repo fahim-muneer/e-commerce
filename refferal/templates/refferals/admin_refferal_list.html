@@ -1,0 +1,133 @@
+{% extends "adminbase.html" %}
+
+{% block context %}
+{% load static %}
+
+<div class="p-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">🤝 Referral Signups</h1>
+    
+    <!-- 🔍 Filter Form -->
+    <div class="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-wrap gap-4 items-center">
+        <form method="GET" class="flex flex-wrap gap-4 w-full">
+            <div class="flex-grow">
+                <label for="search" class="sr-only">Search</label>
+                <input type="search" name="search" id="search" value="{{ search }}"
+                       placeholder="Search by referrer/referred user or code..."
+                       class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+            </div>
+
+            <div>
+                <label for="status" class="sr-only">Status</label>
+                <select name="status" id="status"
+                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending Purchase</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed Purchase</option>
+                    <option value="rewarded" {% if status_filter == 'rewarded' %}selected{% endif %}>Both Rewarded</option>
+                </select>
+            </div>
+
+            <div class="flex space-x-2">
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-150">
+                    Filter
+                </button>
+                <a href="{% url 'admin_referral_list' %}" 
+                   class="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition duration-150 flex items-center justify-center">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- 📋 Referral Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referrer (User A)</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referred (User B)</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code Used</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signed Up</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Purchase</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for referral in referrals %}
+                <tr class="hover:bg-gray-50">
+                    <!-- Referrer -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <a href="{% url 'admin_user_referral_detail' referral.referrer.pk %}" class="text-blue-600 hover:text-blue-800">
+                            {{ referral.referrer.full_name|default:referral.referrer.email }}
+                        </a>
+                    </td>
+
+                    <!-- Referred -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <a href="{% url 'admin_user_referral_detail' referral.referred.pk %}" class="text-blue-600 hover:text-blue-800">
+                            {{ referral.referred.full_name|default:referral.referred.email }}
+                        </a>
+                    </td>
+
+                    <!-- Code -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ referral.referral_code.code }}
+                    </td>
+
+                    <!-- Signup Date -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ referral.signed_up_at|date:"M d, Y" }}
+                    </td>
+
+                    <!-- Purchase Date -->
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if referral.first_purchase_at %}
+                            <span class="text-green-600">{{ referral.first_purchase_at|date:"M d, Y" }}</span>
+                        {% else %}
+                            <span class="text-yellow-600">Pending</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Status -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if referral.status == 'rewarded' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Rewarded
+                            </span>
+                        {% elif referral.first_purchase_at %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                Completed
+                            </span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Pending
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{% url 'admin_user_referral_detail' referral.referred.pk %}" 
+                           class="text-indigo-600 hover:text-indigo-900">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                        No referral records found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% comment %} {% include 'admin_panel/components/pagination.html' with page_obj=referrals %} {% endcomment %}
+</div>
+
+{% endblock %}

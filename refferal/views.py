@@ -14,7 +14,7 @@ from decimal import Decimal
 
 
 @method_decorator(never_cache, name='dispatch')
-class ReferralDashboard(MyLoginRequiredMixin, View):
+class ReferralDashboard(MyLoginRequiredMixin, View):  #.... user side ....
     
     def get(self, request):
         user = request.user
@@ -76,7 +76,7 @@ class ReferralDashboard(MyLoginRequiredMixin, View):
         return render(request, 'refferals/referral_dashboard.html', context)
 
 
-class ReferralDashboardView(AdminLoginMixin, View):
+class ReferralDashboardView(AdminLoginMixin, View): #....admin side.. 
     
     def get(self, request):
         total_referrals = Referral.objects.count()
@@ -142,40 +142,43 @@ class ReferralDashboardView(AdminLoginMixin, View):
 class ReferralListView(AdminLoginMixin, View):
     
     def get(self, request):
-        search = request.GET.get('search', '').strip()
-        status_filter = request.GET.get('status', '')
-        
-        referrals = Referral.objects.select_related(
-            'referrer', 'referred', 'referral_code'
-        ).order_by('-signed_up_at')
-        
-        if search:
-            referrals = referrals.filter(
-                Q(referrer__email__icontains=search) |
-                Q(referrer__full_name__icontains=search) |
-                Q(referred__email__icontains=search) |
-                Q(referred__full_name__icontains=search) |
-                Q(referral_code__code__icontains=search)
-            )
-        
-        if status_filter == 'pending':
-            referrals = referrals.filter(first_purchase_at__isnull=True)
-        elif status_filter == 'completed':
-            referrals = referrals.filter(first_purchase_at__isnull=False)
-        elif status_filter == 'rewarded':
-            referrals = referrals.filter(status=Referral.BOTH_REWARDED)
-        
-        page = request.GET.get('page', 1)
-        paginator = Paginator(referrals, 20)
-        referrals_page = paginator.get_page(page)
-        
-        context = {
-            'referrals': referrals_page,
-            'search': search,
-            'status_filter': status_filter,
-        }
-        
-        return render(request, 'admin_panel/referrals/list.html', context)
+        try:
+            search = request.GET.get('search', '').strip()
+            status_filter = request.GET.get('status', '')
+            
+            referrals = Referral.objects.select_related(
+                'referrer', 'referred', 'referral_code'
+            ).order_by('-signed_up_at')
+            
+            if search:
+                referrals = referrals.filter(
+                    Q(referrer__email__icontains=search) |
+                    Q(referrer__full_name__icontains=search) |
+                    Q(referred__email__icontains=search) |
+                    Q(referred__full_name__icontains=search) |
+                    Q(referral_code__code__icontains=search)
+                )
+            
+            if status_filter == 'pending':
+                referrals = referrals.filter(first_purchase_at__isnull=True)
+            elif status_filter == 'completed':
+                referrals = referrals.filter(first_purchase_at__isnull=False)
+            elif status_filter == 'rewarded':
+                referrals = referrals.filter(status=Referral.BOTH_REWARDED)
+            
+            page = request.GET.get('page', 1)
+            paginator = Paginator(referrals, 20)
+            referrals_page = paginator.get_page(page)
+            
+            context = {
+                'referrals': referrals_page,
+                'search': search,
+                'status_filter': status_filter,
+            }
+            
+            return render(request, 'refferals/admin_refferal_list.html', context)
+        except Exception as e:
+            print(f"The error is : {str(e)}")
 
 
 class ReferralRewardListView(AdminLoginMixin, View):
@@ -225,7 +228,7 @@ class ReferralRewardListView(AdminLoginMixin, View):
             'reward_type': reward_type,
         }
         
-        return render(request, 'admin_panel/referrals/rewards.html', context)
+        return render(request, 'refferals/admin_reward_view.html', context)
 
 
 class UserReferralDetailView(AdminLoginMixin, View):
@@ -271,4 +274,4 @@ class UserReferralDetailView(AdminLoginMixin, View):
             'pending_referrals': pending_count,
         }
         
-        return render(request, 'admin_panel/referrals/user_detail.html', context)
+        return render(request, 'refferals/referral_detail.html', context)

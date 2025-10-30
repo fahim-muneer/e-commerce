@@ -2,17 +2,15 @@
 {% block context %}
 
 
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8">
-        <!-- Header -->
-         <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen ">
+    <div class="bg-white rounded-lg shadow-xl p-8 max-w-5xl w-full mx-auto my-8 mt-5">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6 mt-5">
             <h2 class="text-2xl font-bold text-gray-800"> Update Profile</h2>
           <button class="text-gray-400 hover:text-gray-600">
                  <a href=" {% url 'user_profile' %} "><i class="fa-solid fa-times text-xl"></i> </a>
             </button>
         </div>
-                 {% if messages %}
+        {% if messages %}
         <div class="space-y-3 mb-4"> 
             {% for message in messages %}
                 {% if 'update-picture' in message.tags %}
@@ -51,37 +49,62 @@
         {% endif %}
 
 
-        <!-- Form Layout -->
         <form method="post" enctype="multipart/form-data"  class="space-y-6">
             {% csrf_token %}
             
-            
-            <!-- User image -->
-            <div class="mb-4">
-                <label for={{form.name.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.name}}</label>
-                
-            </div>
 
-             <!-- Category Icon -->
-            <div class="mb-6">
+
+             <div class="mb-6">
                 <label class="block text-lg font-semibold text-gray-800 mb-4">Profile Image</label>
                 
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <label for="{{ form.profile_picture.id_for_label }}" class="flex items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors">
+                <div class="flex items-start space-x-4">
+                    
+                    <label for="{{ form.profile_picture.id_for_label }}" 
+                           id="upload-label"
+                           class="flex flex-col items-center justify-center w-36 h-36 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-500 transition-colors p-2 
+                           {% if form.instance.profile_picture %} hidden {% endif %}">
                         <div class="text-center text-gray-400">
                             <i class="fa-solid fa-image text-3xl mb-2"></i>
                             <p class="text-sm">Upload Your Image</p>
                         </div>
                     </label>
+
+                    <div id="image-preview" 
+                         class="w-36 h-36 border-2 border-gray-300 rounded-md overflow-hidden relative 
+                         {% if not form.instance.profile_picture %} hidden {% endif %}">
+                        
+                        <img id="preview-image-tag" 
+                             class="w-full h-full object-cover" 
+                             src="{% if form.instance.profile_picture %} {{ form.instance.profile_picture.url }} {% else %} # {% endif %}" 
+                             alt="Profile Picture Preview">
+                        
+                        <button type="button" id="remove-image-button" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 leading-none shadow-md hover:bg-red-600 transition-colors z-10">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+
                     <div class="hidden">
                         {{ form.profile_picture }}
-                        {{ form.iprofile_picture.errors }}
+                        {{ form.profile_picture.errors }}
+                        
+                        {% comment %} 
+                            Render Django's default clear checkbox (e.g., if you want to allow users 
+                            to remove the picture entirely if the field is not required)
+                        {% endcomment %}
+                        {% if form.profile_picture.field.required == False and form.instance.profile_picture %}
+                             {{ form.profile_picture.clear }}
+                        {% endif %}
                     </div>
                 </div>
+                
+                {% if form.instance.profile_picture %}
+                    <p id="current-image-text" class="text-sm text-gray-500 mt-2">
+                        Click on the image to change it, or click the trash icon to remove it.
+                    </p>
+                {% endif %}
             </div>
 
 
-            <!-- Publish Button -->
             <div class="flex justify-end">
                 <button type="submit" class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-cloud-upload-alt mr-2"></i>
@@ -89,10 +112,89 @@
                 </button>
             </div>
         </form>
-
-
-
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get elements
+            const fileInput = document.getElementById('{{ form.profile_picture.id_for_label }}');
+            const previewContainer = document.getElementById('image-preview');
+            const previewImage = document.getElementById('preview-image-tag');
+            const uploadLabel = document.getElementById('upload-label');
+            const removeButton = document.getElementById('remove-image-button');
+            const clearCheckbox = document.getElementById('id_profile_picture-clear'); // Django's default clear checkbox ID
+            
+            // Store the initial image URL for reset functionality
+            const initialImageUrl = previewImage.src !== '#' && previewImage.src ? previewImage.src : null;
+
+
+            // --- Core Functionality ---
+
+            // Function to display the selected image
+            function readURL(input) {
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewContainer.classList.remove('hidden'); // Show preview
+                        uploadLabel.classList.add('hidden');        // Hide upload label
+                        if (clearCheckbox) clearCheckbox.checked = false; // Uncheck clear checkbox
+                    }
+
+                    reader.readAsDataURL(input.files[0]);
+                }
+            }
+
+            // Function to clear the image selection
+            function clearImage() {
+                fileInput.value = ''; // Clear file input value
+                previewImage.src = '#'; // Clear preview source
+                previewContainer.classList.add('hidden'); // Hide preview
+                uploadLabel.classList.remove('hidden'); // Show upload label
+                
+                if (clearCheckbox) {
+                    clearCheckbox.checked = true; // Check clear checkbox to remove saved image
+                }
+            }
+            
+            // Function to trigger file selection when clicking the preview image
+            function openFileInput() {
+                fileInput.click();
+            }
+
+
+            // --- Event Listeners ---
+            
+            // 1. New file selected via input
+            fileInput.addEventListener('change', function() {
+                readURL(this);
+            });
+
+            // 2. Remove button clicked (Clears the file and checks Django's clear box)
+            removeButton.addEventListener('click', clearImage);
+            
+            // 3. Click the preview image to select a new file
+            previewContainer.addEventListener('click', openFileInput);
+
+
+            // --- Initial State Cleanup (Handles Django clear checkbox) ---
+            if (clearCheckbox) {
+                // If the form reloads with clear checked (e.g., validation failed), ensure UI matches
+                if (clearCheckbox.checked) {
+                    clearImage(); 
+                }
+                
+                // If user unchecks the clear box, reset the preview to the original image
+                clearCheckbox.addEventListener('change', function() {
+                    if (!this.checked && initialImageUrl) {
+                        previewImage.src = initialImageUrl;
+                        previewContainer.classList.remove('hidden');
+                        uploadLabel.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 {% endblock context %}

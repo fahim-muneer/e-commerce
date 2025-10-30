@@ -1,14 +1,15 @@
 {% extends "adminbase.html" %}
-
-{% block title %}Referral Dashboard{% endblock %}
+{% block title %} Refferal Management {% endblock title %}
+{% block heading %} Refferal Management {% endblock heading %}
 
 {% block context %}
+{% load static %}
 <div class="container mx-auto p-6">
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-800">Referral</h1>
        {% comment %} {% url 'admin_offer_list' %} {% endcomment %}
-        <a href="#" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <a href="offer_view" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
             Manage Offers
         </a>
     </div>
@@ -100,9 +101,9 @@
             </div>
 
             {% comment %} {% url 'admin_referral_list' %} {% endcomment %}
-            <a href="#" class="block text-center mt-4 text-blue-600 hover:underline">
+            {% comment %} <a href="admin_referral_list" class="block text-center mt-4 text-blue-600 hover:underline">
                 View All Referrals →
-            </a>
+            </a> {% endcomment %}
         </div>
         
         <!-- Recent Referrals -->
@@ -173,7 +174,7 @@
                         <td class="px-4 py-3 text-sm">
                             
                             {% comment %} {% url 'admin_offer_detail' offer.pk %} {% endcomment %}
-                            <a href="#" class="text-blue-600 hover:underline">
+                            <a href="{% url 'update_offer' pk=offer.pk %}" class="text-blue-600 hover:underline">
                                 View Details
                             </a>
                         </td>
@@ -196,7 +197,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
        
        {% comment %} {% url 'admin_referral_list' %} {% endcomment %}
-        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+        <a href="{% url 'admin_referral_list' %}" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-list text-2xl text-blue-600"></i>
                 <div>
@@ -206,7 +207,7 @@
             </div>
         </a>
         {% comment %} {% url 'admin_referral_rewards' %} {% endcomment %}
-        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+        <a href="{% url 'admin_reward_list' %}" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-gift text-2xl text-purple-600"></i>
                 <div>
@@ -216,7 +217,7 @@
             </div>
         </a>
         {% comment %} {% url 'admin_offer_list' %} {% endcomment %}
-        <a href="#" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+        <a href="{% url 'offer_view' %}" class="block p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-tags text-2xl text-green-600"></i>
                 <div>

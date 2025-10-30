@@ -136,9 +136,9 @@
 
             <td class="px-6 py-4 whitespace-nowrap text-gray-900">₹{{ order.total_amount|floatformat:2 }}</td>
            
-              <form method="get" action="{% url 'order_list' %}">
+              {% comment %} <form method="get" action="{% url 'order_list' %}"> {% endcomment %}
             <td class="px-6 py-4 whitespace-nowrap">
-                {% if order.order_status == 1  or order.order_status == 6 %}
+                {% comment %} {% if order.order_status == 1  or order.order_status == 6 %}
                 <input type="hidden" name="order_id" value="{{ order.id }}">
                 <select name="order_status" onchange="this.form.submit()">
                   <option value="2" {% if order.order_status == 2 %}selected{% endif %}>Processing</option>
@@ -148,7 +148,7 @@
                 </select>
                 {% endif %}
 
-              </form>
+              </form> {% endcomment %}
               
 
               {% if order.order_status == 1 %}

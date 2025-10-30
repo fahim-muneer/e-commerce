@@ -97,12 +97,17 @@
     {{ product.description }}
   </p>
 
-  <!-- Variant Selection -->
-  {% if product.variant.exists %}
+<!-- Variant Selection -->
+{% if product.variant.exists %}
   <div class="mb-6">
     <h4 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
       <i class="fa-solid fa-layer-group text-blue-500 mr-2"></i>
-      Choose Variant
+      {% if selected_variant %}
+        Selected Variant:
+        <span class="text-blue-600 ml-2 font-semibold">{{ selected_variant.name }}</span>
+      {% else %}
+        Choose Variant
+      {% endif %}
     </h4>
 
     <form method="get" class="relative w-full group" id="variantForm">
@@ -113,14 +118,8 @@
         </div>
       </div>
     </form>
-
-    <script>
-      document.querySelector('#variantForm select').addEventListener('change', function() {
-        this.form.submit();
-      });
-    </script>
   </div>
-  {% endif %}
+{% endif %}
 
   <!-- Add to Cart or Unavailable Section -->
   {% if product.block %}

@@ -81,11 +81,21 @@
                 <div>
                     <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
                     {{form.mobile}}
+                            {% if form.mobile.errors %}
+                                <p class="text-red-600 text-sm mt-1">
+                                    {{ form.mobile.errors.0 }}
+                                </p>
+                            {% endif %}
                 </div>
                 <!-- Second Number -->
                 <div>
                     <label for="second_number" class="block text-sm font-medium text-gray-700 mb-1">Second Number</label>
                     {{form.second_mob}}
+                            {% if form.second_mobile.errors %}
+                                <p class="text-red-600 text-sm mt-1">
+                                    {{ form.second_mobile.errors.0 }}
+                                </p>
+                            {% endif %}
                 </div>
                 <!-- Address -->
                 <div>
@@ -110,6 +120,11 @@
                 <div>
                     <label for="postal_code" class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
                     {{form.pin}}
+                        {% if form.pin.errors %}
+                                <p class="text-red-600 text-sm mt-1">
+                                    {{ form.pin.errors.0 }}
+                                </p>
+                            {% endif %}
                 </div>
 
             </div>

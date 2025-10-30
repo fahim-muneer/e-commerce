@@ -53,7 +53,7 @@ class AddVarients(View):
                 variant.full_clean() 
                 variant.save()
                 
-                messages.success(request, 'The variant was added successfully.')
+                messages.success(request, 'The variant was added successfully.',extra_tags='variant')
                 return redirect('varient_list')
                 
             except ValidationError as e:
@@ -62,20 +62,20 @@ class AddVarients(View):
                         for error in errors:
                             messages.error(request, error)
                 else:
-                    messages.error(request, str(e))
+                    messages.error(request, str(e),extra_tags='variant')
                 return render(request, 'varients/add_varients.html', {'form': form})
                 
             except IntegrityError:
-                messages.error(request, 'A variant with this name already exists.')
+                messages.error(request, 'A variant with this name already exists.',extra_tags='variant')
                 return render(request, 'varients/add_varients.html', {'form': form})
                 
             except Exception as e:
-                messages.error(request, f'An error occurred: {str(e)}')
+                messages.error(request, f'An error occurred: {str(e)}',extra_tags='variant')
                 return render(request, 'varients/add_varients.html', {'form': form})
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{field}: {error}')
+                    messages.error(request, f'{field}: {error}',extra_tags='variant')
             return render(request, 'varients/add_varients.html', {'form': form})
 
 
@@ -90,7 +90,7 @@ class UpdateVarients(UpdateView):
             variant = form.save(commit=False)
             variant.full_clean()
             variant.save()
-            messages.success(self.request, 'Variant updated successfully.')
+            messages.success(self.request, f'Variant updated successfully.',extra_tags='variant-update')
             return redirect(self.success_url)
         except ValidationError as e:
             if hasattr(e, 'message_dict'):
@@ -101,7 +101,7 @@ class UpdateVarients(UpdateView):
                 messages.error(self.request, str(e))
             return self.form_invalid(form)
         except IntegrityError:
-            messages.error(self.request, 'A variant with this name already exists.')
+            messages.error(self.request, 'A variant with this name already exists.',extra_tags='variant-update')
             return self.form_invalid(form)
 
 

@@ -52,6 +52,7 @@ class Register(AbstractBaseUser):
     first_name = models.CharField(max_length=100, blank=True)  
     last_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField(max_length=300, unique=True,validators=[validate_real_email])
+    profile_image = models.ImageField(upload_to='customer/' , null=True , blank=True)
     
     referred_by_code = models.CharField(
         max_length=20, 
@@ -73,10 +74,8 @@ class Register(AbstractBaseUser):
     objects = MyAccountManager()
     
     def save(self, *args, **kwargs):
-        # Auto-populate full_name from first_name and last_name if not set
         if not self.full_name and (self.first_name or self.last_name):
             self.full_name = f"{self.first_name} {self.last_name}".strip()
-        # If full_name is set but first/last not set, try to split
         elif self.full_name and not (self.first_name and self.last_name):
             name_parts = self.full_name.split(' ', 1)
             if len(name_parts) == 2:

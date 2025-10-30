@@ -226,25 +226,12 @@
                         
                         <!-- Wishlist Button -->
                         <div class="absolute top-2 right-2 z-10">
-                            {% if product.id in my_list %}
-                            <form method="post" action="{% url 'unlike' pid=product.id %}">
-                                {% csrf_token %}
-                                <button type="submit" 
-                                        class="bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors">
-                                    <i class="fas fa-heart text-red-500"></i>
-                                </button>
-                            </form>
-                            {% else %}
-                            <form method="post" action="{% url 'wish_list' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="product_id" value="{{ product.id }}">
-                                <input type="hidden" name="action" value="add">
-                                <button type="submit" 
-                                        class="bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors">
-                                    <i class="far fa-heart text-gray-400"></i>
-                                </button>
-                            </form>
-                            {% endif %}
+                            <button type="button" 
+                                    class="wishlist-btn bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
+                                    data-product-id="{{ product.id }}"
+                                    data-in-wishlist="{% if product.id in my_list %}true{% else %}false{% endif %}">
+                                <i class="{% if product.id in my_list %}fas{% else %}far{% endif %} fa-heart {% if product.id in my_list %}text-red-500{% else %}text-gray-400{% endif %}"></i>
+                            </button>
                         </div>
                         
                         <a href="{% url 'items_details' pk=product.pk %}">
@@ -399,4 +386,113 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+
+    // Handle wishlist button clicks
+    document.querySelectorAll('.wishlist-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const productId = this.dataset.productId;
+            const inWishlist = this.dataset.inWishlist === 'true';
+            const icon = this.querySelector('i');
+            const btn = this;
+
+            console.log('Wishlist button clicked:', { productId, inWishlist });
+
+            // Use only one URL for both add and remove
+            const url = '{% url "wish_list" %}';
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('action', inWishlist ? 'remove' : 'add');
+
+            // Disable button during request
+            btn.disabled = true;
+
+            console.log('Sending request to:', url, 'with action:', inWishlist ? 'remove' : 'add');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    // Toggle wishlist state
+                    if (inWishlist) {
+                        // Remove from wishlist
+                        icon.classList.remove('fas', 'text-red-500');
+                        icon.classList.add('far', 'text-gray-400');
+                        btn.dataset.inWishlist = 'false';
+                    } else {
+                        // Add to wishlist
+                        icon.classList.remove('far', 'text-gray-400');
+                        icon.classList.add('fas', 'text-red-500');
+                        btn.dataset.inWishlist = 'true';
+                    }
+                    
+                    // Show success message
+                    showNotification(data.message || 'Wishlist updated!', 'success');
+                } else {
+                    showNotification(data.message || 'Something went wrong', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Failed to update wishlist. Please try again.', 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+        });
+    });
+
+    // Simple notification function
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 2000);
+    }
+});
+</script>
+
 {% endblock content %}

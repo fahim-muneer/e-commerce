@@ -36,11 +36,13 @@ class CategoryAdd(LoginRequiredMixin,View):
     
     def post(self , request):
         form = CategoryForm(request.POST,request.FILES)
+        
         if form.is_valid():
             form.save()
-            
+                
             return redirect('category_list')
-        messages.message(request, messages.ERROR, "This name is already there.", extra_tags='category_add')
+            
+        messages.error(request,"This name is already there.", extra_tags='category_add')
         return render(request ,'category/category_add.html',{'form':form})
 
 
@@ -51,8 +53,29 @@ class UpdateCategory(LoginRequiredMixin,UpdateView):
     template_name = 'category/update_category.html'
     success_url=reverse_lazy('category_list')
     
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f' Category "{self.object.name}" has been updated successfully!',
+            extra_tags='update_category'
+        )
+        return response
+    
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            "Failed to update category. Please check the form and correct the errors below.",
+            extra_tags='update_category'
+        )
+        return super().form_invalid(form)
+    
 @method_decorator(never_cache, name='dispatch')    
 class DeleteCategory(LoginRequiredMixin,DeleteView):
     model = CategoryPage
     template_name = 'category/delete_category.html'
     success_url=reverse_lazy('category_list')
+    
+    
+    

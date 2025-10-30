@@ -1,6 +1,3 @@
-"""
-Django settings for shop project.
-"""
 
 import os
 from pathlib import Path
@@ -46,6 +43,7 @@ INSTALLED_APPS = [
     'coupon',
     'payment',
     'paypal.standard.ipn',
+    'banner'
 ]
 
 MIDDLEWARE = [

@@ -19,6 +19,7 @@ from .views import (
                     ExportSalesReportCSV,
                     ExportSalesReportPDF,
                     ProductSalesReportView,
+                    AdminDashboardView
 
 
 )
@@ -26,6 +27,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 
 urlpatterns = [
+    path('admin/dashboard/', staff_member_required(AdminDashboardView.as_view(), login_url='index'),name='admin_dashboard'),
     path('wallet_dashboard/',login_required(WalletDashboardView.as_view()),name="my_wallet"),
     path('withdraw/', login_required(WithdrawalRequestView.as_view()), name='wallet_withdrawal_request'),
 

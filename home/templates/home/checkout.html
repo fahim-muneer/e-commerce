@@ -2,14 +2,16 @@
 {% load static %}
 
 {% block content %}
-<body class="bg-gray-100 p-6">
-    <div class="max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<body class="bg-gray-100 p-6 mt-5">
+    <div class="max-w-7xl mx-auto mt-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             
             <!-- LEFT SIDE: Delivery Address & Coupon -->
-            <div class="space-y-6">
+            <div class="space-y-6 ">
                 <!-- Delivery Address -->
-                <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="bg-white p-6 rounded-lg shadow-md mt-5">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-xl font-bold text-gray-800">Select Delivery Address</h2>
                         <a href="{% url 'add_order_address' %}" class="text-blue-600 hover:underline text-sm font-semibold">+ADD NEW ADDRESS</a>
@@ -27,7 +29,7 @@
                                 <p class="text-sm text-gray-600">{{ address.city }}, {{ address.state }} {{ address.pin }}</p>
                                 <p class="text-sm text-gray-600">{{ address.mobile }}</p>
                             </div>
-                            <a href="{% url 'edit_order_address' pk=address.id %}" class="absolute top-2 right-2 text-blue-600 hover:underline cursor-pointer text-sm font-semibold">EDIT</a>
+                            <a href="{% url "edit_order_address" pk=address.id %}" class="absolute top-2 right-2 text-blue-600 hover:underline cursor-pointer text-sm font-semibold">EDIT</a>
                         </div>
                         {% endfor %}
                     {% else %}
@@ -50,7 +52,7 @@
                                 {% if 'coupon-tag' in message.tags or 'otp-success' in message.tags %}
                                     <div 
                                         x-data="{ show: true }" 
-                                        x-init="setTimeout(() => { show = false }, 400)" 
+                                        x-init="setTimeout(() => { show = false }, 4000)" 
                                         x-show="show" 
                                         x-transition:enter="transition ease-out duration-300" 
                                         x-transition:leave="transition ease-in duration-200" 
@@ -218,7 +220,7 @@
                                         <button  class="w-full mt-3 py-3 bg-gray-300 text-white font-semibold rounded-md shadow-md  transition-colors duration-200 flex items-center justify-center space-x-2">
                                             <i class="fa-solid fa-truck"></i><span>CASH ON DELIVERY (Unavailable)</span>
                                         </button>
-                                        <p class="text-xs text-red-600 mt-1 text-center">cash on delivary is not available above purchase of 1000</p>
+                                        <a href="{% url 'order_failed' %}" class="text-xs text-red-600 mt-1 text-center">cash on delivary is not available above purchase of 1000</a>
                                         {% else %}
                                         <button type="button" onclick="submitOrder('cod')" class="w-full mt-3 py-3 bg-gray-800 text-white font-semibold rounded-md shadow-md hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center space-x-2">
                                             <i class="fa-solid fa-truck"></i><span>CASH ON DELIVERY</span>

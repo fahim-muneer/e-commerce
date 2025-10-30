@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 space-y-6">
+            
+            <div class="text-center">
+                <svg class="mx-auto h-12 w-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                    Verify Your Email
+                </h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    Enter the <strong>6-digit code</strong> sent to your current email address.
+                </p>
+                {% if old_email %}
+                <p class="mt-1 text-xs text-gray-500">
+                    Code sent to: <strong>{{ old_email }}</strong>
+                </p>
+                {% endif %}
+            </div>
+            
+            <!-- Display Django Messages -->
+            {% if messages %}
+                <div class="space-y-2">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <form class="space-y-6" id="otp-form" action="{% url 'verify_email_otp' %}" method="POST">
+                {% csrf_token %}
+                
+                <div class="space-y-4">
+                    <div class="flex justify-center space-x-2 sm:space-x-3" id="otp-inputs-container">
+                        <input type="text" data-index="0" maxlength="1" pattern="[0-9]" inputmode="numeric" 
+                               class="otp-input w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none transition duration-150 ease-in-out shadow-inner" 
+                               required autofocus>
+                        <input type="text" data-index="1" maxlength="1" pattern="[0-9]" inputmode="numeric" 
+                               class="otp-input w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none transition duration-150 ease-in-out shadow-inner" 
+                               required>
+                        <input type="text" data-index="2" maxlength="1" pattern="[0-9]" inputmode="numeric" 
+                               class="otp-input w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none transition duration-150 ease-in-out shadow-inner" 
+                               required>
+                        <input type="text" data-index="3" maxlength="1" pattern="[0-9]" inputmode="numeric" 
+                               class="otp-input w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none transition duration-150 ease-in-out shadow-inner" 
+                               required>
+                        <input type="text" data-index="4" maxlength="1" pattern="[0-9]" inputmode="numeric" 
+                               class="otp-input w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none transition duration-150 ease-in-out shadow-inner" 
+                               required>
+                        <input type="text" data-index="5" maxlength="1" pattern="[0-9]" inputmode="numeric" 
+                               class="otp-input w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-600 focus:outline-none transition duration-150 ease-in-out shadow-inner" 
+                               required>
+                        
+                        <input type="hidden" name="otp_code" id="otp_code_hidden">
+                    </div>
+                </div>
+                
+                <div>
+                    <button type="submit" id="verify-button"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                        Verify Code
+                    </button>
+                </div>
+            </form>
+
+            <div class="border-t border-gray-200 pt-4">
+                <div class="text-center text-sm space-y-3">
+                    <p class="text-gray-600">
+                        Didn't receive the code? 
+                        <a href="{% url 'resend_otp' %}" class="font-medium text-blue-600 hover:text-blue-500 hover:underline">
+                            Resend Code
+                        </a>
+                    </p>
+                    <p>
+                        <a href="{% url 'admin_profile' %}" class="font-medium text-gray-500 hover:text-gray-700 hover:underline">
+                            &larr; Back to Profile
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputs = document.querySelectorAll('.otp-input');
+        const hiddenInput = document.getElementById('otp_code_hidden');
+        const form = document.getElementById('otp-form');
+        const verifyButton = document.getElementById('verify-button');
+
+        // Function to combine the digits and put them into the hidden field
+        function updateHiddenInput() {
+            let fullCode = '';
+            inputs.forEach(input => {
+                fullCode += input.value;
+            });
+            hiddenInput.value = fullCode;
+            
+            // Enable/disable submit button based on completion
+            if (fullCode.length === inputs.length) {
+                verifyButton.disabled = false;
+                verifyButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                verifyButton.disabled = true;
+                verifyButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            
+            return fullCode;
+        }
+
+        inputs.forEach((input, index) => {
+            // Handle input event
+            input.addEventListener('input', (e) => {
+                // Only allow numbers
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+
+                // Move to the next input field automatically
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+
+                // Update the hidden field with the combined code
+                updateHiddenInput();
+            });
+
+            // Handle keydown event for backspace
+            input.addEventListener('keydown', (e) => {
+                // If backspace is pressed on an empty field, move focus back
+                if (e.key === 'Backspace') {
+                    if (e.target.value === '' && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                }
+                
+                // If left arrow key, move to previous input
+                if (e.key === 'ArrowLeft' && index > 0) {
+                    e.preventDefault();
+                    inputs[index - 1].focus();
+                }
+                
+                // If right arrow key, move to next input
+                if (e.key === 'ArrowRight' && index < inputs.length - 1) {
+                    e.preventDefault();
+                    inputs[index + 1].focus();
+                }
+            });
+
+            // Handle pasting the code
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const paste = e.clipboardData.getData('text').trim();
+                
+                // Ensure it's a 6-digit number
+                if (paste.length === inputs.length && /^\d+$/.test(paste)) {
+                    // Distribute the pasted digits across the fields
+                    paste.split('').forEach((char, i) => {
+                        if (inputs[i]) {
+                            inputs[i].value = char;
+                        }
+                    });
+                    // Focus the last input after pasting
+                    inputs[inputs.length - 1].focus();
+                    updateHiddenInput();
+                }
+            });
+        });
+
+        // Initialize button state on page load
+        updateHiddenInput();
+
+        // Form submission validation
+        form.addEventListener('submit', (e) => {
+            const fullCode = updateHiddenInput();
+            
+            if (fullCode.length !== inputs.length) {
+                e.preventDefault();
+                alert('Please enter all 6 digits of the verification code.');
+                inputs[0].focus();
+                return false;
+            }
+        });
+
+        // Auto-focus first input on page load
+        window.addEventListener('load', () => {
+            inputs[0].focus();
+        });
+    </script>
+
+</body>
+</html>

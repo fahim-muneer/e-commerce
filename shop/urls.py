@@ -26,7 +26,8 @@ urlpatterns = [
     path('payment/', include('payment.urls')),
     path('wallet/', include('wallet.urls')),
     path('refferal/', include('refferal.urls')),
-    path('coupon/', include('coupon.urls'))
+    path('coupon/', include('coupon.urls')),
+    path('banner/',include('banner.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

@@ -37,7 +37,7 @@
                             <span class="text-gray-500">ORDER ID</span>
                             <a href="{% url 'order_details' pk=order.pk %}" 
                                class="text-blue-600 hover:underline font-medium">
-                                #{{ order.id }}
+                                #{{ forloop.counter }}
                             </a>
                         </div>
                         
