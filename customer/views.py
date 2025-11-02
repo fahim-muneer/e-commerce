@@ -1,5 +1,5 @@
 import random
-from django.shortcuts import render, redirect,get_object_or_404
+from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy
@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.urls import reverse
-from orders.models import Orders
+# from orders.models import Orders
 from django.utils.encoding import force_bytes, force_str
 from .models import OTP,Register, Customer ,UserAddress
 from .forms import SignUpForm, LoginForm, OtpVerificationForm, ForgotPasswordForm,CustomSetPasswordForm,UserProfileForm,UpdateEmailForm,UserAddressForm
@@ -26,7 +26,7 @@ from django.db import transaction
 from .models import ReferralCode, Referral, ReferralReward
 from offer.models import Offers
 from datetime import timedelta
-from .utils import create_referral_on_signup
+# from .utils import create_referral_on_signup
 
 
 from allauth.socialaccount.models import SocialAccount
@@ -169,7 +169,6 @@ class SignUp(View):
                     
             except Exception as e:
                 messages.error(request, f"Error creating account: {str(e)}")
-                print(f"the error is : {str(e)}")
                 return render(request, 'customer/signup.html', {'form': form})
         else:
             messages.error(request, "Please correct the errors in the form.", extra_tags='sign-up')
@@ -177,22 +176,15 @@ class SignUp(View):
 
 def process_referral_signup(new_user, referral_code):
 
-    print("="*80)
-    print(f" Starting referral signup process for: {new_user.email}")
-    print(f" Referral code: {referral_code}")
-    
     try:
         referral_code_obj = ReferralCode.objects.get(code=referral_code)
         referrer = referral_code_obj.user
         
-        print(f" Referral code found. Referrer: {referrer.email}")
         
         if referrer == new_user:
-            print(" Self-referral not allowed")
             return False
         
         if Referral.objects.filter(referred=new_user).exists():
-            print(" User was already referred")
             return False
         
         referral = Referral.objects.create(
@@ -202,7 +194,6 @@ def process_referral_signup(new_user, referral_code):
             status=Referral.PENDING
         )
         
-        print(f" Referral record created: ID {referral.id}")
         
         now = timezone.now()
         referral_offers = Offers.objects.filter(
@@ -212,20 +203,12 @@ def process_referral_signup(new_user, referral_code):
             end_date__gte=now
         )
         
-        print(f"Found {referral_offers.count()} active referral offers")
         
         if not referral_offers.exists():
-            print("No active referral offers found - Referral created but no rewards")
             return True
         
         rewards_created = 0
         for offer in referral_offers:
-            print(f"\n Processing offer: {offer.name}")
-            print(f"   - Applies to: {offer.applies_to}")
-            print(f"   - Fixed amount: ₹{offer.fixed_discount_amount}")
-            print(f"   - Percentage: {offer.percentage_discount}%")
-            
-
             if offer.applies_to in ['referee', 'both', 'Referee', 'Both']:
                 validity_days = getattr(offer, 'validity_days', 30) or 30
                 
@@ -240,34 +223,21 @@ def process_referral_signup(new_user, referral_code):
                 )
                 
                 rewards_created += 1
-                print(f"    Referee reward created: ID {reward.id}")
-                print(f"      Amount: ₹{reward.discount_amount}")
-                print(f"      Valid until: {reward.valid_until.strftime('%Y-%m-%d')}")
-            else:
-                print(f"    Skipping - offer applies to: {offer.applies_to}")
-        
-        print(f"\n Process complete: {rewards_created} rewards created for referee")
-        print("="*80)
+            # else:
+
         return True
         
     except ReferralCode.DoesNotExist:
-        print(" Invalid referral code")
-        print("="*80)
+
         return False
     except Exception as e:
-        print(f" Error processing referral: {e}")
-        import traceback
-        traceback.print_exc()
-        print("="*80)
-        return False
+         import traceback
+         traceback.print_exc()
+         return False
 
 
 def process_first_purchase(user, order):
 
-    print("="*80)
-    print(f" Processing first purchase for: {user.email}")
-    print(f" Order ID: {order.order_Id}")
-    
     try:
         # Check if this user was referred and hasn't made first purchase yet
         referral = Referral.objects.filter(
@@ -276,31 +246,18 @@ def process_first_purchase(user, order):
         ).first()
         
         if not referral:
-            print(f"ℹ No pending referral found for user {user.email}")
-            print("="*80)
+         
             return None, None
-        
-        print(f"✓ Found referral: ID {referral.id}")
-        print(f"   Referrer: {referral.referrer.email}")
-        print(f"   Referred: {referral.referred.email}")
         
         referral.first_purchase_at = timezone.now()
         referral.first_order = order
         referral.save()
-        
-        print(f" Referral updated with first purchase timestamp")
-        
-
-        print(f"Signal will process wallet credits automatically")
-        print("="*80)
-        
+       
         return referral, None
         
     except Exception as e:
-        print(f" Error processing first purchase: {e}")
         import traceback
         traceback.print_exc()
-        print("="*80)
         return None, None   
     
 @method_decorator(never_cache, name='dispatch')
@@ -387,23 +344,18 @@ class OtpVerification(View):
 @method_decorator(never_cache, name='dispatch') 
 class ForgotPassword(View):
     def get(self, request):
-        print("got get request in the FORGOT PASSWORD function")
 
         form = ForgotPasswordForm()
 
         return render(request, 'customer/forgot_password.html', {'form': form})
 
     def post(self, request):
-        print(" got POSST request in FORGOT PASSWORD")
 
         form = ForgotPasswordForm(request.POST)
-        print(form)
 
         if form.is_valid():
-            print('form is valid')
             
             email = form.cleaned_data['email']
-            print(f"the entered email is {email}")
             
             
 
@@ -424,10 +376,8 @@ class ForgotPassword(View):
             except User.DoesNotExist as e :
                 messages.error(
                     request, "The email you enetered does not registered.",extra_tags='forgot-password')
-                print(f"the redirect error is {str(e)}")
                 return redirect('forgot_password')
         messages.error(request, "Please enter a valid email.")
-        print("please enter a valid email")
         return render(request,'customer/forgot_password.html',{'form':form})
 
 
@@ -520,7 +470,6 @@ class EditPicture(MyLoginRequiredMixin,View):
             messages.success(request,'Your profile picture was added.')
             return redirect('user_profile')
         messages.error(request,'Your uploading was failed. Please try again.',extra_tags='update-picture')
-        print("redirecting to here and should show the message")
         return render(request ,'customer/update_picture.html',{'form':form})
 
 
@@ -547,7 +496,6 @@ class UpdateEmailAndFullName(MyLoginRequiredMixin, View):
             new_full_name = form.cleaned_data.get('full_name')
             
             if new_email and new_email != old_email:
-                print(f"Email change detected: {old_email} → {new_email}")
                 
                 from customer.models import Register
                 if Register.objects.filter(email=new_email).exclude(id=user.id).exists():
@@ -568,15 +516,12 @@ class UpdateEmailAndFullName(MyLoginRequiredMixin, View):
                         f"We've sent a verification code to your current email ({old_email}). Please enter it to confirm the email change."
                         ,extra_tags='otp-verification'
                     )
-                    print(f"OTP sent to old email: {old_email}")
                     return redirect('email_otp')
                 except Exception as e:
                     messages.error(request, f"Failed to send verification code: {str(e)}")
-                    print(f"Error sending OTP: {str(e)}")
                     return render(request, 'customer/update_email.html', {'form': form, 'user': user})
             
             else:
-                print("No email change, updating full name only")
                 if new_full_name and new_full_name != user.full_name:
                     user.full_name = new_full_name
                     user.save()
@@ -624,10 +569,7 @@ class VerifyEmailOTP(MyLoginRequiredMixin, View):
         new_email = request.session.get('new_email')
         user_id = request.session.get('user_id')
         pending_full_name = request.session.get('pending_full_name')
-        
-        print(f"OTP Verification - Entered: {entered_otp}")
-        print(f"Session - Old: {old_email}, New: {new_email}, User ID: {user_id}")
-        
+       
         # Validate session data
         if not all([old_email, new_email, user_id]):
             messages.error(request, "Session expired. Please try again.")
@@ -645,26 +587,22 @@ class VerifyEmailOTP(MyLoginRequiredMixin, View):
         try:
             # Get user by ID and verify old email matches
             user = Register.objects.get(id=user_id, email=old_email)
-            print(f"User found: {user.email}")
             
             # Get the most recent OTP for this user
             otp_obj = OTP.objects.filter(user=user).order_by('-created_at').first()
             
             if not otp_obj:
                 messages.error(request, "No OTP found. Please request a new one.")
-                print("No OTP found in database")
                 return render(request, 'customer/otp_verification.html', {
                     'form': form,
                     'old_email': old_email,
                     'new_email': new_email
                 })
             
-            print(f"OTP from DB: {otp_obj.code}, Entered: {entered_otp}")
             
             # Check if OTP is still valid (not expired)
             if not otp_obj.is_valid():
                 messages.error(request, "OTP has expired. Please request a new one.")
-                print("OTP expired")
                 return render(request, 'customer/otp_verification.html', {
                     'form': form,
                     'old_email': old_email,
@@ -673,7 +611,6 @@ class VerifyEmailOTP(MyLoginRequiredMixin, View):
             
             # Verify OTP matches
             if otp_obj.code == entered_otp:
-                print("OTP verified successfully!")
                 
                 # Double-check new email is still available
                 if Register.objects.filter(email=new_email).exclude(id=user.id).exists():
@@ -688,14 +625,11 @@ class VerifyEmailOTP(MyLoginRequiredMixin, View):
                 # Update full name if it was pending
                 if pending_full_name and pending_full_name != user.full_name:
                     user.full_name = pending_full_name
-                    print(f"Full name updated to: {pending_full_name}")
                 
                 user.save()
-                print(f"Email updated from {old_email} to {new_email}")
                 
                 # Delete used OTP
                 otp_obj.delete()
-                print("OTP deleted")
                 
                 # Clear session data
                 self.clear_session_data(request)
@@ -708,7 +642,6 @@ class VerifyEmailOTP(MyLoginRequiredMixin, View):
                 return redirect('user_profile')
             else:
                 messages.error(request, "Invalid verification code. Please try again.")
-                print("OTP mismatch")
                 return render(request, 'customer/otp_verification.html', {
                     'form': form,
                     'old_email': old_email,
@@ -717,12 +650,10 @@ class VerifyEmailOTP(MyLoginRequiredMixin, View):
         
         except Register.DoesNotExist:
             messages.error(request, "User not found. Please log in again.")
-            print("User not found")
             self.clear_session_data(request)
             return redirect('login')
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
-            print(f"Exception in VerifyEmailOTP: {str(e)}")
             import traceback
             traceback.print_exc()
             return render(request, 'customer/otp_verification.html', {
@@ -748,7 +679,6 @@ class ResendEmailOTP(MyLoginRequiredMixin, View):
         new_email = request.session.get('new_email')
         user_id = request.session.get('user_id')
         
-        print(f"ResendEmailOTP - Old: {old_email}, New: {new_email}, User ID: {user_id}")
         
         if not all([old_email, user_id]):
             messages.error(request, "Session expired. Please try updating your email again.")
@@ -759,22 +689,18 @@ class ResendEmailOTP(MyLoginRequiredMixin, View):
             
             # Delete old OTPs for this user
             OTP.objects.filter(user=user).delete()
-            print(f"Old OTPs deleted for user {user.email}")
             
             # Generate and send new OTP to OLD email
             generate_and_send_otp(old_email)
             messages.success(request, f"A new verification code has been sent to {old_email}.")
-            print(f"New OTP sent to old email: {old_email}")
             
             return redirect('email_otp')
             
         except Register.DoesNotExist:
             messages.error(request, "User not found. Please log in again.")
-            print("User not found in ResendEmailOTP")
             return redirect('login')
         except Exception as e:
             messages.error(request, f"Failed to resend code: {str(e)}")
-            print(f"Exception in ResendEmailOTP: {str(e)}")
             return redirect('email_otp')
 
 

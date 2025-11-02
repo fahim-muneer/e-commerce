@@ -418,17 +418,11 @@ def cancel_item(request, oid, pid):
 
         try:
             with transaction.atomic():
-                print("=" * 60)
-                print(" CANCEL ITEM - START")
-                print("=" * 60)
-                
+
                 original_order_total = Decimal(str(order.total_amount))
-                print(f"Original order total (paid): ₹{original_order_total}")
                 
                 item_total = Decimal(str(item.total_price))
-                print(f" Cancelling: {item.product.name}")
-                print(f"   Item price: ₹{item_total}")
-                print(f"   Quantity: {item.quantity}")
+               
                 
                 had_coupon = bool(order.coupon_code)
                 coupon_value = Decimal('0')
@@ -438,40 +432,30 @@ def cancel_item(request, oid, pid):
                     coupon = order.coupon_code
                     coupon_value = Decimal(str(coupon.discount_value))
                     coupon_min = Decimal(str(coupon.min_cart_value))
-                    print(f"  Coupon: {coupon.coupon_code}")
-                    print(f"   Discount: ₹{coupon_value}")
-                    print(f"   Minimum: ₹{coupon_min}")
+                   
                 
                 item.order_status = 4
                 item.item_cancel_reason = reason
                 item.save(update_fields=['order_status', 'item_cancel_reason'])
-                print("Item marked as cancelled")
 
                 if item.variant:
                     item.variant.stock = F('stock') + item.quantity
                     item.variant.save(update_fields=['stock'])
                     item.variant.refresh_from_db()
-                    print(f"   Restored {item.quantity} units to variant stock")
                 else:
                     item.product.stock = F('stock') + item.quantity
                     item.product.save(update_fields=['stock'])
                     item.product.refresh_from_db()
-                    print(f"   Restored {item.quantity} units to product stock")
 
                 remaining_items = order.items.exclude(order_status__in=[4, 7])
                 remaining_count = remaining_items.count()
                 remaining_subtotal = sum(Decimal(str(i.total_price)) for i in remaining_items)
-                
-                print(f" After cancellation:")
-                print(f"   Remaining items: {remaining_count}")
-                print(f"   Remaining subtotal: ₹{remaining_subtotal}")
-                
+                 
                 refund_amount = Decimal('0')
                 new_order_total = Decimal('0')
                 coupon_removed = False
                 
                 if remaining_count == 0:
-                    print("\nNo items remaining - full refund")
                     refund_amount = original_order_total
                     new_order_total = Decimal('0')
                     coupon_removed = True
@@ -480,16 +464,11 @@ def cancel_item(request, oid, pid):
                     
                 elif had_coupon:
                     if remaining_subtotal < coupon_min:
-                        print(f"\n Remaining (₹{remaining_subtotal}) < minimum (₹{coupon_min})")
-                        print("   Coupon becomes INVALID")
                         
                       
                         new_order_total = remaining_subtotal
                         
                         refund_amount = original_order_total - new_order_total
-                        
-                        print(f"   New order total (no coupon): ₹{new_order_total}")
-                        print(f"   Refund: ₹{original_order_total} - ₹{new_order_total} = ₹{refund_amount}")
                         
                         order.coupon_code = None
                         coupon_removed = True
@@ -500,38 +479,25 @@ def cancel_item(request, oid, pid):
                             f"₹{coupon_value} discount no longer applied."
                         )
                     else:
-                        print(f"\n  Remaining (₹{remaining_subtotal}) >= minimum (₹{coupon_min})")
-                        print("   Coupon remains VALID")
-                        
+                       
                         new_order_total = remaining_subtotal - coupon_value
                         
                         refund_amount = original_order_total - new_order_total
-                        
-                        print(f"   New order total (with coupon): ₹{new_order_total}")
-                        print(f"   Refund: ₹{original_order_total} - ₹{new_order_total} = ₹{refund_amount}")
                 else:
-                    print("\n No coupon on order")
                     new_order_total = remaining_subtotal
                     refund_amount = item_total
-                    print(f"   New order total: ₹{new_order_total}")
-                    print(f"   Refund (item price): ₹{refund_amount}")
-                
+                  
                 if refund_amount < Decimal('0'):
-                    print(" Refund was negative, setting to 0")
                     refund_amount = Decimal('0')
                 
                 order.total_amount = new_order_total
                 order.save(update_fields=['total_amount', 'order_status', 'coupon_code'])
-                print(f"\n Order updated:")
-                print(f"   New total: ₹{order.total_amount}")
-                print(f"   Status: {order.get_order_status_display()}")
                 
                 if order.payment_status == Orders.PAYMENT_PAID and refund_amount > 0:
                     from wallet.models import Wallet, WalletTransaction
                     
                     wallet, _ = Wallet.objects.get_or_create(user=request.user)
                     
-                    print(f"\n  Processing refund to wallet: ₹{refund_amount}")
                     
                     wallet.add_money(
                         amount=refund_amount,
@@ -544,17 +510,12 @@ def cancel_item(request, oid, pid):
                         request,
                         f"Item '{item.product.name}' cancelled. ₹{refund_amount} refunded to your wallet."
                     )
-                    print("  Refund completed")
                 else:
                     messages.success(request, f"Item '{item.product.name}' cancelled. Stock restored.")
-                    print("  Cancellation completed (no refund needed)")
                 
-                print("=" * 60)
-                print("🛒 CANCEL ITEM - END")
-                print("=" * 60)
+              
 
         except Exception as e:
-            print(f"\n  ERROR: {str(e)}")
             import traceback
             traceback.print_exc()
             messages.error(request, f'Error cancelling item: {str(e)}')
@@ -599,7 +560,6 @@ def cancel_entire_order(request, oid):
                 if order.coupon_code:
                     coupon = order.coupon_code
                     coupon_discount = Decimal(str(coupon.discount_value))
-                    print(f"Coupon applied: {coupon.coupon_code}, Discount: ₹{coupon_discount}")
 
                     refund_amount = original_total  
                                                        
@@ -713,38 +673,27 @@ def complete_return_admin(request, order_id, item_id):
 
     try:
         with transaction.atomic():
-            print("=" * 60)
-            print(" COMPLETE RETURN (ADMIN) - START")
-            print("=" * 60)
-
+           
             original_order_total = Decimal(str(order.total_amount))
             item_total = Decimal(str(item.total_price))
-            print(f"Original order total: ₹{original_order_total}")
-            print(f"Returning item #{item.id}: ₹{item_total}")
-
+            
             if item.variant:
                 item.variant.stock = F('stock') + item.quantity
                 item.variant.save(update_fields=['stock'])
                 item.variant.refresh_from_db()
-                print(f"Restored {item.quantity} units to variant stock.")
             else:
                 item.product.stock = F('stock') + item.quantity
                 item.product.save(update_fields=['stock'])
                 item.product.refresh_from_db()
-                print(f"Restored {item.quantity} units to product stock.")
 
            
             item.order_status = 7  
             item.save(update_fields=['order_status'])
-            print("Item marked as returned.")
 
             
             remaining_items = order.items.exclude(order_status__in=[4, 7])
             remaining_subtotal = sum(Decimal(str(i.total_price)) for i in remaining_items)
             remaining_count = remaining_items.count()
-
-            print(f" Remaining items: {remaining_count}")
-            print(f"   Remaining subtotal: ₹{remaining_subtotal}")
 
             refund_amount = Decimal('0')
             new_order_total = Decimal('0')
@@ -758,11 +707,7 @@ def complete_return_admin(request, order_id, item_id):
                 coupon = order.coupon_code
                 coupon_value = Decimal(str(coupon.discount_value))
                 coupon_min = Decimal(str(coupon.min_cart_value))
-                print(f" Coupon details:")
-                print(f" - Code: {coupon.coupon_code}")
-                print(f" - Discount: ₹{coupon_value}")
-                print(f" - Minimum: ₹{coupon_min}")
-
+              
             if remaining_count == 0:
                 refund_amount = original_order_total
                 new_order_total = Decimal('0')
@@ -771,7 +716,6 @@ def complete_return_admin(request, order_id, item_id):
 
             elif had_coupon:
                 if remaining_subtotal < coupon_min:
-                    print(" Remaining total below coupon minimum → Coupon invalid.")
                     new_order_total = remaining_subtotal
                     refund_amount = original_order_total - new_order_total
 
@@ -779,42 +723,29 @@ def complete_return_admin(request, order_id, item_id):
                     order.coupon_code = None
                     coupon_removed = True
 
-                    print(f"New order total (no coupon): ₹{new_order_total}")
-                    print(f"Refund = ₹{original_order_total} - ₹{new_order_total} = ₹{refund_amount}")
-
                     messages.info(
                         request,
                         f"Coupon '{coupon_code_str}' removed (order below minimum). "
                         f"Refund reduced by ₹{coupon_value}."
                     )
                 else:
-                    print(" Coupon remains valid after return.")
                     new_order_total = remaining_subtotal - coupon_value
                     refund_amount = original_order_total - new_order_total
-                    print(f"New order total (with coupon): ₹{new_order_total}")
-                    print(f"Refund = ₹{original_order_total} - ₹{new_order_total} = ₹{refund_amount}")
-
+                   
             else:
-                print("No coupon applied.")
                 new_order_total = remaining_subtotal
                 refund_amount = item_total
-                print(f"Refund (item price): ₹{refund_amount}")
 
             if refund_amount < Decimal('0'):
-                print("Refund was negative, setting to 0.")
                 refund_amount = Decimal('0')
 
             order.total_amount = new_order_total
             order.save(update_fields=['total_amount', 'order_status', 'coupon_code'])
-            print(f"\nOrder updated:")
-            print(f" - New total: ₹{order.total_amount}")
-            print(f" - Status: {order.get_order_status_display()}")
-
+            
             if order.payment_status == Orders.PAYMENT_PAID and refund_amount > 0:
                 from wallet.models import Wallet, WalletTransaction
                 wallet, _ = Wallet.objects.get_or_create(user=order.user)
 
-                print(f" Refunding ₹{refund_amount} to user's wallet.")
                 wallet.add_money(
                     amount=refund_amount,
                     transaction_type=WalletTransaction.CREDIT_REFUND,
@@ -830,13 +761,8 @@ def complete_return_admin(request, order_id, item_id):
             else:
                 messages.success(request, "Return completed. Stock restored successfully.")
 
-            print("=" * 60)
-            print(" COMPLETE RETURN (ADMIN) - END")
-            print("=" * 60)
-
     except Exception as e:
         messages.error(request, f"Error completing return: {str(e)}")
-        print(f" Error completing return: {str(e)}")
 
     return redirect('order_details', pk=order_id)
 

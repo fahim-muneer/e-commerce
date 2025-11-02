@@ -1,4 +1,5 @@
 from django.apps import AppConfig
+from django.contrib import messages
 
 
 class CustomerConfig(AppConfig):
@@ -7,9 +8,7 @@ class CustomerConfig(AppConfig):
 
     def ready(self):
         """Import signals when app is ready"""
-        try:
-            import customer.signals
-            print("✅ Customer signals loaded successfully")
-        except ImportError as e:
-            print(f"⚠️ Could not import customer signals: {e}")
+        
+        import customer.signals
+        
             

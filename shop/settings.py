@@ -13,7 +13,9 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOST = ['*']
+
 
 INSTALLED_APPS = [
     # 'django.contrib.admin',
@@ -43,7 +45,8 @@ INSTALLED_APPS = [
     'coupon',
     'payment',
     'paypal.standard.ipn',
-    'banner'
+    'banner',
+    'bughandler'
 ]
 
 MIDDLEWARE = [
@@ -97,11 +100,11 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'shop1',
-        'USER': 'postgres',
-        'HOST': 'localhost',
-        'PASSWORD': '1234',
-        'PORT': '5432',
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv("DB_HOST"),
+        'PORT': os.getenv("DB_PORT"),
     }
 }
 
@@ -177,7 +180,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'fahimmuneer313@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Fixed: Use specific env var
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', 'fahimmuneer313@gmail.com')
 
 

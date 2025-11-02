@@ -1,6 +1,4 @@
-"""
-URL configuration for shop project.
-"""
+    
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
@@ -27,16 +25,15 @@ urlpatterns = [
     path('wallet/', include('wallet.urls')),
     path('refferal/', include('refferal.urls')),
     path('coupon/', include('coupon.urls')),
-    path('banner/',include('banner.urls'))
+    path('banner/',include('banner.urls')),
+    path('bughandler/',include('bughandler.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
-    print("DEBUG = True")
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 else:
-    print("Debug = False")
     # Force Django to serve them even when DEBUG=False (for local testing only)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

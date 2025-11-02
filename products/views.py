@@ -11,12 +11,12 @@ from varients.models import Varient
 from .models import ProductVariants,Review
 from custom_admin.views import AdminLoginMixin
 from django.http import JsonResponse
-from django.core.files.base import ContentFile
+# from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import os
 from django.urls import reverse
-from orders.models import OrderItem
+# from orders.models import OrderItem
 
 
 
@@ -141,14 +141,15 @@ class ProductDetail(AdminLoginMixin, View):
         product = get_object_or_404(ProductPage, pk=pk)
         variants = product.variant.all()
 
-        # Collect all product images dynamically
         images = [product.image1, product.image2, product.image3, product.image4, product.image5]
         images = [img for img in images if img]  # only include non-empty images
+        reviews = variants.filter(review__isnull=False).exclude(review="")
 
         context = {
             'product': product,
             'variants': variants,
             'images': images,
+            'reviews':reviews
         }
         return render(request, 'product/product_detail.html', context)
 

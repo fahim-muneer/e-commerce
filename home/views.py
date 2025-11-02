@@ -8,9 +8,9 @@ from orders.models import Cart, CartItems, OrderAddress, Orders, OrderItem
 from django.db import transaction
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from customer.models import UserAddress, Register
-from django.db.models import F, Sum, Count, Max
-from django.contrib.auth.mixins import LoginRequiredMixin
+#  from customer.models import UserAddress, Register
+from django.db.models import F
+# from django.contrib.auth.mixins import LoginRequiredMixin
 from wish_list.models import WishListItems
 User = get_user_model()
 from django.urls import reverse
@@ -33,9 +33,9 @@ from django.utils import timezone
 from django.contrib import messages
 from coupon.models import Coupons
 logger = logging.getLogger(__name__)
-from datetime import date
+# from datetime import date
 from wallet.models import Wallet
-from django.db.models import Min, Max, Q
+from django.db.models import Q
 from products.forms import ReviewForm
 from banner.models import Banner
 
@@ -317,7 +317,6 @@ def add_to_cart(request):
         except ValueError:
             messages.error(request, "Invalid quantity value.")
         except Exception as e:
-            logger.exception("Error adding item to cart")
             messages.error(request, "Error adding item to cart. Please try again.")
     
     return redirect('home')
@@ -331,7 +330,6 @@ def remove_from_cart(request, item_id):
         cart_item.delete()
         messages.success(request, f"Removed {product_name} from your cart.")
     except Exception as e:
-        logger.exception("Error removing item from cart")
         messages.error(request, "Error removing item. Please try again.")
 
     return redirect('cart')
@@ -460,7 +458,6 @@ def _finalize_order(
     total_amount=None,
     coupon=None
 ):
-    print("...............finalized funcion was called...........")
     if payment_method == 'razorpay':
         payment_method_const = Orders.ONLINE_PAYMENT
         payment_status = Orders.PAYMENT_PAID
@@ -494,7 +491,6 @@ def _finalize_order(
         coupon_code=Coupons.objects.get(coupon_code=coupon_code)
         # total_amount -= coupon.discount_value
         # total_amount = max(total_amount, 0)
-        print("coupon is applied in finalize function for order")
 
     order = Orders.objects.create(
         user=user,
@@ -508,7 +504,6 @@ def _finalize_order(
         coupon_code=coupon_code,  
         paid_at=timezone.now() if payment_status == Orders.PAYMENT_PAID else None,
     )
-    print("the order created in the finalized function")
     logger.info(f"Order {order.pk} created with payment_method={payment_method}, payment_status={payment_status}")
 
     for item_info in items_info:
@@ -527,18 +522,15 @@ def _finalize_order(
             unit_price=price,
             order_status=Orders.STATUS_CONFIRMED,
         )
-        print("order item created in finalized function")
 
     if coupon:
         coupon.use_limit -= 1
         coupon.save(update_fields=['use_limit'])
         cart.coupon_code = None
         cart.save(update_fields=['coupon_code'])       
-        print("the coupon updated and decrease its limit in finalized function ")
 
     CartItems.objects.filter(owner=cart).delete()
     cart.delete()
-    print("the cart deleted from the finalized function ")
 
     logger.info(
         f"Order {order.pk} created successfully | User: {user.pk} | "
@@ -546,7 +538,6 @@ def _finalize_order(
         f"Payment Status: {dict(Orders.PAYMENT_STATUS_CHOICES).get(payment_status)} | "
         f"Amount: ₹{order.total_amount} | Coupon: {coupon_code or 'None'}"
     )
-    print('returning the finaized function to CHECKOUT PAGE')
     return order
 
 def create_order_from_cart(cart):
@@ -590,23 +581,16 @@ class CheckoutList(MyLoginRequiredMixin, View):
             if not coupon.is_valid():
                 cart.coupon_code = None
                 cart.save(update_fields=['coupon_code'])
-                print("Removed invalid coupon (expired/inactive/used up)")
             elif cart.subtotal < coupon.min_cart_value:
                 messages.info(request, f"Coupon removed. Cart must be at least ₹{coupon.min_cart_value}.")
                 cart.coupon_code = None
                 cart.save(update_fields=['coupon_code'])
-                print("Cart subtotal not eligible for coupon")
 
         cart_items = cart.ordered_items.all()
         subtotal = cart.subtotal
-        print(f"Subtotal before coupon applied: {subtotal}")
         coupon_discount = cart.coupon_discount
-        print(f"Coupon discount amount: {coupon_discount}")
         total_price = cart.total_price or Decimal('0')
-        print(f"Total price of the cart: {total_price}")
-        print("============================================================================================")
-        print(f" Subtotal: {subtotal}, Discount: {coupon_discount}, Total: {total_price}")
-
+       
         wallet, created = Wallet.objects.get_or_create(user=user)
         applied_coupon = cart.coupon_code 
 
@@ -653,45 +637,34 @@ class CheckoutList(MyLoginRequiredMixin, View):
     @transaction.atomic
     def post(self, request):
         
-        print("checkout processing started")
         user = request.user
-        print(f"user{user}")
         
         address_id = request.POST.get('address', '').strip()
-        print(f"address{address_id}")
         payment_method = request.POST.get('payment_method', 'cod').strip()
-        print(f"payment mrthod{payment_method}")
 
         if not address_id:
             messages.error(request, 'Please select your delivery address.')
-            print("no address found, and redirected")
             return redirect('checkout')
 
         try:
             delivery_address = OrderAddress.objects.get(id=address_id, user=user)
-            print("delivery address got")
         except (OrderAddress.DoesNotExist, ValueError):
             messages.error(request, 'Invalid address selected.')
-            print("invalid address so redirected and redirected")
             return redirect('checkout')
 
         try:
             cart = Cart.objects.get(owner=user)
             if not cart.ordered_items.exists():
                 messages.error(request, 'Your cart is empty.')
-                print("cart is empty so redirected")
                 return redirect('cart')
         except Cart.DoesNotExist as e:
             messages.error(request, 'No cart found.')
             logger.exception(str(e))
-            print("no cart found  so redirected")
             return redirect('cart')
 
         total_amount = cart.total_price or Decimal('0')
-        print(f"total amount is {total_amount}")
 
         applied_coupon = getattr(cart, 'coupon_code', None)
-        print(f"applied coupon is {applied_coupon}")
 
         if applied_coupon:
             if not applied_coupon.is_valid():
@@ -712,7 +685,6 @@ class CheckoutList(MyLoginRequiredMixin, View):
 
             if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
                 messages.error(request, "Payment failed or missing details.",extra_tags='order_failed')
-                print("pyment failed and redirected")
                 return redirect('order_failed')
 
             try:
@@ -736,13 +708,11 @@ class CheckoutList(MyLoginRequiredMixin, View):
 
              
                 messages.success(request, f"Payment successful! Order #{order.pk} confirmed.")
-                print("seccess redirected")
                 return redirect(reverse('order_success', kwargs={'uid': order.pk}))
 
             except Exception as e:
                 messages.error(request, "Payment verification failed. Please try again.",extra_tags='order_failed')
                 logger.exception(f"Razorpay payment error for user {user.pk}: {e}")
-                print(f"the error is {str(e)}")
                 return redirect('order_failed')
 
         elif payment_method == 'wallet':
@@ -866,9 +836,7 @@ def apply_coupon_to_cart(request):
     
 @login_required
 def add_review(request, variant_id):
-    print("Getting into the add review function")
     variant = get_object_or_404(ProductVariants, id=variant_id)
-    print(f"Variant is = {variant}")
     
     has_bought = OrderItem.objects.filter(
         order__user=request.user,
@@ -878,7 +846,6 @@ def add_review(request, variant_id):
     
     if not has_bought:
         messages.error(request, "You can only review products you have purchased and received.",extra_tags='product-details')
-        print("User hasn't purchased this product")
         
         return redirect('items_details', pk=variant.product.pk)
     
@@ -914,15 +881,12 @@ def add_review(request, variant_id):
             )
             
             messages.success(request, "Your review has been submitted successfully!",extra_tags="'product-details'")
-            print("Review submitted successfully!")
             return redirect('items_details', pk=variant.product.pk)
             
         except ValueError:
             messages.error(request, "Invalid rating value.",extra_tags="add_review")
-            print("Invalid rating value")
         except Exception as e:
             messages.error(request, "Please buy the product and try again.")
-            print(f"The error is: {str(e)}")
     
     context = {
         'variant': variant,

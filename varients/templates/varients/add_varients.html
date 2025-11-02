@@ -15,6 +15,9 @@
                  <a href=" {% url 'varient_list' %} "><i class="fa-solid fa-times text-xl"></i> </a>
             </button>
         </div>
+
+
+        
         {% if messages %}
 <div class="space-y-3 mb-4"> 
     {% for message in messages %}
@@ -70,7 +73,7 @@
             <!-- Category Name -->
             <div class="mb-4">
                 <label for={{form.name.id_label}} class="block text-sm font-medium text-gray-700 mb-1">{{form.name}}</label>
-                
+                {% comment %} {{form.error}} {% endcomment %}
             </div>
 
 

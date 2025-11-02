@@ -7,7 +7,7 @@ def mark_referral_first_purchase(user):
     Mark that a referred user has made their first purchase
     This will trigger the signal to credit wallets automatically
     
-    ⚠️ IMPORTANT: Call this in your order success/payment success view!
+     IMPORTANT: Call this in your order success/payment success view!
     
     Usage:
         from customer.utils import mark_referral_first_purchase
@@ -22,7 +22,6 @@ def mark_referral_first_purchase(user):
         dict: Status information about the referral marking
     """
     try:
-        # Find if this user was referred by someone
         referral = Referral.objects.filter(
             referred=user,
             first_purchase_at__isnull=True  # Only if not already marked
@@ -33,17 +32,13 @@ def mark_referral_first_purchase(user):
             referral.first_purchase_at = timezone.now()
             referral.save()  # This triggers the signal to credit wallets!
             
-            print(f"✅ First purchase marked for referral: {referral}")
-            print(f"   Referrer: {referral.referrer.email}")
-            print(f"   Referred: {referral.referred.email}")
-            
+           
             return {
                 'success': True,
                 'message': f'Referral bonus will be credited to {referral.referrer.email}',
                 'referral': referral
             }
         else:
-            print(f"ℹ️ No pending referral found for user: {user.email}")
             return {
                 'success': False,
                 'message': 'No pending referral found',
@@ -89,7 +84,6 @@ def create_referral_on_signup(referred_user, referral_code_str):
         referral_code_obj = ReferralCode.objects.filter(code=referral_code_str).first()
         
         if not referral_code_obj:
-            print(f"❌ Invalid referral code: {referral_code_str}")
             return {
                 'success': False,
                 'message': 'Invalid referral code',
@@ -98,7 +92,6 @@ def create_referral_on_signup(referred_user, referral_code_str):
         
         # Don't allow self-referral
         if referral_code_obj.user == referred_user:
-            print(f"❌ Self-referral attempt blocked for {referred_user.email}")
             return {
                 'success': False,
                 'message': 'You cannot refer yourself',
@@ -108,7 +101,6 @@ def create_referral_on_signup(referred_user, referral_code_str):
         # Check if user already has a referral
         existing = Referral.objects.filter(referred=referred_user).first()
         if existing:
-            print(f"⚠️ User {referred_user.email} already has a referral: {existing}")
             return {
                 'success': False,
                 'message': 'User already referred',
@@ -127,11 +119,7 @@ def create_referral_on_signup(referred_user, referral_code_str):
         referred_user.referred_by_code = referral_code_str
         referred_user.save(update_fields=['referred_by_code'])
         
-        print(f"✅ Referral created successfully!")
-        print(f"   Referrer: {referral.referrer.email}")
-        print(f"   Referred: {referral.referred.email}")
-        print(f"   Code: {referral_code_str}")
-        
+       
         return {
             'success': True,
             'message': f'Successfully used referral code from {referral.referrer.full_name}',
@@ -139,7 +127,6 @@ def create_referral_on_signup(referred_user, referral_code_str):
         }
         
     except Exception as e:
-        print(f"❌ Error creating referral: {str(e)}")
         import traceback
         traceback.print_exc()
         return {
@@ -192,15 +179,12 @@ def check_and_apply_referral_on_first_order(order, user):
         user_orders = Orders.objects.filter(user=user, is_paid=True).count()
         
         if user_orders == 1:  # This is the first paid order
-            print(f"🎯 First order detected for {user.email}")
             result = mark_referral_first_purchase(user)
             
             if result['success']:
-                print(f"🎉 Referral bonuses will be credited!")
                 return True
         
         return False
         
     except Exception as e:
-        print(f"❌ Error in check_and_apply_referral_on_first_order: {str(e)}")
         return False

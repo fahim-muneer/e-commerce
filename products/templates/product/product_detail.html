@@ -96,7 +96,49 @@
 
 <!-- Customer Reviews Section -->
 <div class="p-8 md:p-12">
-    <h3 class="text-2xl font-bold text-gray-800 mb-6">Customer Reviews</h3>
+    
+<div class="p-8 md:p-12">
+
+
+  <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+    <i class="fa-solid fa-star text-yellow-500 mr-2"></i>
+    Customer Reviews ({{ reviews.count }})
+  </h3>
+
+  {% if reviews %}
+    <div class="space-y-6">
+      {% for r in reviews %}
+        <div class="bg-white p-6 rounded-lg shadow">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-semibold text-gray-800">
+               {% if r.user.full_name %}{{ r.user.full_name}}{% else %}{{r.user.email}}{% endif %} 
+              </p>
+              <p class="text-sm text-gray-500">
+                {{ r.created_at|date:"d M Y, h:i A" }}
+              </p>
+            </div>
+            <div class="flex">
+              {% for i in "12345" %}
+                {% if forloop.counter <= r.rating %}
+                  <i class="fa-solid fa-star text-yellow-500"></i>
+                {% else %}
+                  <i class="fa-regular fa-star text-gray-300"></i>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+          <p class="text-gray-700 mt-3">{{ r.comment }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-gray-600">
+      No reviews yet.
+    </p>
+  {% endif %}
+</div>
+
     <div class="space-y-6">
         {% comment %} Repeat reviews here {% endcomment %}
     </div>

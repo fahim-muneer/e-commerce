@@ -1,5 +1,3 @@
-# customer/urls.py - COMPLETE FIXED VERSION
-
 from django.urls import path
 from .views import (
     LogIn,

@@ -8,7 +8,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.exceptions import *
 from django.db.utils import *
-
+from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 
 class VarientsView(View):
     def get(self,request):
@@ -63,7 +64,7 @@ class AddVarients(View):
                             messages.error(request, error)
                 else:
                     messages.error(request, str(e),extra_tags='variant')
-                return render(request, 'varients/add_varients.html', {'form': form})
+                    return render(request, 'varients/add_varients.html', {'form': form})
                 
             except IntegrityError:
                 messages.error(request, 'A variant with this name already exists.',extra_tags='variant')
@@ -73,9 +74,13 @@ class AddVarients(View):
                 messages.error(request, f'An error occurred: {str(e)}',extra_tags='variant')
                 return render(request, 'varients/add_varients.html', {'form': form})
         else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}',extra_tags='variant')
+            #  for field, errors in form.errors.items():
+            #     for error in errors:
+            #         messages.error(request, f'{field}: {error}',extra_tags='variant')
+            # messages.error(request,f': {error}',extra_tags='variant')
+            messages.error(request,"Check your credentials",extra_tags='variant')
+
+            
             return render(request, 'varients/add_varients.html', {'form': form})
 
 
@@ -87,22 +92,40 @@ class UpdateVarients(UpdateView):
     
     def form_valid(self, form):
         try:
-            variant = form.save(commit=False)
-            variant.full_clean()
-            variant.save()
-            messages.success(self.request, f'Variant updated successfully.',extra_tags='variant-update')
-            return redirect(self.success_url)
-        except ValidationError as e:
-            if hasattr(e, 'message_dict'):
-                for field, errors in e.message_dict.items():
-                    for error in errors:
-                        messages.error(self.request, error)
-            else:
-                messages.error(self.request, str(e))
+
+            response = super().form_valid(form)
+            
+
+            messages.success(self.request, 'Variant updated successfully.', extra_tags='variant-update success')
+            
+            return response 
+            
+        except Exception as e:
+            
+            messages.error(self.request, f"An unexpected error occurred during update: {e}", extra_tags='variant-update error')
             return self.form_invalid(form)
+
+
+    def form_invalid(self, form):
+        
+        for error in form.non_field_errors():
+            messages.error(self.request, error, extra_tags='variant-update error')
+
+        # for field, errors in form.errors.items():
+        #     for error in errors:
+        #         message = f"Error in {field}: {error}"
+        #         messages.error(self.request, message, extra_tags='variant-update')
+                
+        return super().form_invalid(form)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
         except IntegrityError:
-            messages.error(self.request, 'A variant with this name already exists.',extra_tags='variant-update')
-            return self.form_invalid(form)
+            messages.error(self.request, 'A variant with this name already exists.', extra_tags='variant-update')
+            
+            form = self.get_form()
+            return self.form_invalid(form) 
 
 
 class DeleteVarients(DeleteView):

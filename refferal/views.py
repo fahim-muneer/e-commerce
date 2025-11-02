@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from customer.models import Referral, ReferralReward, ReferralCode
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache

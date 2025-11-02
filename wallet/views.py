@@ -16,11 +16,11 @@ from customer.models import Customer
 
 
 from django.db.models import Sum, Count, Avg, Q, F
-from django.db.models.functions import TruncDate, TruncMonth, TruncYear
+from django.db.models.functions import TruncDate, TruncMonth
 from decimal import Decimal
 from datetime import datetime, timedelta
 from django.utils import timezone
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 import csv
 from io import BytesIO
 from reportlab.lib.pagesizes import A4, landscape
@@ -220,10 +220,8 @@ class VerifyWalletPaymentView(MyLoginRequiredMixin, View):
                 'razorpay_signature': razorpay_signature
             }
             
-            print("Verifying payment signature...")
             razorpay_client.utility.verify_payment_signature(params_dict)
             
-            print(f"Adding ₹{amount} to wallet...")
             transaction = wallet.add_money(
                 amount=amount,
                 transaction_type=WalletTransaction.CREDIT_ADMIN,
@@ -272,9 +270,7 @@ class WalletDashboardView(MyLoginRequiredMixin, View):
             wallet=wallet,
             status=WalletWithdrawalRequest.PENDING
         )
-        print("the profile picture process starts here")
         profile = Customer.objects.get(user=self.request.user) #pylint: disable=no-member
-        print("the profile picture is updated ")
 
         
         context = {
@@ -686,9 +682,7 @@ class AdminApproveWithdrawalView(AdminLoginMixin, View):
     
     def post(self, request, request_id):
         withdrawal = get_object_or_404(WalletWithdrawalRequest, pk=request_id)
-        print(f"post request from {withdrawal}")
         remarks = request.POST.get('remarks', '')
-        print(f"")
         
         try:
             withdrawal.approve(admin_user=request.user, remarks=remarks)

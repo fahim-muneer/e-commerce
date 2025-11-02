@@ -5,6 +5,7 @@ from django.views.generic import UpdateView,DeleteView
 from .forms import BannerForm
 from django.urls import reverse_lazy
 from django.core.paginator import Paginator
+from django.contrib import messages 
 
 class BannerView(View):
     def get(self, request):
@@ -15,14 +16,18 @@ class BannerView(View):
             banner = user_paginator.get_page(page)
             return render(request, 'banner/banner_view.html', {'banner': banner})
         except Exception as e:
-            print(f"The error is {str(e)}")
+            messages.error(request,f'Error found: {str(e)}',extra_tags='banner')
             return render(request, 'banner/banner_view.html', {'banner': []})  
 
 
 class AddBanner(View):
     def get(self, request):
-        form = BannerForm()
-        return render(request, 'banner/add_banner.html', {'form': form})
+        try:
+            form = BannerForm()
+            return render(request, 'banner/add_banner.html', {'form': form})
+        except Exception as e:
+            messages.error(request,f'Error found : {str(e)}',extra_tags='banner')
+            return render(request, 'banner/add_banner.html', {'form': form})
     
     def post(self, request):
         form = BannerForm(request.POST, request.FILES)  
@@ -31,10 +36,9 @@ class AddBanner(View):
                 form.save()
                 return redirect('banner_view')
             else:
-                print(f"Form errors: {form.errors}")
                 return render(request, 'banner/add_banner.html', {'form': form})
         except Exception as e:
-            print(f"Got error in the form validations: {str(e)}")
+            messages.error(request,f"Error found: {str(e)}",extra_tags='banner')
             return render(request, 'banner/add_banner.html', {'form': form})
 
 class EditBanner(UpdateView):
@@ -42,6 +46,13 @@ class EditBanner(UpdateView):
     fields=['name','image']
     template_name='banner/edit_banner.html'
     success_url = reverse_lazy('banner_view')
+    
+    def dispatch(self, request, *args, **kwargs):
+            try:
+                return super().dispatch(request, *args, **kwargs)
+            except Exception as e:
+                messages.error(request, f"An unexpected error occurred: {e}",extra_tags='banner')
+                return redirect(self.success_url)
 
 
 class DeleteBanner(DeleteView):

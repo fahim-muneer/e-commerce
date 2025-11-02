@@ -133,7 +133,6 @@ class MyListDeleteItem(LoginRequiredMixin, View):
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('wish_list'))
 
 
-# home/views.py - Update the Unlike view
 
 class Unlike(LoginRequiredMixin, View):
     def post(self, request, pid):
