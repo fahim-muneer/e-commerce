@@ -5,81 +5,84 @@
 <div class="flex justify-center py-10 bg-gray-50">
     <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg border border-gray-200 p-6 relative">
         
-        <!-- Close Button -->
         <a href="{% url 'checkout' %}" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-            <i class="fa-solid fa-times text-xl"></i>
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
         </a>
 
-        <!-- Heading -->
         <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2 text-center">
             Available Coupons
         </h2>
         
         <div class="space-y-4">
-            {% for coupons in coupon %}
-                {% if coupons.use_limit > 0 %}
-                <!-- ✅ Active Coupon Card -->
+            {% for item in coupon %} 
+            
+                {% if item.can_use %}
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-5 
                             bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl 
                             shadow-sm border-l-4 border-red-500 transition hover:shadow-md hover:bg-gray-50">
                     
-                    <!-- Left -->
                     <div class="flex flex-col space-y-1 mb-3 md:mb-0">
-                        <h3 class="text-lg font-bold text-gray-800">{{ coupons.coupon_code }}</h3>
-                        <p class="text-sm text-gray-600">{{ coupons.description }}</p>
-                        <p class="text-sm text-gray-500">Min Cart Value: ₹{{ coupons.min_cart_value }}</p>
-                        <p class="text-sm text-gray-500">Discount: {{ coupons.discount_value }}%</p>
+                        <h3 class="text-lg font-bold text-gray-800">{{ item.coupon.coupon_code }}</h3>
+                        <p class="text-sm text-gray-600">{{ item.coupon.description }}</p>
+                        <p class="text-sm text-gray-500">Min Cart Value: ₹{{ item.coupon.min_cart_value }}</p>
+                        <p class="text-sm text-gray-500">Discount: ₹{{ item.coupon.discount_value }}</p>
+                        
+                        {% if request.user.is_authenticated %}
+                            <p class="text-xs text-gray-500 font-medium mt-1">
+                                Remaining uses: <span class="text-red-600 font-bold">{{ item.remaining_uses }}</span>
+                            </p>
+                        {% endif %}
                     </div>
 
-                    <!-- Right -->
                     <div class="flex flex-col items-start md:items-end text-sm space-y-2">
                         <span class="text-gray-600 font-medium">
-                            Valid till: {{ coupons.expire_at|date:"d M, Y" }}
+                            Valid till: {{ item.coupon.expire_at|date:"d M, Y" }}
                         </span>
 
-                        <!-- Copy Button -->
-                        <button onclick="copyCoupon('{{ coupons.coupon_code }}')" 
-                                class="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 focus:outline-none">
+                        <button onclick="copyCoupon('{{ item.coupon.coupon_code }}')" 
+                                class="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 focus:outline-none transform active:scale-[0.98]">
                             Copy Code
                         </button>
                     </div>
                 </div>
+                
                 {% else %}
-                <!--  Expired / Limit Reached Coupon -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-5 
                             bg-gray-100 border border-gray-200 rounded-xl shadow-sm border-l-4 border-gray-400 opacity-70">
                     
-                    <!-- Left -->
                     <div class="flex flex-col space-y-1 mb-3 md:mb-0">
-                        <h3 class="text-lg font-bold text-gray-500">{{ coupons.coupon_code }}</h3>
-                        <p class="text-sm text-gray-500">{{ coupons.description }}</p>
-                        <p class="text-sm text-gray-400">Min Cart Value: ₹{{ coupons.min_cart_value }}</p>
-                        <p class="text-sm text-gray-400">Discount: {{ coupons.discount_value }}%</p>
+                        <h3 class="text-lg font-bold text-gray-500">{{ item.coupon.coupon_code }} (Used Up)</h3>
+                        <p class="text-sm text-gray-500">{{ item.coupon.description }}</p>
+                        <p class="text-sm text-gray-400">Min Cart Value: ₹{{ item.coupon.min_cart_value }}</p>
+                        <p class="text-sm text-gray-400">Discount: ₹{{ item.coupon.discount_value }}</p>
                     </div>
 
-                    <!-- Right -->
                     <div class="flex flex-col items-start md:items-end text-sm">
-                        <span class="text-gray-500 font-medium">
-                            Expired / Limit Reached
+                        <span class="text-red-500 font-medium">
+                            Limit Reached
                         </span>
                     </div>
                 </div>
                 {% endif %}
+
             {% empty %}
             <div class="p-6 text-center text-gray-600 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                No available coupons at the moment.
+                <i class="fa-solid fa-tags text-2xl mb-2"></i>
+                <p>No exciting coupons available for you at the moment.</p>
             </div>
             {% endfor %}
         </div>
 
-        <!-- Pagination -->
+        {% if coupon.paginator.num_pages > 1 %}
         <div class="flex justify-center space-x-2 mt-8">
             {% if coupon.has_previous %}
             <a href="?page={{ coupon.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
             {% endif %}
             
             {% for i in coupon.paginator.page_range %}
-            <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100 {% if i == coupon.number %}bg-red-500 text-white{% endif %}">
+            <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100 {% if i == coupon.number %}bg-red-500 text-white hover:bg-red-500{% endif %}">
                 {{ i }}
             </a>
             {% endfor %}
@@ -88,31 +91,26 @@
             <a href="?page={{ coupon.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 </div>
 
-<!-- ✅ Copy-to-Clipboard Script -->
 <script>
 function copyCoupon(code) {
     navigator.clipboard.writeText(code)
         .then(() => {
-            // Show a success message (temporary alert style)
             const alert = document.createElement('div');
             alert.textContent = `Coupon "${code}" copied!`;
-            alert.className = "fixed top-6 right-6 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transition-all duration-300";
+            alert.className = "fixed top-6 right-6 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transition-all duration-300 z-50";
             document.body.appendChild(alert);
             setTimeout(() => alert.remove(), 2000);
         })
         .catch(err => {
-            alert('Failed to copy coupon code.');
+            alert('Failed to copy coupon code. Please copy manually.');
         });
 }
 </script>
 {% endblock content %}
-
-
-
-
 
 
 

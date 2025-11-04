@@ -1,4 +1,5 @@
 from django.shortcuts import redirect, render, HttpResponseRedirect, get_object_or_404
+from coupon.models import CouponUsage
 from products.models import ProductPage
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
@@ -482,15 +483,19 @@ def _finalize_order(
         total_amount = cart.total_price
 
     coupon_code = None
+    coupon_obj = None
+    
     if coupon:
-        if coupon.expire_at < timezone.now().date():
-            raise ValueError("Coupon has expired.")
-        if coupon.use_limit <= 0:
-            raise ValueError("Coupon usage limit reached.")
+        # Validate coupon again with user-specific checks
+        is_valid, error_message = coupon.is_valid(user=user)
+        if not is_valid:
+            raise ValueError(f"Coupon validation failed: {error_message}")
+        
+        if cart.subtotal < coupon.min_cart_value:
+            raise ValueError(f"Cart value must be at least ₹{coupon.min_cart_value}")
+        
         coupon_code = coupon.coupon_code
-        coupon_code=Coupons.objects.get(coupon_code=coupon_code)
-        # total_amount -= coupon.discount_value
-        # total_amount = max(total_amount, 0)
+        coupon_obj = Coupons.objects.get(coupon_code=coupon_code)
 
     order = Orders.objects.create(
         user=user,
@@ -501,11 +506,12 @@ def _finalize_order(
         total_amount=total_amount,
         razorpay_order_id=razorpay_id,
         razorpay_payment_id=razorpay_payment_id,
-        coupon_code=coupon_code,  
+        coupon_code=coupon_obj,
         paid_at=timezone.now() if payment_status == Orders.PAYMENT_PAID else None,
     )
     logger.info(f"Order {order.pk} created with payment_method={payment_method}, payment_status={payment_status}")
 
+    # Create order items
     for item_info in items_info:
         cart_item = item_info['cart_item']
         stock_source = item_info['stock_source']
@@ -523,12 +529,20 @@ def _finalize_order(
             order_status=Orders.STATUS_CONFIRMED,
         )
 
-    if coupon:
-        coupon.use_limit -= 1
-        coupon.save(update_fields=['use_limit'])
+    # IMPORTANT: Record coupon usage for this user
+    if coupon_obj:
+        CouponUsage.objects.create(
+            coupon=coupon_obj,
+            user=user,
+            order=order
+        )
+        logger.info(f"Coupon '{coupon_code}' usage recorded for user {user.pk} in order {order.pk}")
+        
+        # Remove coupon from cart after successful order
         cart.coupon_code = None
-        cart.save(update_fields=['coupon_code'])       
+        cart.save(update_fields=['coupon_code'])
 
+    # Clear cart
     CartItems.objects.filter(owner=cart).delete()
     cart.delete()
 
@@ -539,29 +553,6 @@ def _finalize_order(
         f"Amount: ₹{order.total_amount} | Coupon: {coupon_code or 'None'}"
     )
     return order
-
-def create_order_from_cart(cart):
-    order = Orders.objects.create(
-        user=cart.owner,
-        total_amount=cart.total_price,
-        coupon_code=cart.coupon if hasattr(cart, 'coupon') else None,
-        delivery_address=cart.owner.default_address,  
-        payment_method=Orders.CASH_ON_DELIVERY
-    )
-
-    for item in cart.ordered_items.all():
-        OrderItem.objects.create(
-            order=order,
-            product=item.product,
-            variant=item.variant,
-            quantity=item.quantity,
-            unit_price=item.unit_price 
-        )
-
-
-
-    return order
-
 class CheckoutList(MyLoginRequiredMixin, View):
     def get(self, request):
         user = request.user

@@ -5,15 +5,8 @@ from django.utils import timezone
 class CouponForm(forms.ModelForm):
     class Meta:
         model = Coupons
-        fields = [
-            'coupon_code',
-            'description',
-            'min_cart_value',
-            'discount_value',
-            'expire_at',
-            'use_limit',
-            'active',
-        ]
+        fields = ['coupon_code', 'description', 'min_cart_value', 
+                        'discount_value', 'expire_at', 'use_limit_per_user', 'active']
         widgets = {
             # 'expire_at': forms.DateInput(attrs={'type': 'date'}),
             # 'description': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-md border border-gray-300 p-2'}),

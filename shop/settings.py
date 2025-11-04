@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'payment',
     'paypal.standard.ipn',
     'banner',
-    'bughandler'
+    'bughandler',
+    'whitenoise.runserver_nostatic'
 ]
 
 MIDDLEWARE = [
@@ -63,14 +64,14 @@ MIDDLEWARE = [
     'shop.middleware.error_handler.CustomExceptionMiddleware',
     'customer.middleware.NoCacheMiddleware',
     'customer.middleware.DisableClientCacheMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleWare.',
+    
 
 
     
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://appendiceal-denny-contextually.ngrok-free.dev',
-]
+CSRF_TRUSTED_ORIGINS = []
 
 ROOT_URLCONF = 'shop.urls'
 
@@ -134,6 +135,9 @@ STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [
     'shop/static',
 ]
+
+STATICFILES_STORAGE='whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_ROOT=BASE_DIR/ 'staticfiles'
 
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'

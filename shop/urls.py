@@ -1,8 +1,8 @@
-    
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 
+# Custom error handlers are correctly placed here
 handler404 = 'custom_admin.views.custom_404'
 handler500 = 'custom_admin.views.custom_500'
 handler403 = 'custom_admin.views.custom_403'
@@ -10,6 +10,7 @@ handler400 = 'custom_admin.views.custom_400'
 
 
 urlpatterns = [
+    # --- Project App URL Inclusions ---
     path('accounts/', include('allauth.urls')),
     path('custom_admin/', include('custom_admin.urls')),
     path('category/', include('category.urls')),
@@ -27,13 +28,11 @@ urlpatterns = [
     path('coupon/', include('coupon.urls')),
     path('banner/',include('banner.urls')),
     path('bughandler/',include('bughandler.urls'))
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] 
 
+# --- PRODUCTION READY STATIC/MEDIA CONFIGURATION ---
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-else:
-    # Force Django to serve them even when DEBUG=False (for local testing only)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+

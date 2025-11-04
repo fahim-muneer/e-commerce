@@ -1,41 +1,75 @@
-from django.shortcuts import render
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import Coupons
+from .models import Coupons, CouponUsage
 from .forms import CouponForm
 from decimal import Decimal
 from orders.models import Cart
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.utils import timezone
+from .models import Coupons 
 
 
 def user_coupon_list(request):
-    coupon=Coupons.objects.all().order_by('-id')
-    page = 1
-    if request.GET:
-        page = request.GET.get('page', 1)
-
-    user_paginator = Paginator(coupon, 2)
-    coupon = user_paginator.get_page(page)
+    """Show available coupons to users with their usage info"""
     
-    return render(request, 'coupons/user_coupon_view.html', {'coupon': coupon})
-
+    coupons = Coupons.objects.filter(active=True, expire_at__gte=timezone.now().date()).order_by('-id')
+    
+    coupon_list_data = [] 
+    
+    for coupon in coupons:
+        
+        if request.user.is_authenticated:
+            used_count = coupon.get_usage_count(request.user)
+            remaining = coupon.use_limit_per_user - used_count
+        else:
+            used_count = 0
+            remaining = coupon.use_limit_per_user
+        
+        can_use = remaining > 0 
+        
+        coupon_list_data.append({
+            'coupon': coupon, 
+            'used_count': used_count,
+            'remaining_uses': remaining,
+            'can_use': can_use
+        })
+    
+    page = request.GET.get('page', 1)
+    user_paginator = Paginator(coupon_list_data, 2)
+    coupon_page_obj = user_paginator.get_page(page)
+    
+    context = {
+        'coupon': coupon_page_obj 
+    }
+    
+    return render(request, 'coupons/user_coupon_view.html', context)
 def coupon_list(request):
-
-    
+    """Admin view for all coupons"""
     coupons = Coupons.objects.all().order_by('-id')
-    print (f"COupon = {coupons}")
-    page = 1
-    if request.GET:
-        page = request.GET.get('page', 1)
-
-    user_paginator = Paginator(coupons, 5)
-    coupons = user_paginator.get_page(page)
     
-    return render(request, 'coupons/admin_coupon.html', {'coupons': coupons})
+    # Add usage statistics for admin
+    coupon_stats = []
+    for coupon in coupons:
+        total_uses = CouponUsage.objects.filter(coupon=coupon).count()
+        unique_users = CouponUsage.objects.filter(coupon=coupon).values('user').distinct().count()
+        
+        coupon_stats.append({
+            'coupon': coupon,
+            'total_uses': total_uses,
+            'unique_users': unique_users
+        })
+    
+    page = request.GET.get('page', 1)
+    user_paginator = Paginator(coupon_stats, 5)
+    coupons_page = user_paginator.get_page(page)
+    
+    return render(request, 'coupons/admin_coupon.html', {'coupons': coupons_page})
+
 
 def create_coupon(request):
-
     if request.method == 'POST':
         form = CouponForm(request.POST)
         if form.is_valid():
@@ -46,14 +80,8 @@ def create_coupon(request):
             messages.error(request, "Please correct the errors below.")
     else:
         form = CouponForm()
+        
     return render(request, 'coupons/add_coupon.html', {'form': form})
-
-# def delete_coupon(request, coupon_id):
-    
-#     '''this fuction is not using so leave it '''
-#     coupon = get_object_or_404(Coupons, id=coupon_id)
-#     coupon.delete()
-#     return redirect('coupons:coupon_list')
 
 
 def update_coupon(request, coupon_id):
@@ -75,16 +103,19 @@ def update_coupon(request, coupon_id):
         'coupon': coupon,
         'is_update': True
     })
-    
-    
-    
+
+
 def apply_coupon(request):
+    """Apply coupon with user-specific validation"""
     if request.method == "POST":
-        
         code = request.POST.get("coupon_code", "").strip()
 
         if not code:
-            messages.error(request, "Please enter a coupon code.",extra_tags='coupon-tag')
+            messages.error(request, "Please enter a coupon code.", extra_tags='coupon-tag')
+            return redirect("checkout")
+
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to use coupons.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         try:
@@ -94,37 +125,47 @@ def apply_coupon(request):
             return redirect("checkout")
 
         if not user_cart.ordered_items.exists():
-            messages.error(request, "Your cart is empty.",extra_tags='coupon-tag')
+            messages.error(request, "Your cart is empty.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         if user_cart.coupon_code and user_cart.coupon_code.coupon_code.lower() == code.lower():
-            messages.info(request, "This coupon is already applied.",extra_tags='coupon-tag')
+            messages.info(request, "This coupon is already applied.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         if user_cart.coupon_code:
-            old_coupon = user_cart.coupon_code.coupon_code
             user_cart.coupon_code = None
             user_cart.save(update_fields=['coupon_code'])
 
         try:
             coupon = Coupons.objects.get(coupon_code__iexact=code)
         except Coupons.DoesNotExist:
-            messages.error(request, "Invalid coupon code.",extra_tags='coupon-tag')
+            messages.error(request, "Invalid coupon code.", extra_tags='coupon-tag')
             return redirect("checkout")
 
-        if not coupon.is_valid():
-            messages.error(request, "This coupon is expired, inactive, or used up.",extra_tags='coupon-tag')
+        is_valid, error_message = coupon.is_valid(user=request.user)
+        if not is_valid:
+            messages.error(request, error_message, extra_tags='coupon-tag')
             return redirect("checkout")
 
         if user_cart.subtotal < coupon.min_cart_value:
-            messages.error(request, f"Cart must be at least ₹{coupon.min_cart_value} to use this coupon.",extra_tags='coupon-tag')
+            messages.error(
+                request, 
+                f"Cart must be at least ₹{coupon.min_cart_value} to use this coupon.",
+                extra_tags='coupon-tag'
+            )
             return redirect("checkout")
 
         user_cart.coupon_code = coupon
         user_cart.save(update_fields=['coupon_code'])
 
-        messages.success(request, f"Coupon '{coupon.coupon_code}' applied! You saved ₹{coupon.discount_value}.")
+        remaining = coupon.get_remaining_uses(request.user) - 1  
+        messages.success(
+            request, 
+            f"Coupon '{coupon.coupon_code}' applied! You saved ₹{coupon.discount_value}. "
+            f"You can use this coupon {remaining} more time(s)."
+        )
         return redirect("checkout")
+    
     return redirect("checkout")
 
 
@@ -136,7 +177,26 @@ def remove_coupon(request):
             user_cart.coupon_code = None
             user_cart.save(update_fields=['coupon_code'])
             messages.success(request, "Coupon removed successfully.")
-    except Cart.DoesNotExist as e:
+    except Cart.DoesNotExist:
         messages.error(request, "No cart found.")
     
     return redirect("checkout")
+
+
+def record_coupon_usage(order):
+    """
+    Call this function when an order is successfully placed.
+    Add this to your order creation view:
+    
+    from coupons.views import record_coupon_usage
+    
+    # After order is created successfully:
+    if order.cart.coupon_code:
+        record_coupon_usage(order)
+    """
+    if order.cart and order.cart.coupon_code:
+        CouponUsage.objects.create(
+            coupon=order.cart.coupon_code,
+            user=order.user,
+            order=order
+        )
