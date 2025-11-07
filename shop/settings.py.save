@@ -17,6 +17,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     'banusfurniture.online',
     'www.banusfurniture.online',
+    '0.0.0.0',
     '3.110.208.30',
 ]
 
@@ -76,20 +77,38 @@ MIDDLEWARE = [
     
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://banusfurniture.online',
-    'https://www.banusfurniture.online',
-]
-
+CSRF_TRUSTED_ORIGINS = []
 
 ROOT_URLCONF = 'shop.urls'
+
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        
-	'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # <-- corrected
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
+
+
+
+
+
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': ['templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

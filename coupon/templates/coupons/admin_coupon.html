@@ -13,11 +13,29 @@
             <form action="{% url 'create_coupon' %}" method="POST" class="space-y-4">
                 {% csrf_token %}
                 
+                <!-- Display form errors if any -->
+                {% if form.errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    <p class="font-semibold">Please correct the following errors:</p>
+                    <ul class="list-disc list-inside mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li class="text-sm">{{ field }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
                 <!-- Coupon Code -->
                 <div>
                     <label for="coupon_code" class="block text-sm font-medium text-gray-700 mb-1">Coupon code</label>
                     <input type="text" id="coupon_code" name="coupon_code" placeholder="Add coupon code here"
-                        value="{{ form.coupon_code.value|default:'' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                        value="{{ form.coupon_code.value|default:'' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    {% if form.coupon_code.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.coupon_code.errors.0 }}</p>
+                    {% endif %}
                 </div>
 
                 <!-- Description -->
@@ -25,20 +43,31 @@
                     <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <textarea id="description" name="description" rows="2" placeholder="add description here"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
                 </div>
 
                 <!-- Min Cart Value -->
                 <div>
                     <label for="min_cart_value" class="block text-sm font-medium text-gray-700 mb-1">Min Cart Value</label>
                     <input type="number" step="0.01" id="min_cart_value" name="min_cart_value" placeholder="e.g., 500"
-                        value="{{ form.min_cart_value.value|default:'' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                        value="{{ form.min_cart_value.value|default:'' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    {% if form.min_cart_value.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.min_cart_value.errors.0 }}</p>
+                    {% endif %}
                 </div>
 
                 <!-- Discount Value -->
                 <div>
                     <label for="discount_value" class="block text-sm font-medium text-gray-700 mb-1">Discount Value</label>
                     <input type="number" step="0.01" id="discount_value" name="discount_value" placeholder="add discount amount"
-                        value="{{ form.discount_value.value|default:'' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                        value="{{ form.discount_value.value|default:'' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    {% if form.discount_value.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.discount_value.errors.0 }}</p>
+                    {% endif %}
                 </div>
 
                 <!-- Expire At -->
@@ -46,13 +75,20 @@
                     <label for="expire_at" class="block text-sm font-medium text-gray-700 mb-1">Expire At</label>
                     <input type="date" id="expire_at" name="expire_at" value="{{ form.expire_at.value|default:'' }}"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    {% if form.expire_at.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.expire_at.errors.0 }}</p>
+                    {% endif %}
                 </div>
 
                 <!-- Use Limit Per User -->
                 <div>
                     <label for="use_limit_per_user" class="block text-sm font-medium text-gray-700 mb-1">Use Limit Per User</label>
                     <input type="number" id="use_limit_per_user" name="use_limit_per_user" placeholder="How many times each user can use"
-                        value="{{ form.use_limit_per_user.value|default:'1' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                        value="{{ form.use_limit_per_user.value|default:'1' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    {% if form.use_limit_per_user.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.use_limit_per_user.errors.0 }}</p>
+                    {% endif %}
                 </div>
 
                 <!-- Active (Boolean Field) -->
@@ -99,7 +135,7 @@
                             <td class="px-6 py-4 text-sm text-gray-900">{{ forloop.counter|add:coupons.start_index|add:"-1" }}</td>
                             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ item.coupon.coupon_code }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ item.coupon.description|truncatewords:5 }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ item.coupon.expire_at }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ item.coupon.expire_at|date:"d M, Y" }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">₹{{ item.coupon.discount_value }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ item.coupon.use_limit_per_user }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">₹{{ item.coupon.min_cart_value }}</td>
@@ -121,7 +157,9 @@
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
                                 <!-- Edit -->
-                                <a href="{% url 'update_coupon' coupon_id=item.coupon.id %}" class="text-gray-400 hover:text-blue-600">
+                                <a href="{% url 'update_coupon' coupon_id=item.coupon.id %}" 
+                                   class="text-gray-400 hover:text-blue-600 inline-block"
+                                   title="Edit Coupon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

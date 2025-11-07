@@ -1,4 +1,6 @@
 from django.shortcuts import redirect,render
+from django.http import HttpResponseNotFound
+
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, SuspiciousOperation, BadRequest
 from django.urls import reverse, NoReverseMatch
@@ -20,6 +22,8 @@ class CustomExceptionMiddleware:
             if response.status_code == 404:
                 messages.error(request, "Page Not Found! The page you're looking for doesn't exist.", extra_tags="error_handler")
                 return render(request,'errors/404.html')
+
+
             
             if response.status_code == 403:
                 messages.error(request, "Access Forbidden! You don't have permission to access this resource.", extra_tags="error_handler")

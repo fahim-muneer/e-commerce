@@ -32,7 +32,7 @@ import razorpay
 from decimal import Decimal
 from django.utils import timezone
 from django.contrib import messages
-from coupon.models import Coupons
+from coupon.models import Coupons,CouponUsage
 logger = logging.getLogger(__name__)
 # from datetime import date
 from wallet.models import Wallet
@@ -448,6 +448,8 @@ def _validate_stock_availability(cart_items):
     return True, "", items_needing_reduction
 
 
+
+
 @transaction.atomic
 def _finalize_order(
     user,
@@ -459,6 +461,27 @@ def _finalize_order(
     total_amount=None,
     coupon=None
 ):
+    """
+    Finalize order with coupon usage tracking.
+    
+    Args:
+        user: User object
+        cart: Cart object
+        delivery_address: DeliveryAddress object
+        payment_method: str ('razorpay', 'wallet', or 'cod')
+        razorpay_id: Optional Razorpay order ID
+        razorpay_payment_id: Optional Razorpay payment ID
+        total_amount: Optional total amount (defaults to cart.total_price)
+        coupon: Optional Coupons object
+    
+    Returns:
+        Orders object
+    
+    Raises:
+        ValueError: If validation fails
+    """
+    
+    # Map payment method to constants
     if payment_method == 'razorpay':
         payment_method_const = Orders.ONLINE_PAYMENT
         payment_status = Orders.PAYMENT_PAID
@@ -470,33 +493,54 @@ def _finalize_order(
         payment_status = Orders.PAYMENT_PENDING
     else:
         raise ValueError(f"Invalid payment method: {payment_method}")
-
+    
+    # Get cart items with lock
     cart_items = list(cart.ordered_items.select_for_update().all())
     if not cart_items:
         raise ValueError("Cart is empty - no valid items found")
-
+    
+    # Validate stock availability
     is_valid, error_message, items_info = _validate_stock_availability(cart_items)
     if not is_valid:
         raise ValueError(error_message)
-
+    
+    # Calculate total amount
     if total_amount is None:
         total_amount = cart.total_price
-
+    
+    # Initialize coupon variables
     coupon_code = None
     coupon_obj = None
     
+    # Validate and prepare coupon
     if coupon:
         # Validate coupon again with user-specific checks
         is_valid, error_message = coupon.is_valid(user=user)
         if not is_valid:
             raise ValueError(f"Coupon validation failed: {error_message}")
         
+        # Check minimum cart value
         if cart.subtotal < coupon.min_cart_value:
-            raise ValueError(f"Cart value must be at least ₹{coupon.min_cart_value}")
+            raise ValueError(
+                f"Cart value must be at least ₹{coupon.min_cart_value} "
+                f"to use this coupon"
+            )
+        
+        # Check if user has already used this coupon (race condition prevention)
+        usage_count = CouponUsage.objects.filter(
+            coupon=coupon,
+            user=user
+        ).count()
+        
+        if usage_count >= coupon.use_limit_per_user:
+            raise ValueError(
+                f"You have already used this coupon {coupon.use_limit_per_user} time(s)"
+            )
         
         coupon_code = coupon.coupon_code
-        coupon_obj = Coupons.objects.get(coupon_code=coupon_code)
-
+        coupon_obj = coupon
+    
+    # Create order
     order = Orders.objects.create(
         user=user,
         delivery_address=delivery_address,
@@ -509,17 +553,23 @@ def _finalize_order(
         coupon_code=coupon_obj,
         paid_at=timezone.now() if payment_status == Orders.PAYMENT_PAID else None,
     )
-    logger.info(f"Order {order.pk} created with payment_method={payment_method}, payment_status={payment_status}")
-
-    # Create order items
+    
+    logger.info(
+        f"Order {order.pk} created with payment_method={payment_method}, "
+        f"payment_status={payment_status}"
+    )
+    
+    # Create order items and update stock
     for item_info in items_info:
         cart_item = item_info['cart_item']
         stock_source = item_info['stock_source']
         price = item_info['price']
-
+        
+        # Update stock
         stock_source.stock = F('stock') - cart_item.quantity
         stock_source.save(update_fields=["stock"])
-
+        
+        # Create order item
         OrderItem.objects.create(
             order=order,
             product=cart_item.product,
@@ -528,31 +578,56 @@ def _finalize_order(
             unit_price=price,
             order_status=Orders.STATUS_CONFIRMED,
         )
-
-    # IMPORTANT: Record coupon usage for this user
+    
+    # Record coupon usage AFTER successful order creation
     if coupon_obj:
-        CouponUsage.objects.create(
-            coupon=coupon_obj,
-            user=user,
-            order=order
-        )
-        logger.info(f"Coupon '{coupon_code}' usage recorded for user {user.pk} in order {order.pk}")
+        try:
+            CouponUsage.objects.create(
+                coupon=coupon_obj,
+                user=user,
+                order=order
+            )
+            logger.info(
+                f"Coupon '{coupon_code}' usage recorded for user {user.pk} "
+                f"in order {order.pk}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to record coupon usage for order {order.pk}: {str(e)}"
+            )
+            # Don't fail the order, but log the error
         
         # Remove coupon from cart after successful order
-        cart.coupon_code = None
-        cart.save(update_fields=['coupon_code'])
-
+        try:
+            cart.coupon_code = None
+            cart.save(update_fields=['coupon_code'])
+        except Exception as e:
+            logger.error(
+                f"Failed to remove coupon from cart for order {order.pk}: {str(e)}"
+            )
+    
     # Clear cart
-    CartItems.objects.filter(owner=cart).delete()
-    cart.delete()
-
+    try:
+        CartItems.objects.filter(owner=cart).delete()
+        cart.delete()
+    except Exception as e:
+        logger.error(
+            f"Failed to clear cart for order {order.pk}: {str(e)}"
+        )
+        # Don't fail the order, but log the error
+    
     logger.info(
-        f"Order {order.pk} created successfully | User: {user.pk} | "
+        f"Order {order.pk} finalized successfully | User: {user.pk} | "
         f"Payment Method: {dict(Orders.PAYMENT_CHOICES).get(payment_method_const)} | "
         f"Payment Status: {dict(Orders.PAYMENT_STATUS_CHOICES).get(payment_status)} | "
         f"Amount: ₹{order.total_amount} | Coupon: {coupon_code or 'None'}"
     )
+    
     return order
+
+
+
+
 class CheckoutList(MyLoginRequiredMixin, View):
     def get(self, request):
         user = request.user

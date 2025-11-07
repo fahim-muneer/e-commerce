@@ -6,21 +6,25 @@ from decimal import Decimal
 from orders.models import Cart
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.shortcuts import render
-from django.core.paginator import Paginator
-from django.utils import timezone
-from .models import Coupons 
+from loguru import logger
+import os
+
+# Configure Loguru
+LOG_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coupon_logs.log')
+
+logger.add(LOG_FILE_PATH, rotation="10 MB", retention="10 days", level="INFO")
 
 
 def user_coupon_list(request):
     """Show available coupons to users with their usage info"""
-    
-    coupons = Coupons.objects.filter(active=True, expire_at__gte=timezone.now().date()).order_by('-id')
+    coupons = Coupons.objects.filter(
+        active=True, 
+        expire_at__gte=timezone.now().date()
+    ).order_by('-id')
     
     coupon_list_data = [] 
     
     for coupon in coupons:
-        
         if request.user.is_authenticated:
             used_count = coupon.get_usage_count(request.user)
             remaining = coupon.use_limit_per_user - used_count
@@ -42,10 +46,12 @@ def user_coupon_list(request):
     coupon_page_obj = user_paginator.get_page(page)
     
     context = {
-        'coupon': coupon_page_obj 
+        'coupons': coupon_page_obj  # Fixed: Changed from 'coupon' to 'coupons'
     }
     
     return render(request, 'coupons/user_coupon_view.html', context)
+
+
 def coupon_list(request):
     """Admin view for all coupons"""
     coupons = Coupons.objects.all().order_by('-id')
@@ -54,7 +60,9 @@ def coupon_list(request):
     coupon_stats = []
     for coupon in coupons:
         total_uses = CouponUsage.objects.filter(coupon=coupon).count()
-        unique_users = CouponUsage.objects.filter(coupon=coupon).values('user').distinct().count()
+        unique_users = CouponUsage.objects.filter(
+            coupon=coupon
+        ).values('user').distinct().count()
         
         coupon_stats.append({
             'coupon': coupon,
@@ -71,14 +79,20 @@ def coupon_list(request):
 
 def create_coupon(request):
     if request.method == 'POST':
+        
         form = CouponForm(request.POST)
         if form.is_valid():
+            
             form.save()
+            
             messages.success(request, "Coupon created successfully!")
+            
             return redirect('coupon_list')
         else:
+            
             messages.error(request, "Please correct the errors below.")
     else:
+        
         form = CouponForm()
         
     return render(request, 'coupons/add_coupon.html', {'form': form})
@@ -88,16 +102,24 @@ def update_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupons, id=coupon_id)
     
     if request.method == 'POST':
+        
         form = CouponForm(request.POST, instance=coupon)
         if form.is_valid():
+            
             form.save()
-            messages.success(request, f"Coupon '{coupon.coupon_code}' updated successfully!")
+            
+            messages.success(
+                request, 
+                f"Coupon '{coupon.coupon_code}' updated successfully!"
+            )
+            
             return redirect('coupon_list')
         else:
+            
             messages.error(request, "Please correct the errors below.")
     else:
         form = CouponForm(instance=coupon)
-    
+        
     return render(request, 'coupons/update_coupon.html', {
         'form': form,
         'coupon': coupon,
@@ -111,27 +133,46 @@ def apply_coupon(request):
         code = request.POST.get("coupon_code", "").strip()
 
         if not code:
-            messages.error(request, "Please enter a coupon code.", extra_tags='coupon-tag')
+            messages.error(
+                request, 
+                "Please enter a coupon code.", 
+                extra_tags='coupon-tag'
+            )
             return redirect("checkout")
 
         if not request.user.is_authenticated:
-            messages.error(request, "Please login to use coupons.", extra_tags='coupon-tag')
+            messages.error(
+                request, 
+                "Please login to use coupons.", 
+                extra_tags='coupon-tag'
+            )
             return redirect("checkout")
 
         try:
             user_cart = Cart.objects.get(owner=request.user)
         except Cart.DoesNotExist:
-            messages.error(request, "No cart found.")
+            messages.error(request, "No cart found.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         if not user_cart.ordered_items.exists():
-            messages.error(request, "Your cart is empty.", extra_tags='coupon-tag')
+            messages.error(
+                request, 
+                "Your cart is empty.", 
+                extra_tags='coupon-tag'
+            )
             return redirect("checkout")
 
-        if user_cart.coupon_code and user_cart.coupon_code.coupon_code.lower() == code.lower():
-            messages.info(request, "This coupon is already applied.", extra_tags='coupon-tag')
+        # Check if same coupon is already applied
+        if (user_cart.coupon_code and 
+            user_cart.coupon_code.coupon_code.lower() == code.lower()):
+            messages.info(
+                request, 
+                "This coupon is already applied.", 
+                extra_tags='coupon-tag'
+            )
             return redirect("checkout")
 
+        # Remove existing coupon if different one is being applied
         if user_cart.coupon_code:
             user_cart.coupon_code = None
             user_cart.save(update_fields=['coupon_code'])
@@ -139,14 +180,20 @@ def apply_coupon(request):
         try:
             coupon = Coupons.objects.get(coupon_code__iexact=code)
         except Coupons.DoesNotExist:
-            messages.error(request, "Invalid coupon code.", extra_tags='coupon-tag')
+            messages.error(
+                request, 
+                "Invalid coupon code.", 
+                extra_tags='coupon-tag'
+            )
             return redirect("checkout")
 
+        # Validate coupon with user-specific checks
         is_valid, error_message = coupon.is_valid(user=request.user)
         if not is_valid:
             messages.error(request, error_message, extra_tags='coupon-tag')
             return redirect("checkout")
 
+        # Check minimum cart value
         if user_cart.subtotal < coupon.min_cart_value:
             messages.error(
                 request, 
@@ -155,14 +202,18 @@ def apply_coupon(request):
             )
             return redirect("checkout")
 
+        # Apply coupon to cart
         user_cart.coupon_code = coupon
         user_cart.save(update_fields=['coupon_code'])
 
-        remaining = coupon.get_remaining_uses(request.user) - 1  
+        # Fixed: Get correct remaining uses (don't subtract 1 prematurely)
+        remaining = coupon.get_remaining_uses(request.user)
+        
         messages.success(
             request, 
             f"Coupon '{coupon.coupon_code}' applied! You saved ₹{coupon.discount_value}. "
-            f"You can use this coupon {remaining} more time(s)."
+            f"You have {remaining} use(s) remaining for this coupon.",
+            extra_tags='coupon-tag'
         )
         return redirect("checkout")
     
@@ -176,27 +227,23 @@ def remove_coupon(request):
         if user_cart.coupon_code:
             user_cart.coupon_code = None
             user_cart.save(update_fields=['coupon_code'])
-            messages.success(request, "Coupon removed successfully.")
+            messages.success(
+                request, 
+                "Coupon removed successfully.", 
+                extra_tags='coupon-tag'
+            )
+        else:
+            # Fixed: Added feedback when no coupon was applied
+            messages.info(
+                request, 
+                "No coupon was applied to your cart.", 
+                extra_tags='coupon-tag'
+            )
     except Cart.DoesNotExist:
-        messages.error(request, "No cart found.")
+        messages.error(
+            request, 
+            "No cart found.", 
+            extra_tags='coupon-tag'
+        )
     
     return redirect("checkout")
-
-
-def record_coupon_usage(order):
-    """
-    Call this function when an order is successfully placed.
-    Add this to your order creation view:
-    
-    from coupons.views import record_coupon_usage
-    
-    # After order is created successfully:
-    if order.cart.coupon_code:
-        record_coupon_usage(order)
-    """
-    if order.cart and order.cart.coupon_code:
-        CouponUsage.objects.create(
-            coupon=order.cart.coupon_code,
-            user=order.user,
-            order=order
-        )
