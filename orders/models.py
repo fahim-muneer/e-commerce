@@ -19,9 +19,22 @@ from decimal import Decimal
 from django.db.models import Sum
 from coupon.models import Coupons
 import logging
-
+from django.core.validators import RegexValidator
 logger = logging.getLogger(__name__)
 
+alphanumeric_with_symbols = RegexValidator(
+    r'^[a-zA-Z0-9\s,.\-_\/]+$',  # Added underscore (_) and forward slash (/)
+    'Please enter a valid address.',
+    'invalid_address_symbols'
+)
+
+# 2. Improved City/State Validator
+# Only allows letters and spaces, with a clearer error message.
+city_state_validator = RegexValidator(
+    r'^[a-zA-Z\s]+$', # Only letters and spaces
+    'City/State must only contain letters and spaces.', # More descriptive message
+    'invalid_city_state'
+)
 
 def realistic_pin_validator(value):
     if not re.match(r'^[1-9][0-9]{5}$', value):
@@ -35,9 +48,18 @@ class OrderAddress(models.Model):
     user       = models.ForeignKey(Register, on_delete=models.CASCADE, null=True, blank=True)
     mobile     = PhoneNumberField(blank=False) 
     second_mob = PhoneNumberField(blank=True, null=True) 
-    address    = models.CharField(max_length=500, blank=False)
-    city       = models.CharField(max_length=300, blank=False)
-    state      = models.CharField(max_length=200, blank=False)
+    address = models.CharField(
+        max_length=500, 
+        validators=[alphanumeric_with_symbols] # Address needs more allowed symbols
+    )
+    city = models.CharField(
+        max_length=100, 
+        validators=[city_state_validator] # City/State generally only need letters and spaces
+    )
+    state = models.CharField(
+        max_length=200,
+        validators=[city_state_validator]
+    )
     pin        = models.CharField(max_length=6, validators=[realistic_pin_validator])
     created_at = models.DateTimeField(auto_now_add=True)
 

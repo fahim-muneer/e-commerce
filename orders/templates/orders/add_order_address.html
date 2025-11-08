@@ -53,7 +53,14 @@
                 <div>
                     <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                    {{ form.address }}
-                </div>
+               {% if form.address.errors %}
+            {% for error in form.address.errors %}
+                <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        {% endif %}
+
+
+			 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
@@ -61,12 +68,23 @@
                 <div>
                     <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
                     {{form.city}}
-                </div>
+			{% if form.city.errors %}
+            {% for error in form.city.errors %}
+                <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        {% endif %}                
+
+
+		</div>
                 <!-- State -->
                 <div>
                     <label for="state" class="block text-sm font-medium text-gray-700 mb-1">State</label>
                     {{form.state}}
-
+             {% if form.state.errors %}
+            {% for error in form.state.errors %}
+                <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        {% endif %}
                 </div>
                 <!-- Postal Code -->
                 <div>

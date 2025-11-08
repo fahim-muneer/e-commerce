@@ -17,7 +17,7 @@ from django.conf import settings
 import os
 from django.urls import reverse
 # from orders.models import OrderItem
-
+from django.db.models import Avg
 
 
 @csrf_exempt  
@@ -142,15 +142,17 @@ class ProductDetail(AdminLoginMixin, View):
         variants = product.variant.all()
 
         images = [product.image1, product.image2, product.image3, product.image4, product.image5]
-        images = [img for img in images if img]  # only include non-empty images
-        reviews = variants.filter(review__isnull=False).exclude(review="")
+        images = [img for img in images if img]
+        reviews = Review.objects.filter(product_variant__product=product)
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
 
         context = {
             'product': product,
             'variants': variants,
             'images': images,
-            'reviews':reviews
-        }
+            'reviews':reviews,
+            'avg_rating':avg_rating
+              }
         return render(request, 'product/product_detail.html', context)
 
 

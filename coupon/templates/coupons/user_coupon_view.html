@@ -16,7 +16,7 @@
         </h2>
         
         <div class="space-y-4">
-            {% for item in coupons %} 
+            {% for item in coupon %} 
             
                 {% if item.can_use %}
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-5 
@@ -24,10 +24,10 @@
                             shadow-sm border-l-4 border-red-500 transition hover:shadow-md hover:bg-gray-50">
                     
                     <div class="flex flex-col space-y-1 mb-3 md:mb-0">
-                        <h3 class="text-lg font-bold text-gray-800">{{ item.coupons.coupon_code }}</h3>
+                        <h3 class="text-lg font-bold text-gray-800">{{ item.coupon.coupon_code }}</h3>
                         <p class="text-sm text-gray-600">{{ item.coupons.description }}</p>
-                        <p class="text-sm text-gray-500">Min Cart Value: ₹{{ item.coupons.min_cart_value }}</p>
-                        <p class="text-sm text-gray-500">Discount: ₹{{ item.coupons.discount_value }}</p>
+                        <p class="text-sm text-gray-500">Min Cart Value: ₹{{ item.coupon.min_cart_value }}</p>
+                        <p class="text-sm text-gray-500">Discount: ₹{{ item.coupon.discount_value }}</p>
                         
                         {% if request.user.is_authenticated %}
                             <p class="text-xs text-gray-500 font-medium mt-1">
@@ -38,7 +38,7 @@
 
                     <div class="flex flex-col items-start md:items-end text-sm space-y-2">
                         <span class="text-gray-600 font-medium">
-                            Valid till: {{ item.coupons.expire_at|date:"d M, Y" }}
+                            Valid till: {{ item.coupon.expire_at|date:"d M, Y" }}
                         </span>
 
                         <button onclick="copyCoupon('{{ item.coupon.coupon_code }}')" 
@@ -53,10 +53,10 @@
                             bg-gray-100 border border-gray-200 rounded-xl shadow-sm border-l-4 border-gray-400 opacity-70">
                     
                     <div class="flex flex-col space-y-1 mb-3 md:mb-0">
-                        <h3 class="text-lg font-bold text-gray-500">{{ item.coupons.coupon_code }} (Used Up)</h3>
+                        <h3 class="text-lg font-bold text-gray-500">{{ item.coupon.coupon_code }} (Used Up)</h3>
                         <p class="text-sm text-gray-500">{{ item.coupon.description }}</p>
-                        <p class="text-sm text-gray-400">Min Cart Value: ₹{{ item.coupons.min_cart_value }}</p>
-                        <p class="text-sm text-gray-400">Discount: ₹{{ item.coupons.discount_value }}</p>
+                        <p class="text-sm text-gray-400">Min Cart Value: ₹{{ item.coupon.min_cart_value }}</p>
+                        <p class="text-sm text-gray-400">Discount: ₹{{ item.coupon.discount_value }}</p>
                     </div>
 
                     <div class="flex flex-col items-start md:items-end text-sm">
@@ -75,20 +75,20 @@
             {% endfor %}
         </div>
 
-        {% if coupons.paginator.num_pages > 1 %}
+        {% if coupon.paginator.num_pages > 1 %}
         <div class="flex justify-center space-x-2 mt-8">
-            {% if coupons.has_previous %}
-            <a href="?page={{ coupons.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+            {% if coupon.has_previous %}
+            <a href="?page={{ coupon.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
             {% endif %}
             
-            {% for i in coupons.paginator.page_range %}
+            {% for i in coupon.paginator.page_range %}
             <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100 {% if i == coupon.number %}bg-red-500 text-white hover:bg-red-500{% endif %}">
                 {{ i }}
             </a>
             {% endfor %}
             
-            {% if coupons.has_next %}
-            <a href="?page={{ coupons.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+            {% if coupon.has_next %}
+            <a href="?page={{ coupon.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
             {% endif %}
         </div>
         {% endif %}

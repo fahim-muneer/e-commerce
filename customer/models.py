@@ -8,6 +8,18 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 import uuid
 from .validators import validate_real_email
+from django.core.validators import RegexValidator
+
+alphanumeric_with_symbols = RegexValidator(
+    r'^[a-zA-Z0-9\s,.\-]+$', 
+    'Please enter a valid address', 
+    'invalid_symbols'
+)
+city_state_validator = RegexValidator(
+    r'^[a-zA-Z\s]+$', # Only letters and spaces
+    'Please enter a valid name',
+    'invalid_city_state'
+)
 
 
 def realistic_pin_validator(value):
@@ -166,9 +178,19 @@ class UserAddress(models.Model):
     user = models.ForeignKey(Register, on_delete=models.CASCADE, related_name='user_address')
     mobile = PhoneNumberField(blank=False) 
     second_mob = PhoneNumberField(blank=True, null=True) 
-    address = models.CharField(max_length=500)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=200)
+    
+    address = models.CharField(
+        max_length=500, 
+        validators=[alphanumeric_with_symbols] # Address needs more allowed symbols
+    )
+    city = models.CharField(
+        max_length=100, 
+        validators=[city_state_validator] # City/State generally only need letters and spaces
+    )
+    state = models.CharField(
+        max_length=200,
+        validators=[city_state_validator]
+    )
     pin = models.CharField(max_length=6, validators=[realistic_pin_validator])
     address_type = models.ForeignKey(AddressType, on_delete=models.CASCADE)
     is_default = models.BooleanField(default=False)  

@@ -15,15 +15,16 @@ LOG_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coupon
 logger.add(LOG_FILE_PATH, rotation="10 MB", retention="10 days", level="INFO")
 
 
+
 def user_coupon_list(request):
     """Show available coupons to users with their usage info"""
     coupons = Coupons.objects.filter(
-        active=True, 
+        active=True,
         expire_at__gte=timezone.now().date()
     ).order_by('-id')
-    
-    coupon_list_data = [] 
-    
+
+    coupon_list_data = []
+
     for coupon in coupons:
         if request.user.is_authenticated:
             used_count = coupon.get_usage_count(request.user)
@@ -31,25 +32,27 @@ def user_coupon_list(request):
         else:
             used_count = 0
             remaining = coupon.use_limit_per_user
-        
-        can_use = remaining > 0 
-        
+
+        can_use = remaining > 0
+
         coupon_list_data.append({
-            'coupon': coupon, 
+            'coupon': coupon,
             'used_count': used_count,
             'remaining_uses': remaining,
             'can_use': can_use
         })
-    
+
+    # ✅ Pagination setup
     page = request.GET.get('page', 1)
-    user_paginator = Paginator(coupon_list_data, 2)
-    coupon_page_obj = user_paginator.get_page(page)
-    
+    paginator = Paginator(coupon_list_data, 2)
+    coupon_page_obj = paginator.get_page(page)
+
     context = {
-        'coupons': coupon_page_obj  # Fixed: Changed from 'coupon' to 'coupons'
+        'coupon': coupon_page_obj  # 👈 This matches your template variable
     }
-    
+
     return render(request, 'coupons/user_coupon_view.html', context)
+
 
 
 def coupon_list(request):
