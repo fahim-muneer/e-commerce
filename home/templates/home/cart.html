@@ -45,7 +45,7 @@
                                 
                                 {% if cart_item.has_discount %}
                                 <p class="text-xs text-green-600 font-semibold mt-1">
-                                    🎉 You save ₹{{ cart_item.savings|floatformat:2 }}
+                                     You save ₹{{ cart_item.savings|floatformat:2 }}
                                 </p>
                                 {% endif %}
                             </div>
@@ -72,10 +72,10 @@
                                     type="number" 
                                     id="qty-{{ cart_item.id }}"
                                     data-item-id="{{ cart_item.id }}"
-                                    data-max="{% if cart_item.variant %}{{ cart_item.variant.stock }}{% else %}{{ cart_item.product.stock }}{% endif %}"
+                                    data-max="5"
                                     value="{{ cart_item.quantity }}" 
                                     min="1" 
-                                    max="{% if cart_item.variant %}{{ cart_item.variant.stock }}{% else %}{{ cart_item.product.stock }}{% endif %}"
+                                    max="5"
                                     class="w-16 px-2 py-1 rounded-md border border-gray-300 text-center text-sm" 
                                     onchange="updateQuantityManual({{ cart_item.id }})">
                                 
