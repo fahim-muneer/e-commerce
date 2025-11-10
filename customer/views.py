@@ -49,36 +49,50 @@ class MyLoginRequiredMixin(LoginRequiredMixin):
 
 
 def generate_and_send_otp(user):
+ 
     if isinstance(user, str):
         try:
             user = Register.objects.get(email=user)
             print(f"Converted email to user: {user}")
-        except User.DoesNotExist:
+        except Register.DoesNotExist:
             print("ERROR: No user found for this email.")
             return
-    
-    
+
     if not hasattr(user, 'email'):
         print("ERROR: Invalid user object")
         return
-        
-        
-        
-        
+
     otp_code = str(random.randint(100000, 999999))
-    OTP.objects.update_or_create(     # pylint: disable=no-member
+    OTP.objects.update_or_create(  # pylint: disable=no-member
         user=user,
         defaults={'code': otp_code,
                   'created_at': timezone.now()})
 
+    
+    subject = 'Banus Furniture: Your One-Time Password (OTP)'
+
+    message = f"""
+Dear Customer,
+
+Your One-Time Password (OTP) for Banus Furniture is: { otp_code }
+
+This OTP is valid for 2 minutes. Please do not share it with anyone.
+
+If you did not request this, please ignore this email.
+
+Thank you,
+The Banus Furniture Team
+    """
+
+    clean_message = message.strip()
+
     send_mail(
-        'Your OTP for verification',
-        f'Your one-time password is: {otp_code}',
-        settings.EMAIL_HOST_USER,  
+        subject,
+        clean_message,
+        settings.EMAIL_HOST_USER,
         [user.email],
         fail_silently=False
     )
-
 
 @method_decorator(never_cache, name='dispatch') 
 class ResendOtp(View):
