@@ -9,11 +9,9 @@ from django.utils import timezone
 from loguru import logger
 import os
 
-# Configure Loguru
 LOG_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'coupon_logs.log')
 
 logger.add(LOG_FILE_PATH, rotation="10 MB", retention="10 days", level="INFO")
-
 
 
 def user_coupon_list(request):
@@ -49,7 +47,6 @@ def user_coupon_list(request):
     context = {
         'coupon': coupon_page_obj  
     }
-
     return render(request, 'coupons/user_coupon_view.html', context)
 
 
@@ -57,8 +54,6 @@ def user_coupon_list(request):
 def coupon_list(request):
     """Admin view for all coupons"""
     coupons = Coupons.objects.all().order_by('-id')
-    
-    # Add usage statistics for admin
     coupon_stats = []
     for coupon in coupons:
         total_uses = CouponUsage.objects.filter(coupon=coupon).count()
@@ -165,7 +160,6 @@ def apply_coupon(request):
             )
             return redirect("checkout")
 
-        # Check if same coupon is already applied
         if (user_cart.coupon_code and 
             user_cart.coupon_code.coupon_code.lower() == code.lower()):
             messages.info(
@@ -175,7 +169,6 @@ def apply_coupon(request):
             )
             return redirect("checkout")
 
-        # Remove existing coupon if different one is being applied
         if user_cart.coupon_code:
             user_cart.coupon_code = None
             user_cart.save(update_fields=['coupon_code'])
@@ -190,13 +183,11 @@ def apply_coupon(request):
             )
             return redirect("checkout")
 
-        # Validate coupon with user-specific checks
         is_valid, error_message = coupon.is_valid(user=request.user)
         if not is_valid:
             messages.error(request, error_message, extra_tags='coupon-tag')
             return redirect("checkout")
 
-        # Check minimum cart value
         if user_cart.subtotal < coupon.min_cart_value:
             messages.error(
                 request, 
@@ -205,11 +196,9 @@ def apply_coupon(request):
             )
             return redirect("checkout")
 
-        # Apply coupon to cart
         user_cart.coupon_code = coupon
         user_cart.save(update_fields=['coupon_code'])
 
-        # Fixed: Get correct remaining uses (don't subtract 1 prematurely)
         remaining = coupon.get_remaining_uses(request.user)
         
         messages.success(
@@ -236,7 +225,6 @@ def remove_coupon(request):
                 extra_tags='coupon-tag'
             )
         else:
-            # Fixed: Added feedback when no coupon was applied
             messages.info(
                 request, 
                 "No coupon was applied to your cart.", 

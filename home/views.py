@@ -9,13 +9,10 @@ from orders.models import Cart, CartItems, OrderAddress, Orders, OrderItem
 from django.db import transaction
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-#  from customer.models import UserAddress, Register
 from django.db.models import F
-# from django.contrib.auth.mixins import LoginRequiredMixin
 from wish_list.models import WishListItems
 User = get_user_model()
 from django.urls import reverse
-from varients.models import Varient
 from .forms import VarientSelectforms
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -34,7 +31,6 @@ from django.utils import timezone
 from django.contrib import messages
 from coupon.models import Coupons,CouponUsage
 logger = logging.getLogger(__name__)
-# from datetime import date
 from wallet.models import Wallet
 from django.db.models import Q
 from products.forms import ReviewForm
@@ -56,9 +52,6 @@ class Index(View):
         banner1 = banner[1] if len(banner) > 1 else None
         banner2 = banner[2] if len(banner) > 2 else None
         banner3 = banner[3] if len(banner) > 3 else None
-        
-
-
         context = {
             'latest_products': latest_products,
             'featured_product': featured_product,
@@ -67,14 +60,12 @@ class Index(View):
             'banner_main':banner_main,
             'banner1':banner1,
             'banner2':banner2,
-            'banner3':banner3,
-        }
+            'banner3':banner3 }
         
         return render(request, 'home/index.html', context)
 def home(request):
     products = ProductPage.objects.prefetch_related('variant').all()
 
-    # Get ALL filter parameters
     category_filter = request.GET.getlist('category')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
@@ -83,7 +74,6 @@ def home(request):
     
     print(f"Filters - Category: {category_filter}, Price: {min_price}-{max_price}, Sort: {sort_option}, Search: {search_query}")
 
-    # Apply search filter
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) | 
@@ -91,11 +81,9 @@ def home(request):
             Q(category__name__icontains=search_query)
         )
 
-    # Apply category filter
     if category_filter:
         products = products.filter(category__name__in=category_filter)
 
-    # Apply price filter on variants
     if min_price and max_price:
         try:
             min_price_decimal = Decimal(min_price)
@@ -105,9 +93,8 @@ def home(request):
                 variant__price__lte=max_price_decimal
             ).distinct()
         except (ValueError, TypeError):
-            pass  # Invalid price values, ignore filter
+            pass  
 
-    # Attach largest_variant and display_price to each product
     products_list = list(products)
     for product in products_list:
         highest_stock_variant = product.variant.order_by('-stock').first()
@@ -117,7 +104,6 @@ def home(request):
         else:
             product.display_price_value = product.price if product.price else 0
 
-    # Apply sorting
     if sort_option:
         if sort_option == 'price':
             products_list = sorted(products_list, key=lambda p: p.display_price_value or 0)
@@ -134,15 +120,11 @@ def home(request):
         elif sort_option == 'created_at':
             products_list = sorted(products_list, key=lambda p: p.created_at)
     else:
-        # Default: Sort by stock (highest first)
         products_list = sorted(products_list, key=lambda p: p.largest_variant.stock if p.largest_variant else 0, reverse=True)
-
-    # Pagination
     paginator = Paginator(products_list, 10)
     page = request.GET.get('page')
     products = paginator.get_page(page)
 
-    # Get wishlist
     if request.user.is_authenticated:
         my_list = list(
             WishListItems.objects.filter(wish_list__user=request.user)
@@ -459,29 +441,8 @@ def _finalize_order(
     razorpay_id=None,
     razorpay_payment_id=None,
     total_amount=None,
-    coupon=None
-):
-    """
-    Finalize order with coupon usage tracking.
-    
-    Args:
-        user: User object
-        cart: Cart object
-        delivery_address: DeliveryAddress object
-        payment_method: str ('razorpay', 'wallet', or 'cod')
-        razorpay_id: Optional Razorpay order ID
-        razorpay_payment_id: Optional Razorpay payment ID
-        total_amount: Optional total amount (defaults to cart.total_price)
-        coupon: Optional Coupons object
-    
-    Returns:
-        Orders object
-    
-    Raises:
-        ValueError: If validation fails
-    """
-    
-    # Map payment method to constants
+    coupon=None):
+  
     if payment_method == 'razorpay':
         payment_method_const = Orders.ONLINE_PAYMENT
         payment_status = Orders.PAYMENT_PAID
@@ -494,39 +455,31 @@ def _finalize_order(
     else:
         raise ValueError(f"Invalid payment method: {payment_method}")
     
-    # Get cart items with lock
     cart_items = list(cart.ordered_items.select_for_update().all())
     if not cart_items:
         raise ValueError("Cart is empty - no valid items found")
     
-    # Validate stock availability
     is_valid, error_message, items_info = _validate_stock_availability(cart_items)
     if not is_valid:
         raise ValueError(error_message)
     
-    # Calculate total amount
     if total_amount is None:
         total_amount = cart.total_price
     
-    # Initialize coupon variables
     coupon_code = None
     coupon_obj = None
     
-    # Validate and prepare coupon
     if coupon:
-        # Validate coupon again with user-specific checks
         is_valid, error_message = coupon.is_valid(user=user)
         if not is_valid:
             raise ValueError(f"Coupon validation failed: {error_message}")
         
-        # Check minimum cart value
         if cart.subtotal < coupon.min_cart_value:
             raise ValueError(
                 f"Cart value must be at least ₹{coupon.min_cart_value} "
                 f"to use this coupon"
             )
         
-        # Check if user has already used this coupon (race condition prevention)
         usage_count = CouponUsage.objects.filter(
             coupon=coupon,
             user=user
@@ -559,17 +512,13 @@ def _finalize_order(
         f"payment_status={payment_status}"
     )
     
-    # Create order items and update stock
     for item_info in items_info:
         cart_item = item_info['cart_item']
         stock_source = item_info['stock_source']
         price = item_info['price']
-        
-        # Update stock
         stock_source.stock = F('stock') - cart_item.quantity
         stock_source.save(update_fields=["stock"])
         
-        # Create order item
         OrderItem.objects.create(
             order=order,
             product=cart_item.product,
@@ -579,7 +528,6 @@ def _finalize_order(
             order_status=Orders.STATUS_CONFIRMED,
         )
     
-    # Record coupon usage AFTER successful order creation
     if coupon_obj:
         try:
             CouponUsage.objects.create(
@@ -595,9 +543,7 @@ def _finalize_order(
             logger.error(
                 f"Failed to record coupon usage for order {order.pk}: {str(e)}"
             )
-            # Don't fail the order, but log the error
         
-        # Remove coupon from cart after successful order
         try:
             cart.coupon_code = None
             cart.save(update_fields=['coupon_code'])
@@ -606,7 +552,6 @@ def _finalize_order(
                 f"Failed to remove coupon from cart for order {order.pk}: {str(e)}"
             )
     
-    # Clear cart
     try:
         CartItems.objects.filter(owner=cart).delete()
         cart.delete()
@@ -614,7 +559,6 @@ def _finalize_order(
         logger.error(
             f"Failed to clear cart for order {order.pk}: {str(e)}"
         )
-        # Don't fail the order, but log the error
     
     logger.info(
         f"Order {order.pk} finalized successfully | User: {user.pk} | "
@@ -629,46 +573,103 @@ def _finalize_order(
 
 
 class CheckoutList(MyLoginRequiredMixin, View):
-    def get(self, request):
-        user = request.user
 
+    def get(self, request):
+        """Displays the checkout page with cart summary, addresses, and Razorpay initialization."""
+        user = request.user
+        
+        cart = self._get_and_validate_cart(request, user)
+        if redirect_response := self._check_for_empty_cart(request, cart):
+            return redirect_response
+
+        cart = self._validate_and_update_coupon(request, cart)
+        context = self._build_base_context(user, cart, request)
+        self._initialize_razorpay(context, cart.total_price)
+        
+        return render(request, 'home/checkout.html', context)
+
+
+    @transaction.atomic
+    def post(self, request):
+        """Processes the selected address and payment method."""
+        user = request.user
+        address_id = request.POST.get('address', '').strip()
+        payment_method = request.POST.get('payment_method', 'cod').strip()
+
+        delivery_address, cart = self._get_address_and_cart(request, user, address_id)
+        if isinstance(delivery_address, redirect): return delivery_address
+
+        applied_coupon = self._revalidate_coupon(request, cart)
+        total_amount = cart.total_price or Decimal('0')
+
+        if payment_method == 'razorpay':
+            return self._handle_razorpay_payment(request, user, cart, delivery_address, total_amount, applied_coupon)
+        elif payment_method == 'wallet':
+            return self._handle_wallet_payment(request, user, cart, delivery_address, total_amount, applied_coupon)
+        elif payment_method == 'cod':
+            return self._handle_cod_payment(request, user, cart, delivery_address, total_amount, applied_coupon)
+        else:
+            messages.error(request, 'Invalid payment method.', extra_tags='order_failed')
+            return redirect('order_failed')
+
+
+    def _get_and_validate_cart(self, request, user):
+        """Retrieves cart or returns None if it doesn't exist."""
         try:
-            cart = Cart.objects.get(owner=user)
+            return Cart.objects.get(owner=user)
         except Cart.DoesNotExist:
             messages.error(request, 'No cart found.')
-            return redirect('cart')
+            return None
 
-        if not cart.ordered_items.exists():
+    def _check_for_empty_cart(self, request, cart):
+        """Checks if the cart is empty and returns a redirect response if it is."""
+        if not cart or not cart.ordered_items.exists():
             messages.error(request, 'Your cart is empty.')
             return redirect('cart')
+        return None
 
+    def _validate_and_update_coupon(self, request, cart):
+        """Validates the existing coupon on the cart and updates the cart if invalid."""
         if cart.coupon_code:
             coupon = cart.coupon_code
             if not coupon.is_valid():
+                messages.info(request, "Coupon removed as it is no longer valid.")
                 cart.coupon_code = None
                 cart.save(update_fields=['coupon_code'])
             elif cart.subtotal < coupon.min_cart_value:
                 messages.info(request, f"Coupon removed. Cart must be at least ₹{coupon.min_cart_value}.")
                 cart.coupon_code = None
                 cart.save(update_fields=['coupon_code'])
+        return cart
 
-        cart_items = cart.ordered_items.all()
-        subtotal = cart.subtotal
-        coupon_discount = cart.coupon_discount
-        total_price = cart.total_price or Decimal('0')
-       
+    def _build_base_context(self, user, cart, request):
+        """Builds the common context dictionary."""
         wallet, created = Wallet.objects.get_or_create(user=user)
-        applied_coupon = cart.coupon_code 
-
         addresses_queryset = OrderAddress.objects.filter(user=request.user).order_by('-id')
-        page = request.GET.get('page', 1)
+        
         paginator = Paginator(addresses_queryset, 3)
+        page = request.GET.get('page', 1)
         addresses = paginator.get_page(page)
 
-        currency = 'INR'
+        return {
+            'cart_items': cart.ordered_items.all(),
+            'addresses': addresses,
+            'subtotal': cart.subtotal,
+            'coupon_discount': cart.coupon_discount,
+            'total_price': cart.total_price or Decimal('0'),
+            'cart': cart,
+            'wallet': wallet,
+            'applied_coupon': cart.coupon_code,
+            'currency': 'INR',
+        }
+
+    def _initialize_razorpay(self, context, total_price):
+        """Initializes a Razorpay order and updates the context."""
+        currency = context.get('currency', 'INR')
         amount = int(total_price * 100)
-        razorpay_order_id = ""
-        razorpay_error = None
+        
+        context['razorpay_order_id'] = ""
+        context['razorpay_error'] = None
 
         try:
             razorpay_order = razorpay_client.order.create(dict(
@@ -676,60 +677,43 @@ class CheckoutList(MyLoginRequiredMixin, View):
                 currency=currency,
                 payment_capture='1'
             ))
-            razorpay_order_id = razorpay_order['id']
+            context['razorpay_order_id'] = razorpay_order['id']
+            context['razorpay_merchant_key'] = settings.RAZORPAY_KEY_ID
+            context['razorpay_amount'] = amount
+            context['razorpay_available'] = True
         except Exception as e:
-            razorpay_error = "Razorpay payment gateway unavailable. Try COD or Wallet."
+            context['razorpay_error'] = "Razorpay payment gateway unavailable. Try COD or Wallet."
+            context['razorpay_available'] = False
             logger.error(f"Razorpay init failed: {str(e)}")
 
-        context = {
-            'cart_items': cart_items,
-            'addresses': addresses,
-            'subtotal': subtotal,
-            'coupon_discount': coupon_discount,
-            'total_price': total_price,
-            'cart': cart,
-            'wallet': wallet,
-            'applied_coupon': applied_coupon,
-            'razorpay_order_id': razorpay_order_id,
-            'razorpay_merchant_key': settings.RAZORPAY_KEY_ID if razorpay_order_id else None,
-            'razorpay_amount': amount,
-            'currency': currency,
-            'razorpay_error': razorpay_error,
-            'razorpay_available': bool(razorpay_order_id),
-        }
 
-        return render(request, 'home/checkout.html', context)
 
-    @transaction.atomic
-    def post(self, request):
-        
-        user = request.user
-        
-        address_id = request.POST.get('address', '').strip()
-        payment_method = request.POST.get('payment_method', 'cod').strip()
-
+    def _get_address_and_cart(self, request, user, address_id):
+        """Validates and retrieves the delivery address and cart."""
         if not address_id:
             messages.error(request, 'Please select your delivery address.')
-            return redirect('checkout')
+            return redirect('checkout'), None
 
         try:
             delivery_address = OrderAddress.objects.get(id=address_id, user=user)
         except (OrderAddress.DoesNotExist, ValueError):
             messages.error(request, 'Invalid address selected.')
-            return redirect('checkout')
+            return redirect('checkout'), None
 
         try:
             cart = Cart.objects.get(owner=user)
             if not cart.ordered_items.exists():
                 messages.error(request, 'Your cart is empty.')
-                return redirect('cart')
+                return redirect('cart'), None
         except Cart.DoesNotExist as e:
             messages.error(request, 'No cart found.')
             logger.exception(str(e))
-            return redirect('cart')
+            return redirect('cart'), None
 
-        total_amount = cart.total_price or Decimal('0')
+        return delivery_address, cart
 
+    def _revalidate_coupon(self, request, cart):
+        """Re-validates coupon just before order finalization and returns the coupon object."""
         applied_coupon = getattr(cart, 'coupon_code', None)
 
         if applied_coupon:
@@ -737,122 +721,103 @@ class CheckoutList(MyLoginRequiredMixin, View):
                 messages.warning(request, "Coupon is not valid anymore. Removed automatically.")
                 cart.coupon_code = None
                 cart.save(update_fields=['coupon_code'])
-                applied_coupon = None
-            elif cart.subtotal < applied_coupon.min_cart_value:
+                return None
+            
+            if cart.subtotal < applied_coupon.min_cart_value:
                 messages.warning(request, f"Cart must be at least ₹{applied_coupon.min_cart_value} to use this coupon.")
                 cart.coupon_code = None
                 cart.save(update_fields=['coupon_code'])
-                applied_coupon = None
+                return None
+        
+        return cart.coupon_code
 
-        if payment_method == 'razorpay':
-            razorpay_payment_id = request.POST.get('razorpay_payment_id', '').strip()
-            razorpay_order_id = request.POST.get('razorpay_order_id', '').strip()
-            razorpay_signature = request.POST.get('razorpay_signature', '').strip()
 
-            if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
-                messages.error(request, "Payment failed or missing details.",extra_tags='order_failed')
-                return redirect('order_failed')
+    def _handle_razorpay_payment(self, request, user, cart, delivery_address, total_amount, applied_coupon):
+        """Handles the final verification and creation of an order paid via Razorpay."""
+        razorpay_payment_id = request.POST.get('razorpay_payment_id', '').strip()
+        razorpay_order_id = request.POST.get('razorpay_order_id', '').strip()
+        razorpay_signature = request.POST.get('razorpay_signature', '').strip()
 
-            try:
-                params_dict = {
-                    'razorpay_order_id': razorpay_order_id,
-                    'razorpay_payment_id': razorpay_payment_id,
-                    'razorpay_signature': razorpay_signature
-                }
-                razorpay_client.utility.verify_payment_signature(params_dict)
-
-                order = _finalize_order(
-                    user=user,
-                    cart=cart,
-                    delivery_address=delivery_address,
-                    payment_method='razorpay',
-                    razorpay_id=razorpay_order_id,
-                    razorpay_payment_id=razorpay_payment_id,
-                    total_amount=total_amount,
-                    coupon=applied_coupon
-                )
-
-             
-                messages.success(request, f"Payment successful! Order #{order.pk} confirmed.")
-                return redirect(reverse('order_success', kwargs={'uid': order.pk}))
-
-            except Exception as e:
-                messages.error(request, "Payment verification failed. Please try again.",extra_tags='order_failed')
-                logger.exception(f"Razorpay payment error for user {user.pk}: {e}")
-                return redirect('order_failed')
-
-        elif payment_method == 'wallet':
-            try:
-                from wallet.models import Wallet, WalletTransaction
-                wallet, created = Wallet.objects.get_or_create(user=user)
-
-                if not wallet.has_sufficient_balance(total_amount):
-                    messages.error(request, f'Insufficient wallet balance. Your balance: ₹{wallet.balance}, Required: ₹{total_amount}')
-                    return redirect('order_failed')
-
-                wallet.deduct_money(
-                    amount=total_amount,
-                    transaction_type=WalletTransaction.DEBIT_PURCHASE,
-                    description="Payment for order",
-                    reference_id=None
-                )
-
-                order = _finalize_order(
-                    user=user,
-                    cart=cart,
-                    delivery_address=delivery_address,
-                    payment_method='wallet',
-                    total_amount=total_amount,
-                    coupon=applied_coupon
-                )
-
-              
-
-                last_transaction = WalletTransaction.objects.filter(
-                    wallet=wallet,
-                    reference_id=None,
-                    transaction_type=WalletTransaction.DEBIT_PURCHASE
-                ).order_by('-created_at').first()
-
-                if last_transaction:
-                    last_transaction.reference_id = str(order.pk)
-                    last_transaction.save(update_fields=['reference_id'])
-
-                messages.success(request, f'Order #{order.pk} confirmed! Paid via wallet.')
-                return redirect(reverse('order_success', kwargs={'uid': order.pk}))
-
-            except ValueError as e:
-                messages.error(request, str(e))
-                return redirect('checkout')
-            except Exception as e:
-                messages.error(request, "Error processing wallet payment.")
-                logger.exception(f"Wallet payment error for user {user.pk}: {e}")
-                return redirect('order_failed')
-
-        elif payment_method == 'cod':
-            try:
-                order = _finalize_order(
-                    user=user,
-                    cart=cart,
-                    delivery_address=delivery_address,
-                    payment_method='cod',
-                    total_amount=total_amount,
-                    coupon=applied_coupon
-                )
-
-               
-                messages.success(request, f'Order #{order.pk} confirmed!')
-                return redirect(reverse('order_success', kwargs={'uid': order.pk}))
-            except Exception as e:
-                messages.error(request, "Error processing order.")
-                logger.exception(f"Order processing error for user {user.pk}: {e}")
-                return redirect('order_failed')
-
-        else:
-            messages.error(request, 'Invalid payment method.',extra_tags='order_failed')
+        if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
+            messages.error(request, "Payment failed or missing details.", extra_tags='order_failed')
             return redirect('order_failed')
 
-        
+        try:
+            params_dict = {
+                'razorpay_order_id': razorpay_order_id,
+                'razorpay_payment_id': razorpay_payment_id,
+                'razorpay_signature': razorpay_signature
+            }
+            razorpay_client.utility.verify_payment_signature(params_dict)
+
+            order = _finalize_order(
+                user=user, cart=cart, delivery_address=delivery_address, payment_method='razorpay',
+                razorpay_id=razorpay_order_id, razorpay_payment_id=razorpay_payment_id,
+                total_amount=total_amount, coupon=applied_coupon
+            )
+            
+            messages.success(request, f"Payment successful! Order #{order.pk} confirmed.")
+            return redirect(reverse('order_success', kwargs={'uid': order.pk}))
+
+        except Exception as e:
+            messages.error(request, "Payment verification failed. Please try again.", extra_tags='order_failed')
+            logger.exception(f"Razorpay payment error for user {user.pk}: {e}")
+            return redirect('order_failed')
+
+
+    def _handle_wallet_payment(self, request, user, cart, delivery_address, total_amount, applied_coupon):
+        """Handles the deduction from the wallet and creation of a wallet-paid order."""
+        try:
+            from wallet.models import Wallet, WalletTransaction # Re-importing locally as in original code
+            wallet, created = Wallet.objects.get_or_create(user=user)
+
+            if not wallet.has_sufficient_balance(total_amount):
+                messages.error(request, f'Insufficient wallet balance. Your balance: ₹{wallet.balance}, Required: ₹{total_amount}')
+                return redirect('order_failed')
+
+            wallet.deduct_money(
+                amount=total_amount,
+                transaction_type=WalletTransaction.DEBIT_PURCHASE,
+                description="Payment for order",
+                reference_id=None 
+            )
+
+            order = _finalize_order(
+                user=user, cart=cart, delivery_address=delivery_address, payment_method='wallet',
+                total_amount=total_amount, coupon=applied_coupon
+            )
+
+            last_transaction = WalletTransaction.objects.filter(
+                wallet=wallet, reference_id=None, transaction_type=WalletTransaction.DEBIT_PURCHASE
+            ).order_by('-created_at').first()
+
+            if last_transaction:
+                last_transaction.reference_id = str(order.pk)
+                last_transaction.save(update_fields=['reference_id'])
+
+            messages.success(request, f'Order #{order.pk} confirmed! Paid via wallet.')
+            return redirect(reverse('order_success', kwargs={'uid': order.pk}))
+
+        except Exception as e:
+            messages.error(request, "Error processing wallet payment.")
+            logger.exception(f"Wallet payment error for user {user.pk}: {e}")
+            return redirect('order_failed')
+
+
+    def _handle_cod_payment(self, request, user, cart, delivery_address, total_amount, applied_coupon):
+        """Handles the creation of a Cash on Delivery order."""
+        try:
+            order = _finalize_order(
+                user=user, cart=cart, delivery_address=delivery_address, payment_method='cod',
+                total_amount=total_amount, coupon=applied_coupon
+            )
+            
+            messages.success(request, f'Order #{order.pk} confirmed!')
+            return redirect(reverse('order_success', kwargs={'uid': order.pk}))
+        except Exception as e:
+            messages.error(request, "Error processing order.")
+            logger.exception(f"Order processing error for user {user.pk}: {e}")
+            return redirect('order_failed')    
         
 def order_success(request, uid):
     try:

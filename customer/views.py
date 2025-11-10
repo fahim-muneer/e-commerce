@@ -21,7 +21,7 @@ from orders.models import OrderAddress
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
-
+from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
 from .models import ReferralCode, Referral, ReferralReward
 from offer.models import Offers
@@ -94,6 +94,7 @@ The Banus Furniture Team
         fail_silently=False
     )
 
+
 @method_decorator(never_cache, name='dispatch') 
 class ResendOtp(View):
     
@@ -103,7 +104,6 @@ class ResendOtp(View):
             try:
                 user = User.objects.get(email=email)
                 generate_and_send_otp(user)
-                # messages.success(request, "A new OTP has been sent to your email.",extra_tags='Resent-otp') 
                 return redirect('otp-verification')
             except User.DoesNotExist:
                 messages.error(request, "The user does not exist.",extra_tags='resent-otp')
@@ -111,7 +111,8 @@ class ResendOtp(View):
         else:
             messages.error(request, "Session timed out. Please sign up again.")
             return redirect('signup')
-
+        
+        
 @method_decorator(never_cache, name='dispatch')
 class SignUp(View):
     
@@ -237,8 +238,7 @@ def process_referral_signup(new_user, referral_code):
                 )
                 
                 rewards_created += 1
-            # else:
-
+                
         return True
         
     except ReferralCode.DoesNotExist:
@@ -273,7 +273,11 @@ def process_first_purchase(user, order):
         import traceback
         traceback.print_exc()
         return None, None   
-    
+
+
+
+
+
 @method_decorator(never_cache, name='dispatch')
 class LogIn(View):
     def get(self, request):
@@ -364,25 +368,38 @@ class ForgotPassword(View):
         return render(request, 'customer/forgot_password.html', {'form': form})
 
     def post(self, request):
-
         form = ForgotPasswordForm(request.POST)
-
-        if form.is_valid():
-            
-            email = form.cleaned_data['email']
-            
-            
-
+        if form.is_valid(): 
+            email = form.cleaned_data['email']   
             try:
                 user = User.objects.get(email=email) 
                 token = default_token_generator.make_token(user)
                 uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-
-                
                 reset_link = request.build_absolute_uri(
                     reverse('change-password', kwargs={'uidb64': uidb64, 'token': token}))
-                send_mail('Password reset request', f'Click here to set new password {reset_link}',
-                          'fahimmuneer313@gmail.com', [user.email], fail_silently=False)
+   
+                subject = 'Banus Furniture: Your One-Time Password (OTP)'
+
+                message = f"""
+                                Dear Customer,
+
+                                Your Password Re-set for Banus Furniture is: { reset_link}
+
+                                click here and change your password. Please do not share it with anyone.
+
+                                Thank you,
+                                The Banus Furniture Team
+                                    """
+
+                clean_message = message.strip()
+
+                send_mail(
+                    subject,
+                    clean_message,
+                    settings.EMAIL_HOST_USER,
+                    [user.email],
+                    fail_silently=False
+                )
 
                 messages.success(
                     request, "A link was sent to your mail to Reset your password.",extra_tags='otp-success')
@@ -399,7 +416,6 @@ class ForgotPassword(View):
 class ChangePassword(View):
     def get(self, request, uidb64, token):
 
-        # decode the uidb64
         try : 
             u_id = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=u_id)
@@ -413,7 +429,6 @@ class ChangePassword(View):
         messages.error(request,'The link was exhausted.',extra_tags='change-password')
 
     def post(self, request, uidb64, token):
-        # decode the uidb64
         try:
             u_id = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=u_id)
@@ -447,12 +462,7 @@ class UserProfile(MyLoginRequiredMixin,View):
         try:
             
             profile = Customer.objects.get(user=request.user) #pylint: disable=no-member
-            # if profile is None:
-            #     profile=Register.objects.create(
-            #         full_name=request.user.first_name,
-            #         email=request.user.email
-                    
-            #     )
+
         except Customer.DoesNotExist:  #pylint: disable=no-member
               profile=Customer.objects.create(user=request.user) #pylint: disable=no-member
               messages.warning(request, "Add a profile picture.",extra_tags='customer-profile')
@@ -539,7 +549,7 @@ class UpdateEmailAndFullName(MyLoginRequiredMixin, View):
                 if new_full_name and new_full_name != user.full_name:
                     user.full_name = new_full_name
                     user.save()
-                    messages.success(request, "Your profile has been updated successfully!")
+                    messages.success(request, "Your profile has been updated successfully!",extra_tags="customer-profile")
                 else:
                     messages.info(request, "No changes were made.")
                 return redirect('profile') 
@@ -550,140 +560,141 @@ class UpdateEmailAndFullName(MyLoginRequiredMixin, View):
 
 
 
-
 @method_decorator(never_cache, name='dispatch')
 class VerifyEmailOTP(MyLoginRequiredMixin, View):
     """Handle OTP verification for email change"""
-    
+
     def get(self, request):
-        # Check if session data exists
         old_email = request.session.get('old_email')
         new_email = request.session.get('new_email')
-        
+
         if not (old_email and new_email):
             messages.error(request, "Session expired. Please try updating your email again.")
             return redirect('user_profile')
-        
+
         form = OtpVerificationForm()
         return render(request, 'customer/otp_verification.html', {
             'form': form,
             'old_email': old_email,
             'new_email': new_email
         })
-    
+
     def post(self, request):
         form = OtpVerificationForm(request.POST)
-        
+
         if not form.is_valid():
-            messages.error(request, "Please enter a valid OTP.")
-            return render(request, 'customer/otp_verification.html', {'form': form})
+            return self.render_error(request, form, "Please enter a valid OTP.")
         
         entered_otp = form.cleaned_data['otp_code']
-        old_email = request.session.get('old_email')
-        new_email = request.session.get('new_email')
-        user_id = request.session.get('user_id')
-        pending_full_name = request.session.get('pending_full_name')
-       
-        # Validate session data
-        if not all([old_email, new_email, user_id]):
+        session_data = self.get_session_data(request)
+
+        if not session_data:
             messages.error(request, "Session expired. Please try again.")
             return redirect('user_profile')
-        
-        # Validate OTP length
-        if len(entered_otp) != 6:
-            messages.error(request, "Please enter a valid 6-digit code.")
-            return render(request, 'customer/otp_verification.html', {
-                'form': form,
-                'old_email': old_email,
-                'new_email': new_email
-            })
-        
+
+        old_email, new_email, user_id, pending_full_name = session_data
+
+        if not self.is_valid_otp_format(entered_otp):
+            return self.render_error(request, form, "Please enter a valid 6-digit code.")
+
         try:
-            # Get user by ID and verify old email matches
-            user = Register.objects.get(id=user_id, email=old_email)
-            
-            # Get the most recent OTP for this user
-            otp_obj = OTP.objects.filter(user=user).order_by('-created_at').first()
-            
-            if not otp_obj:
-                messages.error(request, "No OTP found. Please request a new one.")
-                return render(request, 'customer/otp_verification.html', {
-                    'form': form,
-                    'old_email': old_email,
-                    'new_email': new_email
-                })
-            
-            
-            # Check if OTP is still valid (not expired)
-            if not otp_obj.is_valid():
-                messages.error(request, "OTP has expired. Please request a new one.")
-                return render(request, 'customer/otp_verification.html', {
-                    'form': form,
-                    'old_email': old_email,
-                    'new_email': new_email
-                })
-            
-            # Verify OTP matches
-            if otp_obj.code == entered_otp:
-                
-                # Double-check new email is still available
-                if Register.objects.filter(email=new_email).exclude(id=user.id).exists():
-                    messages.error(request, "This email is now taken by another user. Please try a different email.")
-                    self.clear_session_data(request)
-                    return redirect('user_profile')
-                
-                # Update email
-                user.email = new_email
-                user.username = new_email  # Update username if based on email
-                
-                # Update full name if it was pending
-                if pending_full_name and pending_full_name != user.full_name:
-                    user.full_name = pending_full_name
-                
-                user.save()
-                
-                # Delete used OTP
-                otp_obj.delete()
-                
-                # Clear session data
-                self.clear_session_data(request)
-                
-                # Keep user logged in (update session)
-                from django.contrib.auth import update_session_auth_hash
-                update_session_auth_hash(request, user)
-                
-                messages.success(request, "Your email has been updated successfully!")
+            user, otp_obj = self._verify_otp_and_user(request, form, user_id, old_email, entered_otp)
+            if not user:
+                return redirect('user_profile') 
+
+            if self._is_new_email_available(request, new_email, user):
+                self._complete_email_update(request, user, new_email, pending_full_name, otp_obj)
+                messages.success(request, "Your email has been updated successfully!",extra_tags="customer-profile")
                 return redirect('user_profile')
             else:
-                messages.error(request, "Invalid verification code. Please try again.")
-                return render(request, 'customer/otp_verification.html', {
-                    'form': form,
-                    'old_email': old_email,
-                    'new_email': new_email
-                })
-        
+                return redirect('user_profile')
+
         except Register.DoesNotExist:
             messages.error(request, "User not found. Please log in again.")
             self.clear_session_data(request)
             return redirect('login')
         except Exception as e:
-            messages.error(request, f"An error occurred: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return render(request, 'customer/otp_verification.html', {
-                'form': form,
-                'old_email': old_email,
-                'new_email': new_email
-            })
+            messages.error(request, f"A system error occurred: {str(e)}")
+            return self.render_error(request, form, "A critical error occurred.")
+
+#-------------------------helper and splited funstions------------------------------
+
+    def _verify_otp_and_user(self, request, form, user_id, old_email, entered_otp):
+        """Retrieves user and OTP, and performs all OTP validation checks."""
+        user, otp_obj = self.get_user_and_otp(user_id, old_email)
+
+        if not otp_obj:
+            self.render_error(request, form, "No OTP found. Please request a new one.")
+            return None, None
+        
+        if not otp_obj.is_valid():
+            self.render_error(request, form, "OTP has expired. Please request a new one.")
+            return None, None
+        
+        if otp_obj.code != entered_otp:
+            self.render_error(request, form, "Invalid verification code. Please try again.")
+            return None, None
+
+        return user, otp_obj
+
+    def _is_new_email_available(self, request, new_email, user):
+        """Checks if the new email is already in use by another user."""
+        if self.is_email_taken(new_email, user):
+            messages.error(request, "This email is already taken by another user.")
+            self.clear_session_data(request)
+            return False
+        return True
+
+    def _complete_email_update(self, request, user, new_email, pending_full_name, otp_obj):
+        """Performs the final database update and cleans up."""
+        self.update_user_info(user, new_email, pending_full_name)
+        otp_obj.delete()
+        self.clear_session_data(request)
+        update_session_auth_hash(request, user)
+
+
     
+    def get_session_data(self, request):
+        old_email = request.session.get('old_email')
+        new_email = request.session.get('new_email')
+        user_id = request.session.get('user_id')
+        pending_full_name = request.session.get('pending_full_name')
+        if not all([old_email, new_email, user_id]):
+            return None
+        return old_email, new_email, user_id, pending_full_name
+
+    def get_user_and_otp(self, user_id, old_email):
+        user = Register.objects.get(id=user_id, email=old_email)
+        otp_obj = OTP.objects.filter(user=user).order_by('-created_at').first()
+        return user, otp_obj
+
+    def is_valid_otp_format(self, otp):
+        return otp.isdigit() and len(otp) == 6
+
+    def is_email_taken(self, new_email, user):
+        return Register.objects.filter(email=new_email).exclude(id=user.id).exists()
+
+    def update_user_info(self, user, new_email, pending_full_name):
+        user.email = new_email
+        user.username = new_email
+        if pending_full_name and pending_full_name != user.full_name:
+            user.full_name = pending_full_name
+        user.save()
+
     def clear_session_data(self, request):
-        """Helper method to clear session data"""
-        session_keys = ['old_email', 'new_email', 'user_id', 'pending_full_name']
-        for key in session_keys:
-            if key in request.session:
-                del request.session[key]
+        for key in ['old_email', 'new_email', 'user_id', 'pending_full_name']:
+            request.session.pop(key, None)
 
-
+    def render_error(self, request, form, message):
+        messages.error(request, message)
+        old_email = request.session.get('old_email')
+        new_email = request.session.get('new_email')
+        return render(request, 'customer/otp_verification.html', {
+            'form': form,
+            'old_email': old_email,
+            'new_email': new_email
+        })
+        
 @method_decorator(never_cache, name='dispatch')
 class ResendEmailOTP(MyLoginRequiredMixin, View):
     """Resend OTP for email verification"""
@@ -691,25 +702,17 @@ class ResendEmailOTP(MyLoginRequiredMixin, View):
     def get(self, request):
         old_email = request.session.get('old_email')
         new_email = request.session.get('new_email')
-        user_id = request.session.get('user_id')
-        
+        user_id = request.session.get('user_id')        
         
         if not all([old_email, user_id]):
             messages.error(request, "Session expired. Please try updating your email again.")
-            return redirect('user_profile')
-        
+            return redirect('user_profile')       
         try:
-            user = Register.objects.get(id=user_id, email=old_email)
-            
-            # Delete old OTPs for this user
-            OTP.objects.filter(user=user).delete()
-            
-            # Generate and send new OTP to OLD email
+            user = Register.objects.get(id=user_id, email=old_email)           
+            OTP.objects.filter(user=user).delete()           
             generate_and_send_otp(old_email)
-            messages.success(request, f"A new verification code has been sent to {old_email}.")
-            
-            return redirect('email_otp')
-            
+            messages.success(request, f"A new verification code has been sent to {old_email}.")           
+            return redirect('email_otp')            
         except Register.DoesNotExist:
             messages.error(request, "User not found. Please log in again.")
             return redirect('login')
@@ -753,9 +756,7 @@ class AddCustomerAddress(MyLoginRequiredMixin,View):
             if form.cleaned_data.get("is_default"):
                 UserAddress.objects.filter(user=request.user, is_default=True).update(is_default=False) #pylint: disable=no-member
                 address.is_default = True
-            address.save()
-        
-        
+            address.save()       
             if address.is_default:                   #pylint: disable=no-member
                     OrderAddress.objects.create(    #pylint: disable=no-member
                     user=request.user,
@@ -764,18 +765,16 @@ class AddCustomerAddress(MyLoginRequiredMixin,View):
                     address=form.cleaned_data['address'],
                     city=form.cleaned_data['city'],
                     state=form.cleaned_data['state'],
-                    pin=form.cleaned_data['pin'],
-                   
-                
-                    )
-            
-            
+                    pin=form.cleaned_data['pin'],                
+                    )                       
             messages.success(request,'Your address was added.')
             return redirect('user_address')
         
         messages.error(request,'Check your credentials.',extra_tags='add-customer-address')
         return render(request,'customer/add_address.html',{'form':form})
-
+    
+    
+    
 class EditAddress(MyLoginRequiredMixin,UpdateView):
     model = UserAddress
     fields =['mobile', 'second_mob', 'address', 'city', 'state', 'pin', 'address_type', 'is_default']
