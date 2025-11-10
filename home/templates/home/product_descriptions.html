@@ -144,9 +144,9 @@
                    name="quantity" 
                    value="1" 
                    min="1" 
-                   max="{{ variant_product.stock }}" 
+                   max="5" 
                    class="w-24 px-3 py-2 rounded-md border border-gray-300 text-center focus:ring-2 focus:ring-blue-500">
-            <span class="text-sm text-gray-500">Max: {{ variant_product.stock }}</span>
+            <span class="text-sm text-gray-500">Max: 5 </span>
           </div>
 
           {% if user.is_authenticated %}
@@ -181,9 +181,9 @@
                    name="quantity" 
                    value="1" 
                    min="1" 
-                   max="{{ product.stock }}" 
+                   max="5" 
                    class="w-24 px-3 py-2 rounded-md border border-gray-300 text-center focus:ring-2 focus:ring-blue-500">
-            <span class="text-sm text-gray-500">Max: {{ product.stock }}</span>
+            <span class="text-sm text-gray-500">Max: 5 </span>
           </div>
 
           {% if user.is_authenticated %}
