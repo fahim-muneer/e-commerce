@@ -112,7 +112,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'shop1',
+        'NAME': os.getenv('DB_NAME'),
         'USER': 'fahim',
         'PASSWORD': '1234',
         'HOST': 'localhost',
