@@ -13,12 +13,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
+
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
-# ALLOWED_HOSTS = [
-#     'banusfurniture.online',
-#     'www.banusfurniture.online',
-#     '3.110.208.30',
-# ]
 
 
 
