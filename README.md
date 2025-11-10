@@ -1,11 +1,12 @@
-# 🛒 Banus Furniture E-commerce Website
+
+#  Banus Furniture E-commerce Website
 
 A full-featured **Django-based E-commerce web application** for furniture shopping.  
 Includes user authentication, cart, wishlist, offers, coupons, orders, and admin dashboard.
 
 ---
 
-## 🚀 Features
+##  Features
 
 - User registration and login with authentication  
 - Admin and user dashboards  
@@ -17,10 +18,10 @@ Includes user authentication, cart, wishlist, offers, coupons, orders, and admin
 
 ---
 
-## 🧰 Tech Stack
+##  Tech Stack
 
 - **Backend:** Django, Python  
-- **Frontend:** HTML, CSS, JavaScript, Bootstrap / Tailwind  
+- **Frontend:** HTML, CSS, JavaScript, Tailwind  
 - **Database:** PostgreSQL  
 - **Server:** Gunicorn + Nginx  
 - **Hosting:** AWS EC2  
@@ -32,5 +33,5 @@ Includes user authentication, cart, wishlist, offers, coupons, orders, and admin
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/yourusername/e-commerce.git
+git clone https://github.com/fahim-muneer/e-commerce.git
 cd e-commerce
