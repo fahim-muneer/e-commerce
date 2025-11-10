@@ -34,3 +34,16 @@ class CouponForm(forms.ModelForm):
         if code and not code.isalnum():
             raise forms.ValidationError("Coupon code should contain only letters and numbers.")
         return code
+
+    def clean(self):
+        cleaned_data = super().clean()
+        min_cart_value = cleaned_data.get('min_cart_value')
+        discount_value = cleaned_data.get('discount_value')
+
+        if min_cart_value is not None and discount_value is not None:
+            if discount_value >= min_cart_value:
+                raise forms.ValidationError(
+                    "Discount value cannot be greater than or equal to the minimum cart value."
+                )
+
+        return cleaned_data

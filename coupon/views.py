@@ -42,13 +42,12 @@ def user_coupon_list(request):
             'can_use': can_use
         })
 
-    # ✅ Pagination setup
     page = request.GET.get('page', 1)
     paginator = Paginator(coupon_list_data, 2)
     coupon_page_obj = paginator.get_page(page)
 
     context = {
-        'coupon': coupon_page_obj  # 👈 This matches your template variable
+        'coupon': coupon_page_obj  
     }
 
     return render(request, 'coupons/user_coupon_view.html', context)
@@ -93,12 +92,13 @@ def create_coupon(request):
             return redirect('coupon_list')
         else:
             
-            messages.error(request, "Please correct the errors below.")
+            logger.error("the form is not validated yet ")
+
     else:
         
         form = CouponForm()
         
-    return render(request, 'coupons/add_coupon.html', {'form': form})
+    return render(request, 'coupons/admin_coupon.html', {'form': form})
 
 
 def update_coupon(request, coupon_id):
