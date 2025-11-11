@@ -250,13 +250,33 @@
                                 {{ product.description }}
                             </p>
                         </a>
-                        
-                        <!-- Rating Stars -->
-                        <div class="flex items-center mb-2">
-                            <div class="text-yellow-400 text-xs">
-                                ★★★★★
-                            </div>
+                <!--Ratings for the product-->
+                <div class="flex items-center mb-2">
+                    {% if product.avg_rating %}
+                        <div class="flex text-yellow-400 text-xs">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= product.avg_rating %}
+                                    <i class="fas fa-star"></i>
+                                {% elif forloop.counter|add:"-1" < product.avg_rating %}
+                                    <i class="fas fa-star-half-alt"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
                         </div>
+                        <span class="ml-1 text-xs text-gray-600">({{ product.avg_rating|floatformat:1 }})</span>
+                    {% else %}
+                        <div class="flex text-gray-300 text-xs">
+                            <i class="far fa-star"></i>
+                            <i class="far fa-star"></i>
+                            <i class="far fa-star"></i>
+                            <i class="far fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                        <span class="ml-1 text-xs text-gray-500">(No reviews)</span>
+                    {% endif %}
+                </div>
+
                         
                         {% if product.block %}
                         <p class="text-red-600 text-sm font-semibold text-center py-2 bg-red-50 rounded">

@@ -9,7 +9,7 @@ from orders.models import Cart, CartItems, OrderAddress, Orders, OrderItem
 from django.db import transaction
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import F
+from django.db.models import F,Avg
 from wish_list.models import WishListItems
 User = get_user_model()
 from django.urls import reverse
@@ -19,7 +19,6 @@ from django.views.decorators.csrf import csrf_exempt
 from customer.views import MyLoginRequiredMixin
 from decimal import Decimal
 from products.models import ProductVariants,Review
-from django.db.models import Prefetch
 from django.views.decorators.http import require_POST
 from customer.utils import mark_referral_first_purchase
 from django.conf import settings
@@ -103,6 +102,11 @@ def home(request):
             product.display_price_value = highest_stock_variant.price
         else:
             product.display_price_value = product.price if product.price else 0
+        
+        reviews = Review.objects.filter(product_variant__product=product)
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+        product.avg_rating = round(avg_rating, 1) if avg_rating else None
+        product.review_count = reviews.count()
 
     if sort_option:
         if sort_option == 'price':
@@ -121,6 +125,7 @@ def home(request):
             products_list = sorted(products_list, key=lambda p: p.created_at)
     else:
         products_list = sorted(products_list, key=lambda p: p.largest_variant.stock if p.largest_variant else 0, reverse=True)
+    
     paginator = Paginator(products_list, 10)
     page = request.GET.get('page')
     products = paginator.get_page(page)
@@ -158,7 +163,6 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
         product = self.get_object()
         variants = product.variant.all()
 
-        # ---------------- Wishlist ----------------
         if self.request.user.is_authenticated:
             my_list = list(
                 WishListItems.objects.filter(
@@ -169,8 +173,7 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
             my_list = []
         context["my_list"] = my_list
 
-        # ---------------- Variant Handling ----------------
-        selected_variant = None  # ✅ defined upfront
+        selected_variant = None  
         variant_id = self.request.GET.get("variant")
 
         if variant_id:
@@ -186,7 +189,6 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
         else:
             context["is_variant_selected"] = False
 
-        # ---------------- Price Logic ----------------
         if selected_variant:
             original_price = selected_variant.get_original_price()
             discounted_price = selected_variant.get_discounted_price()
@@ -205,13 +207,11 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
             else 0
         )
 
-        # ---------------- Variant Form ----------------
         context["variant_form"] = VarientSelectforms(
             queryset=variants,
             initial={'variant': selected_variant.id if selected_variant else None}
         )
 
-        # ---------------- Offer, Reviews, Related ----------------
         active_offer = product.get_active_offer()
         context["active_offer"] = active_offer
         context["has_offer"] = active_offer is not None
@@ -224,7 +224,6 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
             .exclude(id=product.id)[:6]
         )
 
-        # ---------------- Has Bought ----------------
         has_bought = False
         if self.request.user.is_authenticated:
             if selected_variant:
@@ -240,6 +239,10 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
                     order__order_status=Orders.STATUS_DELIVERED
                 ).exists()
         context["has_bought"] = has_bought
+        
+        reviews=Review.objects.filter(product_variant__product=product)
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        context["avg_rating"]=avg_rating
 
         return context
 
