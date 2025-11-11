@@ -8,7 +8,7 @@ from products.models import ProductPage,Review
 from .models import WishList, WishListItems
 from customer.models import Customer
 from django.db.models import Avg
-
+from django.contrib import messages
 
 class MyList(LoginRequiredMixin, View):
     def get(self, request):
@@ -34,7 +34,6 @@ class MyList(LoginRequiredMixin, View):
         product_id = request.POST.get('product_id')
         action = request.POST.get('action')
         
-        # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
         if product_id and action:
@@ -131,7 +130,7 @@ class MyListDeleteItem(LoginRequiredMixin, View):
                     'success': False,
                     'message': 'An error occurred. Please try again.'
                 })
-        
+        messages.success(request,'Deleted successfully',extra_tags="wish_list")
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('wish_list'))
 
 
