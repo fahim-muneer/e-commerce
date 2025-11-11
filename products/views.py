@@ -36,7 +36,6 @@ def upload_cropped_image(request):
             for chunk in image_file.chunks():
                 f.write(chunk)
 
-        # Return the image URL
         image_url = f"{settings.MEDIA_URL}cropped/{image_file.name}"
         return JsonResponse({'image_url': image_url})
 
@@ -86,7 +85,6 @@ class ProductView(AdminLoginMixin,View):
 class ProductAdding(AdminLoginMixin, View):
     def get(self, request):
         form = ProductForm()
-        # Create a list of the image fields
         image_fields = [
             form['image1'],
             form['image2'],
@@ -96,11 +94,10 @@ class ProductAdding(AdminLoginMixin, View):
         ]
         context = {
             'form': form,
-            'image_fields': image_fields,  # This variable holds the list
+            'image_fields': image_fields,  
         }
         return render(request, 'product/product_add.html', context)
     
-    # Your post method can remain as it is if you prefer to build the context that way
     def post(self, request):
         form = ProductForm(request.POST, request.FILES) 
         
@@ -119,7 +116,7 @@ class ProductAdding(AdminLoginMixin, View):
         messages.error(request, 'Please correct the errors below and try again.')
         context = {
             'form': form,
-            'image_fields': image_fields, # Pass the list to the template
+            'image_fields': image_fields, 
         }
         return render(request, 'product/product_add.html', context)
     

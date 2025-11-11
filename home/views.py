@@ -153,6 +153,7 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
     model = ProductPage
     template_name = 'home/product_details_page.html'
     context_object_name = 'product'
+    
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -211,6 +212,22 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
             .exclude(id=product.id)[:6]
         )
         context["related_products"] = related_products
+        has_bought = False
+        if self.request.user.is_authenticated:
+            if selected_variant:
+                has_bought = OrderItem.objects.filter(
+                    order__user=self.request.user,
+                    variant=selected_variant,
+                    order__order_status=Orders.STATUS_DELIVERED
+                ).exists()
+        else:
+            has_bought = OrderItem.objects.filter(
+                order__user=self.request.user,
+                variant__product=product,
+                order__order_status=Orders.STATUS_DELIVERED
+            ).exists()
+
+        context["has_bought"] = has_bought
 
         return context
 
@@ -264,7 +281,7 @@ def add_to_cart(request):
                         variant = None
 
                 if quantity > available_stock:
-                    messages.error(request, f"Only {available_stock} items available in stock.")
+                    messages.error(request, f"Only {available_stock} items available in stock.",extra_tags="product-details")
                     return redirect('items_details', pk=product.id)
 
                 cart_obj, cart_created = Cart.objects.get_or_create(
@@ -597,7 +614,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
         payment_method = request.POST.get('payment_method', 'cod').strip()
 
         delivery_address, cart = self._get_address_and_cart(request, user, address_id)
-        if isinstance(delivery_address, redirect): return delivery_address
+        if isinstance(delivery_address, HttpResponseRedirect): return delivery_address
 
         applied_coupon = self._revalidate_coupon(request, cart)
         total_amount = cart.total_price or Decimal('0')
