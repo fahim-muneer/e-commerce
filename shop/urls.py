@@ -12,14 +12,14 @@ handler400 = 'custom_admin.views.custom_400'
 urlpatterns = [
     # --- Project App URL Inclusions ---
     path('accounts/', include('allauth.urls')),
-    path('custom_admin/', include('custom_admin.urls')),
+    path('custom/admin/', include('custom_admin.urls')),
     path('category/', include('category.urls')),
     path('customer/', include('customer.urls')),
     path('', include('home.urls')),
     path('products/', include('products.urls')),
-    path('user_panel/', include('user_panel.urls')),
+    path('user/panel/', include('user_panel.urls')),
     path('orders/', include('orders.urls')),
-    path('wish-list/', include('wish_list.urls')),
+    path('wish/list/', include('wish_list.urls')),
     path('varients/', include('varients.urls')),
     path('offer/', include('offer.urls')),
     path('payment/', include('payment.urls')),

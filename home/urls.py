@@ -8,16 +8,16 @@ urlpatterns = [
     path('<pk>/details/',ProdectDetails.as_view(),name="items_details"),
     path('',Index.as_view(),name="index"),
     path('cart/',login_required(show_cart),name="cart"),
-    path('add_to_cart/',login_required(add_to_cart), name='add_to_cart'),
-    path('remove_from_cart/<int:item_id>/',login_required(remove_from_cart), name='remove_from_cart'),
-    path('update-cart-item/<int:item_id>/', login_required(update_cart_item), name='update_cart_item'), 
+    path('add/to/cart/',login_required(add_to_cart), name='add_to_cart'),
+    path('remove/from/cart/<int:item_id>/',login_required(remove_from_cart), name='remove_from_cart'),
+    path('update/cart/item/<int:item_id>/', login_required(update_cart_item), name='update_cart_item'), 
     path('checkout/',login_required(CheckoutList.as_view()), name='checkout'),
-    path('<int:uid>/order_success/',login_required(order_success),name='order_success'),
+    path('<int:uid>/order/success/',login_required(order_success),name='order_success'),
     path('<int:pid>/unlike/',login_required(unlike.as_view()),name="unlike"),
     path('about/',about,name="about"),
-    path('contact_us/',contact_us,name="contact_us"),
-    path('add-review/<int:variant_id>/',add_review, name='add_review'),
-    path('order_failed/',login_required(OrderFailed.as_view()),name="order_failed")
+    path('contact/us/',contact_us,name="contact_us"),
+    path('add/review/<int:variant_id>/',add_review, name='add_review'),
+    path('order/failed/',login_required(OrderFailed.as_view()),name="order_failed")
 
 
     
