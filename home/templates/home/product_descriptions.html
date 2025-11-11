@@ -30,7 +30,7 @@
           {% widthratio variant_original_price 1 1 as original %}
           {% widthratio variant_discounted_price 1 1 as discounted %}
           <span class="text-green-600 font-semibold text-sm bg-green-100 px-2 py-1 rounded">
-            Save ₹{{ variant_original_price|add:"-"|add:variant_discounted_price|floatformat:0 }}
+             Save ₹{{ variant_saving|floatformat:0 }}
           </span>
         </div>
       {% else %}

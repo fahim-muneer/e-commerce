@@ -148,18 +148,17 @@ class Unlike(MyLoginRequiredMixin, View):
         WishListItems.objects.filter(products_id=pid, wish_list__user=request.user).delete()
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('wish_list'))
 
-
 class ProdectDetails(MyLoginRequiredMixin, DetailView):
     model = ProductPage
     template_name = 'home/product_details_page.html'
     context_object_name = 'product'
-    
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
         variants = product.variant.all()
 
+        # ---------------- Wishlist ----------------
         if self.request.user.is_authenticated:
             my_list = list(
                 WishListItems.objects.filter(
@@ -168,50 +167,64 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
             )
         else:
             my_list = []
-
         context["my_list"] = my_list
 
+        # ---------------- Variant Handling ----------------
+        selected_variant = None  # ✅ defined upfront
         variant_id = self.request.GET.get("variant")
+
         if variant_id:
             try:
                 selected_variant = variants.get(id=variant_id)
-                context["selected_variant"] = selected_variant
-                context["variant_product"] = selected_variant
                 context["is_variant_selected"] = True
-                context["variant_original_price"] = selected_variant.get_original_price()
-                context["variant_discounted_price"] = selected_variant.get_discounted_price()
             except ProductVariants.DoesNotExist:
-                context["variant_product"] = product
+                selected_variant = None
                 context["is_variant_selected"] = False
+        elif variants.exists():
+            selected_variant = variants.first()
+            context["is_variant_selected"] = True
         else:
-            if variants.exists():
-                selected_variant = variants.first()
-                context["selected_variant"] = selected_variant
-                context["variant_product"] = selected_variant
-                context["is_variant_selected"] = True
-                context["variant_original_price"] = selected_variant.get_original_price()
-                context["variant_discounted_price"] = selected_variant.get_discounted_price()
-            else:
-                context["variant_product"] = product
-                context["selected_variant"] = None
-                context["is_variant_selected"] = False
+            context["is_variant_selected"] = False
 
+        # ---------------- Price Logic ----------------
+        if selected_variant:
+            original_price = selected_variant.get_original_price()
+            discounted_price = selected_variant.get_discounted_price()
+        else:
+            original_price = getattr(product, "original_price", 0)
+            discounted_price = getattr(product, "price", 0)
+
+        context["selected_variant"] = selected_variant
+        context["variant_product"] = selected_variant or product
+        context["variant_original_price"] = original_price
+        context["variant_discounted_price"] = discounted_price
+        context["variant_saving"] = max(original_price - discounted_price, 0)
+        context["variant_saving_percentage"] = (
+            (context["variant_saving"] / original_price * 100)
+            if original_price > 0
+            else 0
+        )
+
+        # ---------------- Variant Form ----------------
         context["variant_form"] = VarientSelectforms(
-                queryset=variants,
-                initial={'variant': selected_variant.id if selected_variant else None}
-            )
+            queryset=variants,
+            initial={'variant': selected_variant.id if selected_variant else None}
+        )
+
+        # ---------------- Offer, Reviews, Related ----------------
         active_offer = product.get_active_offer()
         context["active_offer"] = active_offer
         context["has_offer"] = active_offer is not None
         context["discount_percentage"] = product.get_discount_percentage() if active_offer else 0
-        
+
         context["reviews"] = Review.objects.filter(product_variant__product=product)
         context["review_form"] = ReviewForm()
-        related_products = (
+        context["related_products"] = (
             ProductPage.objects.filter(category=product.category)
             .exclude(id=product.id)[:6]
         )
-        context["related_products"] = related_products
+
+        # ---------------- Has Bought ----------------
         has_bought = False
         if self.request.user.is_authenticated:
             if selected_variant:
@@ -220,16 +233,16 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
                     variant=selected_variant,
                     order__order_status=Orders.STATUS_DELIVERED
                 ).exists()
-        else:
-            has_bought = OrderItem.objects.filter(
-                order__user=self.request.user,
-                variant__product=product,
-                order__order_status=Orders.STATUS_DELIVERED
-            ).exists()
-
+            else:
+                has_bought = OrderItem.objects.filter(
+                    order__user=self.request.user,
+                    variant__product=product,
+                    order__order_status=Orders.STATUS_DELIVERED
+                ).exists()
         context["has_bought"] = has_bought
 
         return context
+
 
 
 @login_required(login_url='/customer/')
