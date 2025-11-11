@@ -47,10 +47,34 @@
       </div>
       <div class="p-4">
         <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
-        <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description }}</p>
-        <div class="flex items-center mb-1">
-          ⭐⭐⭐⭐★
+        <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description |truncatewords:10 }}</p>
+        <!--review rating-->
+<div class="flex items-center mb-2">
+    {% if product.avg_rating %}
+        <div class="flex text-yellow-400 text-xs">
+            {% for i in "12345" %}
+                {% if forloop.counter <= product.avg_rating %}
+                    <i class="fas fa-star"></i>
+                {% elif forloop.counter|add:"-1" < product.avg_rating %}
+                    <i class="fas fa-star-half-alt"></i>
+                {% else %}
+                    <i class="far fa-star"></i>
+                {% endif %}
+            {% endfor %}
         </div>
+        <span class="ml-1 text-xs text-gray-600">({{ product.avg_rating|floatformat:1 }})</span>
+    {% else %}
+    
+        <div class="flex text-gray-300 text-xs">
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+        </div>
+        <span class="ml-1 text-xs text-gray-500">(No reviews)</span>
+    {% endif %}
+</div>
         {% if product.block %}
                             <p class="block w-full py-2 mt-2 bg-white-500 text-red-600 text-sm font-semibold text-center rounded-md">
                             Currently Unavailable
@@ -166,9 +190,32 @@
       <div class="p-4">
         <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
         <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description }}</p>
-        <div class="flex items-center mb-1">
-          ⭐⭐⭐⭐★
+<div class="flex items-center mb-2">
+    {% if product.avg_rating %}
+        <div class="flex text-yellow-400 text-xs">
+            {% for i in "12345" %}
+                {% if forloop.counter <= product.avg_rating %}
+                    <i class="fas fa-star"></i>
+                {% elif forloop.counter|add:"-1" < product.avg_rating %}
+                    <i class="fas fa-star-half-alt"></i>
+                {% else %}
+                    <i class="far fa-star"></i>
+                {% endif %}
+            {% endfor %}
         </div>
+        <span class="ml-1 text-xs text-gray-600">({{ product.avg_rating|floatformat:1 }})</span>
+    {% else %}
+    
+        <div class="flex text-gray-300 text-xs">
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+        </div>
+        <span class="ml-1 text-xs text-gray-500">(No reviews)</span>
+    {% endif %}
+</div>
         <div class="flex items-center space-x-2 mb-2">
           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
     {% comment %} <span class="text-red-500 font-semibold">₹{{ product.price }}</span> {% endcomment %}
@@ -230,9 +277,32 @@
       <div class="p-4">
         <p class="text-gray-800 text-sm truncate">{{ product.name }}</p>
         <p class="text-gray-500 text-xs mb-2 truncate">{{ product.description }}</p>
-        <div class="flex items-center mb-1">
-          ⭐⭐⭐⭐★
+        <div class="flex items-center mb-2">
+    {% if product.avg_rating %}
+        <div class="flex text-yellow-400 text-xs">
+            {% for i in "12345" %}
+                {% if forloop.counter <= product.avg_rating %}
+                    <i class="fas fa-star"></i>
+                {% elif forloop.counter|add:"-1" < product.avg_rating %}
+                    <i class="fas fa-star-half-alt"></i>
+                {% else %}
+                    <i class="far fa-star"></i>
+                {% endif %}
+            {% endfor %}
         </div>
+        <span class="ml-1 text-xs text-gray-600">({{ product.avg_rating|floatformat:1 }})</span>
+    {% else %}
+    
+        <div class="flex text-gray-300 text-xs">
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+            <i class="far fa-star"></i>
+        </div>
+        <span class="ml-1 text-xs text-gray-500">(No reviews)</span>
+    {% endif %}
+</div>
         <div class="flex items-center space-x-2 mb-2">
           <span class="text-gray-400 line-through text-sm">₹{{ product.old_price }}</span>
           {% comment %} <span class="text-red-500 font-semibold">₹{{ product.price }}</span> {% endcomment %}

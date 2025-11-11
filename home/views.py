@@ -40,6 +40,8 @@ razorpay_client = razorpay.Client(
 )
 
 
+
+
 class Index(View):
     def get(self, request):
         latest_products = ProductPage.objects.order_by('-pk')[:5]
@@ -47,19 +49,42 @@ class Index(View):
         popular_product = ProductPage.objects.order_by('old_price')[:10]
         category = CategoryPage.objects.all()[:4]
         banner = Banner.objects.order_by('-pk')[:4]
-        banner_main=banner[0] if len(banner) >0 else None
+        banner_main = banner[0] if len(banner) > 0 else None
         banner1 = banner[1] if len(banner) > 1 else None
         banner2 = banner[2] if len(banner) > 2 else None
         banner3 = banner[3] if len(banner) > 3 else None
+        
+        # Add dynamic ratings to latest products
+        for product in latest_products:
+            reviews = Review.objects.filter(product_variant__product=product)
+            avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+            product.avg_rating = round(avg_rating, 1) if avg_rating else None
+            product.review_count = reviews.count()
+        
+        # Add dynamic ratings to featured products
+        for product in featured_product:
+            reviews = Review.objects.filter(product_variant__product=product)
+            avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+            product.avg_rating = round(avg_rating, 1) if avg_rating else None
+            product.review_count = reviews.count()
+        
+        # Add dynamic ratings to popular products
+        for product in popular_product:
+            reviews = Review.objects.filter(product_variant__product=product)
+            avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+            product.avg_rating = round(avg_rating, 1) if avg_rating else None
+            product.review_count = reviews.count()
+        
         context = {
             'latest_products': latest_products,
             'featured_product': featured_product,
             'popular_product': popular_product,
             'category': category,
-            'banner_main':banner_main,
-            'banner1':banner1,
-            'banner2':banner2,
-            'banner3':banner3 }
+            'banner_main': banner_main,
+            'banner1': banner1,
+            'banner2': banner2,
+            'banner3': banner3
+        }
         
         return render(request, 'home/index.html', context)
 def home(request):
@@ -71,7 +96,6 @@ def home(request):
     sort_option = request.GET.get('sort')
     search_query = request.GET.get('search', '').strip()
     
-    print(f"Filters - Category: {category_filter}, Price: {min_price}-{max_price}, Sort: {sort_option}, Search: {search_query}")
 
     if search_query:
         products = products.filter(

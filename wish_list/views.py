@@ -4,9 +4,10 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from products.models import ProductPage
+from products.models import ProductPage,Review
 from .models import WishList, WishListItems
 from customer.models import Customer
+from django.db.models import Avg
 
 
 class MyList(LoginRequiredMixin, View):
@@ -14,7 +15,11 @@ class MyList(LoginRequiredMixin, View):
         profile = get_object_or_404(Customer, user=request.user)
         my_list, _ = WishList.objects.get_or_create(user=request.user)
         wishlist_items = WishListItems.objects.filter(wish_list=my_list)
-
+        for item in wishlist_items:
+            reviews = Review.objects.filter(product_variant__product=item.products)
+            avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+            item.products.avg_rating = round(avg_rating, 1) if avg_rating else None
+            item.products.review_count = reviews.count()
         product_paginator = Paginator(wishlist_items, 2)
         page_number = request.GET.get('page', 1)
         wishlist_items = product_paginator.get_page(page_number)
@@ -96,13 +101,11 @@ class MyList(LoginRequiredMixin, View):
                     'message': 'Invalid request.'
                 })
 
-        # For non-AJAX requests, redirect as before
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('home'))
 
 
 class MyListDeleteItem(LoginRequiredMixin, View):
     def post(self, request, pid):
-        # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         try:
@@ -129,14 +132,12 @@ class MyListDeleteItem(LoginRequiredMixin, View):
                     'message': 'An error occurred. Please try again.'
                 })
         
-        # For non-AJAX requests, redirect as before
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('wish_list'))
 
 
 
 class Unlike(LoginRequiredMixin, View):
     def post(self, request, pid):
-        # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         try:
@@ -163,5 +164,4 @@ class Unlike(LoginRequiredMixin, View):
                     'message': 'An error occurred. Please try again.'
                 })
         
-        # For non-AJAX requests, redirect as before
         return HttpResponseRedirect(request.META.get('HTTP_REFERER') or reverse('wish_list'))
