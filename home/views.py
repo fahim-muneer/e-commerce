@@ -54,27 +54,25 @@ class Index(View):
         banner2 = banner[2] if len(banner) > 2 else None
         banner3 = banner[3] if len(banner) > 3 else None
         
-        # Add dynamic ratings to latest products
         for product in latest_products:
             reviews = Review.objects.filter(product_variant__product=product)
             avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
             product.avg_rating = round(avg_rating, 1) if avg_rating else None
             product.review_count = reviews.count()
         
-        # Add dynamic ratings to featured products
         for product in featured_product:
             reviews = Review.objects.filter(product_variant__product=product)
             avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
             product.avg_rating = round(avg_rating, 1) if avg_rating else None
             product.review_count = reviews.count()
         
-        # Add dynamic ratings to popular products
         for product in popular_product:
             reviews = Review.objects.filter(product_variant__product=product)
             avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
             product.avg_rating = round(avg_rating, 1) if avg_rating else None
             product.review_count = reviews.count()
-        
+            breadcrumb_trail = [('Home', reverse('index'))]
+
         context = {
             'latest_products': latest_products,
             'featured_product': featured_product,
@@ -83,7 +81,9 @@ class Index(View):
             'banner_main': banner_main,
             'banner1': banner1,
             'banner2': banner2,
-            'banner3': banner3
+            'banner3': banner3,
+            'breadcrumb_trail': breadcrumb_trail,
+
         }
         
         return render(request, 'home/index.html', context)
@@ -95,7 +95,16 @@ def home(request):
     max_price = request.GET.get('max_price')
     sort_option = request.GET.get('sort')
     search_query = request.GET.get('search', '').strip()
-    
+    current_category = request.GET.getlist('category')
+    breadcrumb_trail = [
+            ('Home', reverse('index')),
+            ('shop', reverse('home')),
+        ]
+    if current_category:
+        if len(current_category) == 1:
+            breadcrumb_trail.append((current_category[0], None))
+        else:
+            breadcrumb_trail.append(('Multiple Categories', None))
 
     if search_query:
         products = products.filter(
@@ -169,6 +178,8 @@ def home(request):
         "my_list": my_list,
         "current_category": category_filter,
         "search_query": search_query,
+        'breadcrumb_trail': breadcrumb_trail,
+
     }
 
     return render(request, "home/home.html", context)
@@ -267,6 +278,18 @@ class ProdectDetails(MyLoginRequiredMixin, DetailView):
         reviews=Review.objects.filter(product_variant__product=product)
         avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
         context["avg_rating"]=avg_rating
+        breadcrumb_trail = [
+            ('Home', reverse('index')),
+            ('shop',reverse('home')),
+            ('Product', reverse('home')),
+        ]
+
+
+        breadcrumb_trail.append((product.name, None))
+        context["breadcrumb_trail"] = breadcrumb_trail
+
+
+        
 
         return context
 
@@ -280,10 +303,19 @@ def show_cart(request):
     )
 
     cart_obj = Cart.objects.get(owner=request.user)
+    
+    breadcrumb_trail = [
+        ('Home', reverse('index')),
+        ('shop',reverse('home')),
+        ('Shopping Cart', None)
+    ]    
+    
     context = {
         'cart': cart_obj,
         'total_items': cart_obj.total_items,
         'total_price': cart_obj.total_price,
+        'breadcrumb_trail': breadcrumb_trail,
+
     }
 
     return render(request, 'home/cart.html', context)

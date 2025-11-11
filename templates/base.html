@@ -180,7 +180,10 @@
     </div>
   </div>
   <!-- END Nav Bar -->
-
+  <div class="container mx-auto px-4">
+        {% block breadcrumbs %}
+            {% endblock breadcrumbs %}
+    </div>
   {% block content %}
   {% endblock content %}
 

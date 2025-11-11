@@ -1,8 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 {% load chunks %}
+{% load query_params %}
+{% load breadcrumbs %}
 
-{% block content %} 
+{% block title %}Shop{% endblock title %}
+
+{% block breadcrumbs %}
+    {% with trail=breadcrumb_trail %}
+        {% render_breadcrumbs trail %}
+    {% endwith %}
+{% endblock breadcrumbs %}
+
+{% block content %}
 
 <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white rounded-lg shadow-xl mb-5 mt-5">
 
