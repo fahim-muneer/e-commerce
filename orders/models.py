@@ -117,6 +117,7 @@ class Cart(models.Model):
     def total_items(self):
         return sum(item.quantity for item in self.ordered_items.all())
 
+
     @property
     def total_savings(self):
         """Total savings from product offers + coupon"""
@@ -155,6 +156,7 @@ class CartItems(models.Model):
     def item_total(self):
         price = self.unit_price
         return price * self.quantity if price else Decimal('0')
+
     
     @property
     def original_item_total(self):

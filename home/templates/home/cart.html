@@ -29,10 +29,8 @@
 
         {% if cart.ordered_items.exists %}
             {% for cart_item in cart.ordered_items.all %}
-            <!-- Cart Item -->
             <div class="flex items-center space-x-4 p-4 border-b border-gray-200">
                 {% if cart_item.product %}
-                    <!-- Product Image with Discount Badge -->
                     <div class="relative">
                         <img src="{{ cart_item.product.image1.url }}" alt="{{ cart_item.product.name }}" class="w-24 h-24 object-cover rounded-md">
                         {% if cart_item.has_discount %}
@@ -69,49 +67,47 @@
                         </div>
                         
                         <div class="mt-2 flex items-center space-x-2">
-                            <span class="text-sm text-gray-600">Qty:</span>
-                            
-                            <!-- Quantity Controls -->
-                            <div class="flex items-center space-x-1">
-                                <button 
-                                    type="button" 
-                                    class="text-gray-600 hover:text-red-500 font-bold text-lg px-2"
-                                    onclick="changeQuantity({{ cart_item.id }}, -1)">-</button>
-                                
-                                <input 
-                                    type="number" 
-                                    id="qty-{{ cart_item.id }}"
-                                    data-item-id="{{ cart_item.id }}"
-                                    data-max="5"
-                                    value="{{ cart_item.quantity }}" 
-                                    min="1" 
-                                    max="5"
-                                    class="w-16 px-2 py-1 rounded-md border border-gray-300 text-center text-sm" 
-                                    onchange="updateQuantityManual({{ cart_item.id }})">
-                                
-                                <button 
-                                    type="button" 
-                                    class="text-gray-600 hover:text-green-500 font-bold text-lg px-2"
-                                    onclick="changeQuantity({{ cart_item.id }}, 1)">+</button>
-                            </div>
-                            
-                            <!-- Price Display with Discount -->
-                            <div class="flex items-center space-x-2">
-                                {% if cart_item.has_discount %}
-                                    <span class="text-gray-400 line-through text-sm">₹{{ cart_item.original_unit_price }}</span>
-                                    <span class="text-red-500 font-semibold text-sm">₹{{ cart_item.unit_price|floatformat:2 }}</span>
-                                {% else %}
-                                    <span class="text-red-500 font-semibold text-sm">₹{{ cart_item.unit_price|floatformat:2 }}</span>
-                                {% endif %}
-                            </div>
-                            
-                            <span class="text-blue-600 font-semibold text-sm ml-4" id="item-total-{{ cart_item.id }}">
-                                Total: ₹{{ cart_item.item_total|floatformat:2 }}
-                            </span>
-                        </div>
+    <span class="text-sm text-gray-600">Qty:</span>
+    
+    <div class="flex items-center space-x-1" id="qty-controls-{{ cart_item.id }}">
+        <button 
+            type="button" 
+            class="text-gray-600 hover:text-red-500 font-bold text-lg px-2"
+            onclick="changeQuantity({{ cart_item.id }}, -1)">-</button>
+        
+        <input 
+            type="number" 
+            id="qty-{{ cart_item.id }}"
+            data-item-id="{{ cart_item.id }}"
+            data-max="5"
+            value="{{ cart_item.quantity }}" 
+            min="1" 
+            max="5"
+            class="w-16 px-2 py-1 rounded-md border border-gray-300 text-center text-sm" 
+            onchange="updateQuantityManual({{ cart_item.id }})"
+            oninput="debounceManualUpdate({{ cart_item.id }})">
+        
+        <button 
+            type="button" 
+            class="text-gray-600 hover:text-green-500 font-bold text-lg px-2"
+            onclick="changeQuantity({{ cart_item.id }}, 1)">+</button>
+    </div>
+    
+    <div class="flex items-center space-x-2">
+        {% if cart_item.has_discount %}
+            <span class="text-gray-400 line-through text-sm">₹{{ cart_item.original_unit_price }}</span>
+            <span class="text-red-500 font-semibold text-sm">₹{{ cart_item.unit_price|floatformat:2 }}</span>
+        {% else %}
+            <span class="text-red-500 font-semibold text-sm">₹{{ cart_item.unit_price|floatformat:2 }}</span>
+        {% endif %}
+    </div>
+    
+    <span class="text-blue-600 font-semibold text-sm ml-4" id="item-total-{{ cart_item.id }}">
+        Total: ₹{{ cart_item.item_total|floatformat:2 }}
+    </span>
+</div>
                     </div>
                 {% else %}
-                    <!-- Handle deleted products -->
                     <div class="w-24 h-24 bg-gray-200 rounded-md flex items-center justify-center">
                         <i class="fa-solid fa-image text-gray-400"></i>
                     </div>
@@ -136,7 +132,6 @@
             </div>
             {% endfor %}
         {% else %}
-            <!-- Empty Cart Message -->
             <div class="text-center py-12">
                 <i class="fa-solid fa-shopping-cart text-gray-300 text-6xl mb-4"></i>
                 <h3 class="text-lg font-semibold text-gray-600 mb-2">Your cart is empty</h3>
@@ -148,7 +143,6 @@
         {% endif %}
     </div>
 
-    <!-- Cart Totals Section -->
     {% if cart.ordered_items.exists %}
     <div class="bg-gray-50 p-6 rounded-lg shadow-sm" id="cart-totals-section">
         <h2 class="text-xl font-bold text-gray-800 mb-6">Cart Totals</h2>
@@ -201,20 +195,40 @@
     }
 
     const csrftoken = getCookie('csrftoken');
+    let debounceTimer; // Global variable for debounce
+
+    // NEW FUNCTION: Debounce utility
+    function debounce(callback, delay = 500) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(callback, delay);
+    }
+
+    // NEW HANDLER: Called on keypress/input change, triggers debounce
+    function debounceManualUpdate(itemId) {
+        // Validation logic can be moved here, but keeping it in updateQuantityManual for now
+        debounce(() => {
+            updateQuantityManual(itemId);
+        }, 800); // 800ms delay to wait for user to finish typing
+    }
 
     function changeQuantity(itemId, delta) {
         const input = document.getElementById(`qty-${itemId}`);
         const maxStock = parseInt(input.getAttribute('data-max'));
         let newQty = parseInt(input.value) + delta;
         
-        if (newQty < 1) newQty = 1;
-        if (newQty > maxStock) {
+        if (newQty < 1) {
+            newQty = 1;
+        }
+        if (newQty > maxStock) { 
             alert(`Maximum available stock is ${maxStock}`);
             newQty = maxStock;
         }
         
-        input.value = newQty;
-        updateCart(itemId, newQty);
+        // Only update if the quantity actually changes (avoids unnecessary API call)
+        if (newQty !== parseInt(input.value)) {
+            input.value = newQty;
+            updateCart(itemId, newQty);
+        }
     }
 
     function updateQuantityManual(itemId) {
@@ -222,6 +236,7 @@
         const maxStock = parseInt(input.getAttribute('data-max'));
         let newQty = parseInt(input.value);
         
+        // Input validation
         if (isNaN(newQty) || newQty < 1) {
             newQty = 1;
             input.value = 1;
@@ -232,11 +247,25 @@
             input.value = maxStock;
         }
         
+        // Send update only if the cleaned/validated value is different from the current display value
+        if (newQty !== parseInt(input.value)) {
+            input.value = newQty; // Ensure the validated number is displayed
+        }
+        
         updateCart(itemId, newQty);
     }
 
     function updateCart(itemId, quantity) {
-        const url = `/update-cart-item/${itemId}/`;
+        const url = `/update/cart/item/${itemId}/`;
+        const controls = document.getElementById(`qty-controls-${itemId}`);
+        
+        console.log('Sending update:', {itemId, quantity, url});
+        
+        // 1. SHOW LOADING STATE (Disable controls)
+        if (controls) {
+            controls.style.opacity = '0.5'; 
+            controls.style.pointerEvents = 'none'; 
+        }
         
         fetch(url, {
             method: 'POST',
@@ -246,21 +275,66 @@
             },
             body: `quantity=${quantity}`
         })
-        .then(response => response.json())
+        .then(response => {
+            // 2. CHECK FOR NON-JSON ERRORS (e.g., 403 Forbidden, 500 HTML page)
+            if (!response.ok) {
+                 // Check if the response is JSON before calling .json()
+                 const contentType = response.headers.get('content-type');
+                 if (contentType && contentType.indexOf("application/json") !== -1) {
+                     return response.json(); // Continue to process server-side JSON errors
+                 } else {
+                     throw new Error(`Server returned status ${response.status} and non-JSON content.`);
+                 }
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Response data:', data);
+
+            // 3. HIDE LOADING STATE
+            if (controls) {
+                controls.style.opacity = '1';
+                controls.style.pointerEvents = 'auto';
+            }
+            
             if (data.success) {
-                document.getElementById(`item-total-${itemId}`).innerText = `Total: ₹${parseFloat(data.item_total).toFixed(2)}`;
-                document.getElementById('subtotal-amount').innerText = `₹${parseFloat(data.cart_total).toFixed(2)}`;
-                document.getElementById('total-amount').innerText = `₹${parseFloat(data.cart_total).toFixed(2)}`;
-                document.getElementById('total-items-count').innerText = data.total_items;
+                // Update display elements
+                const itemTotalEl = document.getElementById(`item-total-${itemId}`);
+                if (itemTotalEl) {
+                    itemTotalEl.innerHTML = `Total: &#8377;${parseFloat(data.item_total).toFixed(2)}`;
+                }
+                
+                const subtotalEl = document.getElementById('subtotal-amount');
+                const totalEl = document.getElementById('total-amount');
+                const itemsCountEl = document.getElementById('total-items-count');
+                
+                if (subtotalEl) subtotalEl.innerHTML = `&#8377;${parseFloat(data.cart_total).toFixed(2)}`;
+                if (totalEl) totalEl.innerHTML = `&#8377;${parseFloat(data.cart_total).toFixed(2)}`;
+                if (itemsCountEl) itemsCountEl.innerText = data.total_items;
+                
                 document.getElementById(`qty-${itemId}`).value = data.new_quantity;
+                
+                console.log('Update successful');
             } else {
+                console.error('Update failed:', data.error);
                 alert(data.error || 'Failed to update quantity.');
+                
+                // If update fails (e.g., due to low stock), reload to reset the quantity input
+                location.reload(); 
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please refresh the page.');
+            // CATCHES NETWORK ERRORS (e.g., no internet, 403, 500)
+            console.error('Fetch/Network Error:', error);
+            alert('A network error occurred. Please refresh the page. Check console for details.');
+            
+            // HIDE LOADING STATE ON CATCH
+            if (controls) {
+                controls.style.opacity = '1';
+                controls.style.pointerEvents = 'auto';
+            }
+            // Reload as a fallback for severe errors
+            location.reload(); 
         });
     }
 </script>

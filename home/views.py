@@ -315,7 +315,6 @@ def show_cart(request):
         'total_items': cart_obj.total_items,
         'total_price': cart_obj.total_price,
         'breadcrumb_trail': breadcrumb_trail,
-
     }
 
     return render(request, 'home/cart.html', context)
@@ -407,55 +406,57 @@ def remove_from_cart(request, item_id):
     return redirect('cart')
 
 
+
 @login_required
 @require_POST
 def update_cart_item(request, item_id):
+    """Update cart item quantity with proper validation"""
     try:
+        # Get cart item
         cart_item = get_object_or_404(
             CartItems,
             id=item_id,
             owner__owner=request.user
         )
         
+        # Parse quantity
         try:
             new_quantity = int(request.POST.get('quantity'))
         except (ValueError, TypeError):
-            return JsonResponse({'success': False, 'error': 'Invalid quantity'})
+            logger.error(f"Invalid quantity format: {request.POST.get('quantity')}")
+            return JsonResponse({'success': False, 'error': 'Invalid quantity format'})
 
+        # Validate minimum
         if new_quantity < 1:
-            return JsonResponse({
-                'success': False,
-                'error': 'Quantity must be at least 1.'
-            })
+            return JsonResponse({'success': False, 'error': 'Quantity must be at least 1.'})
 
+        # Get available stock
         if cart_item.variant:
             max_stock = cart_item.variant.stock or 0
-            item_price = cart_item.variant.get_discounted_price()
         else:
             max_stock = cart_item.product.stock or 0
-            item_price = cart_item.product.get_display_price()
         
-        if isinstance(item_price, int):
-            item_price = Decimal(str(item_price))
-        elif item_price is None:
-            item_price = Decimal('0')
-        else:
-            item_price = Decimal(str(item_price))
+        logger.info(f"Updating cart item {item_id}: new_qty={new_quantity}, max_stock={max_stock}")
         
+        # Validate stock
         if new_quantity > max_stock:
             return JsonResponse({
                 'success': False,
-                'error': f'Only {max_stock} items in stock.'
+                'error': f'Only {max_stock} items available.',
+                'max_stock': max_stock
             })
 
+        # Update quantity
         cart_item.quantity = new_quantity
         cart_item.save(update_fields=['quantity'])
 
+        # Get updated totals using model properties
         cart = cart_item.owner
-        cart_total = cart.total_price or Decimal('0')
-        total_items = sum(item.quantity for item in cart.ordered_items.all())
+        item_total = cart_item.item_total  # Uses the @property from CartItems model
+        cart_total = cart.total_price  # Uses the @property from Cart model
+        total_items = cart.total_items  # Uses the @property from Cart model
 
-        item_total = item_price * new_quantity
+        logger.info(f"Cart item {item_id} updated successfully: item_total={item_total}, cart_total={cart_total}")
 
         return JsonResponse({
             'success': True,
@@ -466,61 +467,11 @@ def update_cart_item(request, item_id):
         })
         
     except CartItems.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Cart item not found.'
-        })
+        logger.error(f"Cart item {item_id} not found for user {request.user.id}")
+        return JsonResponse({'success': False, 'error': 'Cart item not found.'})
     except Exception as e:
-        logger.exception("Error updating cart item")
-        return JsonResponse({
-            'success': False,
-            'error': 'Error updating cart. Please try again.'
-        })
-
-
-def _get_item_price(cart_item):
-    if cart_item.variant:
-        price = cart_item.variant.get_discounted_price()
-    else:
-        price = cart_item.product.get_display_price()
-    
-    if price is None:
-        price = Decimal('0')
-    return Decimal(str(price))
-
-
-def _validate_stock_availability(cart_items):
-
-    items_needing_reduction = []
-    
-    for cart_item in cart_items:
-        if not cart_item.product:
-            return False, "Product unavailable in your cart", []
-        
-        if cart_item.variant:
-            stock_source = cart_item.variant
-            available_stock = stock_source.stock or 0
-            product_name = f"{cart_item.product.name} - {stock_source.variant.name}"
-        else:
-            stock_source = cart_item.product
-            available_stock = stock_source.stock or 0
-            product_name = cart_item.product.name
-        
-        if available_stock < cart_item.quantity:
-            return False, f"Insufficient stock for {product_name}. Available: {available_stock}, Requested: {cart_item.quantity}", []
-        
-        items_needing_reduction.append({
-            'cart_item': cart_item,
-            'stock_source': stock_source,
-            'price': _get_item_price(cart_item),
-            'product_name': product_name,
-        })
-    
-    return True, "", items_needing_reduction
-
-
-
-
+        logger.exception(f"Error updating cart item {item_id}: {str(e)}")
+        return JsonResponse({'success': False, 'error': f'Update failed: {str(e)}'}) 
 @transaction.atomic
 def _finalize_order(
     user,
