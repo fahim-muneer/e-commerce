@@ -103,7 +103,7 @@ class Cart(models.Model):
     def coupon_discount(self):
         """Get the coupon discount amount"""
         if self.coupon_code and self.coupon_code.is_valid():
-            discount = self.coupon_code.discount_value
+            discount = self.coupon_code.calculate_discount(self.subtotal)
             return min(discount, self.subtotal)
         return Decimal('0')
 

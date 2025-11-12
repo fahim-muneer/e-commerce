@@ -82,7 +82,7 @@ def create_coupon(request):
             
             form.save()
             
-            messages.success(request, "Coupon created successfully!")
+            messages.success(request, "Coupon created successfully!",extra_tags="coupon")
             
             return redirect('coupon_list')
         else:
@@ -124,26 +124,17 @@ def update_coupon(request, coupon_id):
         'is_update': True
     })
 
-
 def apply_coupon(request):
     """Apply coupon with user-specific validation"""
     if request.method == "POST":
         code = request.POST.get("coupon_code", "").strip()
 
         if not code:
-            messages.error(
-                request, 
-                "Please enter a coupon code.", 
-                extra_tags='coupon-tag'
-            )
+            messages.error(request, "Please enter a coupon code.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         if not request.user.is_authenticated:
-            messages.error(
-                request, 
-                "Please login to use coupons.", 
-                extra_tags='coupon-tag'
-            )
+            messages.error(request, "Please login to use coupons.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         try:
@@ -153,20 +144,12 @@ def apply_coupon(request):
             return redirect("checkout")
 
         if not user_cart.ordered_items.exists():
-            messages.error(
-                request, 
-                "Your cart is empty.", 
-                extra_tags='coupon-tag'
-            )
+            messages.error(request, "Your cart is empty.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         if (user_cart.coupon_code and 
             user_cart.coupon_code.coupon_code.lower() == code.lower()):
-            messages.info(
-                request, 
-                "This coupon is already applied.", 
-                extra_tags='coupon-tag'
-            )
+            messages.info(request, "This coupon is already applied.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         if user_cart.coupon_code:
@@ -176,11 +159,7 @@ def apply_coupon(request):
         try:
             coupon = Coupons.objects.get(coupon_code__iexact=code)
         except Coupons.DoesNotExist:
-            messages.error(
-                request, 
-                "Invalid coupon code.", 
-                extra_tags='coupon-tag'
-            )
+            messages.error(request, "Invalid coupon code.", extra_tags='coupon-tag')
             return redirect("checkout")
 
         is_valid, error_message = coupon.is_valid(user=request.user)
@@ -199,11 +178,13 @@ def apply_coupon(request):
         user_cart.coupon_code = coupon
         user_cart.save(update_fields=['coupon_code'])
 
+        # Calculate actual discount
+        discount_amount = coupon.calculate_discount(user_cart.subtotal)
         remaining = coupon.get_remaining_uses(request.user)
         
         messages.success(
             request, 
-            f"Coupon '{coupon.coupon_code}' applied! You saved ₹{coupon.discount_value}. "
+            f"Coupon '{coupon.coupon_code}' applied! You saved ₹{discount_amount:.2f}. "
             f"You have {remaining} use(s) remaining for this coupon.",
             extra_tags='coupon-tag'
         )

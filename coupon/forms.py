@@ -5,22 +5,33 @@ from django.utils import timezone
 class CouponForm(forms.ModelForm):
     class Meta:
         model = Coupons
-        fields = ['coupon_code', 'description', 'min_cart_value', 
-                        'discount_value', 'expire_at', 'use_limit_per_user', 'active']
+        fields = [
+            'coupon_code', 
+            'description', 
+            'discount_type',
+            'discount_value',
+            'max_discount_amount',
+            'min_cart_value', 
+            'expire_at', 
+            'use_limit_per_user',
+            'active'
+        ]
         widgets = {
-            # 'expire_at': forms.DateInput(attrs={'type': 'date'}),
-            # 'description': forms.Textarea(attrs={'rows': 2, 'class': 'w-full rounded-md border border-gray-300 p-2'}),
-            # 'coupon_code': forms.TextInput(attrs={'class': 'w-full rounded-md border border-gray-300 p-2'}),
-            # 'min_cart_value': forms.NumberInput(attrs={'class': 'w-full rounded-md border border-gray-300 p-2'}),
-            # 'discount_value': forms.NumberInput(attrs={'class': 'w-full rounded-md border border-gray-300 p-2'}),
-            # 'use_limit': forms.NumberInput(attrs={'class': 'w-full rounded-md border border-gray-300 p-2'}),
-            'active': forms.CheckboxInput(attrs={ 'class':"w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"}),
+            'expire_at': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 2}),
+            'active': forms.CheckboxInput(attrs={'class': "w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"}),
         }
 
     def clean_discount_value(self):
         discount = self.cleaned_data.get('discount_value')
-        if discount is not None and (discount <= 0 or discount > 100):
-            raise forms.ValidationError("Discount value must be between 1 and 100.")
+        discount_type = self.cleaned_data.get('discount_type')
+        
+        if discount is not None and discount <= 0:
+            raise forms.ValidationError("Discount value must be greater than 0.")
+        
+        if discount_type == 'percentage' and discount > 100:
+            raise forms.ValidationError("Percentage discount cannot exceed 100%.")
+        
         return discount
 
     def clean_expire_at(self):
@@ -31,19 +42,22 @@ class CouponForm(forms.ModelForm):
 
     def clean_coupon_code(self):
         code = self.cleaned_data.get('coupon_code')
-        if code and not code.isalnum():
-            raise forms.ValidationError("Coupon code should contain only letters and numbers.")
+        if code:
+            code = code.upper()  
+            if not code.replace('_', '').replace('-', '').isalnum():
+                raise forms.ValidationError("Coupon code should contain only letters, numbers, hyphens and underscores.")
         return code
 
     def clean(self):
         cleaned_data = super().clean()
         min_cart_value = cleaned_data.get('min_cart_value')
         discount_value = cleaned_data.get('discount_value')
+        discount_type = cleaned_data.get('discount_type')
 
-        if min_cart_value is not None and discount_value is not None:
+        if discount_type == 'fixed' and min_cart_value and discount_value:
             if discount_value >= min_cart_value:
                 raise forms.ValidationError(
-                    "Discount value cannot be greater than or equal to the minimum cart value."
+                    "Fixed discount amount cannot be greater than or equal to the minimum cart value."
                 )
 
         return cleaned_data
