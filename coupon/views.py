@@ -78,13 +78,16 @@ def create_coupon(request):
     if request.method == 'POST':
         
         form = CouponForm(request.POST)
-        if form.is_valid():
-            
-            form.save()
-            
-            messages.success(request, "Coupon created successfully!",extra_tags="coupon")
-            
-            return redirect('coupon_list')
+        try:
+            if form.is_valid():
+                
+                form.save()
+                print("the coupon is not validated")
+                messages.success(request, "Coupon created successfully!",extra_tags="coupon")
+                
+                return redirect('coupon_list')
+        except Exception as e:
+            messages.error(request,f'Error occur:{str(e)}')
         else:
             
             logger.error("the form is not validated yet ")

@@ -2,92 +2,286 @@
 {% block title %} Update Coupon {% endblock title %}
 {% block heading %} Update Coupon {% endblock heading %}
 {% block context %}
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+{% if messages %}
+<div class="space-y-3 mb-4"> 
+    {% for message in messages %}
+        <div 
+            x-data="{ show: true }" 
+            x-init="setTimeout(() => { show = false }, 5000)" 
+            x-show="show" 
+            x-transition:enter="transition ease-out duration-300" 
+            x-transition:leave="transition ease-in duration-200" 
+            
+            {% if message.tags == 'success' %}
+                class="flex items-start justify-between p-3 bg-green-100 text-green-800 border border-green-300 rounded-lg shadow-sm"
+            {% elif message.tags == 'error' %}
+                class="flex items-start justify-between p-3 bg-red-100 text-red-800 border border-red-300 rounded-lg shadow-sm"
+            {% elif message.tags == 'warning' %}
+                class="flex items-start justify-between p-3 bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-lg shadow-sm"
+            {% else %}
+                class="flex items-start justify-between p-3 bg-blue-100 text-blue-800 border border-blue-300 rounded-lg shadow-sm"
+            {% endif %}
+            
+            role="alert"
+        >
+            <div class="flex items-start space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 flex-shrink-0" 
+                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="font-medium text-sm">{{ message }}</span>
+            </div>
+
+            <button 
+                @click="show = false" 
+                class="ml-3 hover:text-black text-xl font-bold leading-none focus:outline-none"
+                title="Close"
+            >
+                &times;
+            </button>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <main class="lg:col-start-2 row-start-2 p-4 lg:p-6 overflow-y-auto">
-    
-    <h2 class="text-xl font-semibold text-gray-800 mb-6">Update Coupon</h2>
-
-
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Update Coupon Form -->
         <div class="lg:col-span-1 bg-white p-6 shadow-xl rounded-xl">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">
-                Update Coupon - {{ coupon.coupon_code }}
-            </h3>
+            <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+                <h3 class="text-lg font-semibold text-gray-800">Update Coupon</h3>
+                <a href="{% url 'coupon_list' %}" 
+                   class="text-sm text-gray-600 hover:text-gray-900 flex items-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Back</span>
+                </a>
+            </div>
 
-            <form action="{% url 'update_coupon' coupon_id=coupon.id %}" method="POST" class="space-y-4">
+            <form action="{% url 'update_coupon' coupon_id=coupon.id %}" method="POST" class="space-y-4" 
+                  x-data="{ discountType: '{{ form.discount_type.value|default:'percentage' }}' }">
                 {% csrf_token %}
                 
+                <!-- Display form errors if any -->
+                {% if form.errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    <p class="font-semibold">Please correct the following errors:</p>
+                    <ul class="list-disc list-inside mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li class="text-sm">{{ field }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <!-- Coupon Code -->
                 <div>
-                    <label for="{{ form.coupon_code.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Coupon Code</label>
-                    <input type="text" id="{{ form.coupon_code.id_for_label }}" name="{{ form.coupon_code.name }}" 
-                           value="{{ form.coupon_code.value|default:'' }}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    <label for="coupon_code" class="block text-sm font-medium text-gray-700 mb-1">Coupon Code</label>
+                    <input type="text" id="coupon_code" name="coupon_code" placeholder="e.g., SAVE20"
+                        value="{{ form.coupon_code.value|default:'' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 uppercase" required>
                     {% if form.coupon_code.errors %}
                         <p class="text-red-500 text-xs mt-1">{{ form.coupon_code.errors.0 }}</p>
                     {% endif %}
                 </div>
 
+                <!-- Description -->
                 <div>
-                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea id="{{ form.description.id_for_label }}" name="{{ form.description.name }}" rows="2" placeholder="add description here"
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="description" name="description" rows="2" placeholder="Describe your coupon offer"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">{{ form.description.value|default:'' }}</textarea>
                     {% if form.description.errors %}
                         <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
                     {% endif %}
                 </div>
 
+                <!-- Discount Type -->
                 <div>
-                    <label for="{{ form.min_cart_value.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Minimum Cart Value</label>
-                    <input type="number" step="0.01" id="{{ form.min_cart_value.id_for_label }}" name="{{ form.min_cart_value.name }}" 
-                           value="{{ form.min_cart_value.value|default:'' }}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
-                    {% if form.min_cart_value.errors %}
-                        <p class="text-red-500 text-xs mt-1">{{ form.min_cart_value.errors.0 }}</p>
+                    <label for="discount_type" class="block text-sm font-medium text-gray-700 mb-1">Discount Type</label>
+                    <select id="discount_type" name="discount_type" x-model="discountType"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                        <option value="percentage" {% if form.discount_type.value == 'percentage' %}selected{% endif %}>Percentage (%)</option>
+                        <option value="fixed" {% if form.discount_type.value == 'fixed' %}selected{% endif %}>Fixed Amount (₹)</option>
+                    </select>
+                    {% if form.discount_type.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.discount_type.errors.0 }}</p>
                     {% endif %}
                 </div>
 
+                <!-- Discount Value -->
                 <div>
-                    <label for="{{ form.discount_value.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Discount Value</label>
-                    <input type="number" step="0.01" id="{{ form.discount_value.id_for_label }}" name="{{ form.discount_value.name }}" 
-                           value="{{ form.discount_value.value|default:'' }}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    <label for="discount_value" class="block text-sm font-medium text-gray-700 mb-1">
+                        <span x-show="discountType === 'percentage'">Discount Percentage</span>
+                        <span x-show="discountType === 'fixed'">Discount Amount</span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="0.01" id="discount_value" name="discount_value" 
+                            :placeholder="discountType === 'percentage' ? 'e.g., 10 for 10%' : 'e.g., 100 for ₹100'"
+                            value="{{ form.discount_value.value|default:'' }}" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                        <span class="absolute right-3 top-2.5 text-gray-500 text-sm font-medium">
+                            <span x-show="discountType === 'percentage'">%</span>
+                            <span x-show="discountType === 'fixed'">₹</span>
+                        </span>
+                    </div>
                     {% if form.discount_value.errors %}
                         <p class="text-red-500 text-xs mt-1">{{ form.discount_value.errors.0 }}</p>
                     {% endif %}
                 </div>
 
+                <!-- Max Discount Amount (Only for percentage) -->
+                <div x-show="discountType === 'percentage'" x-transition>
+                    <label for="max_discount_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                        Max Discount Amount (Optional)
+                    </label>
+                    <input type="number" step="0.01" id="max_discount_amount" name="max_discount_amount" 
+                        placeholder="e.g., 500 (max ₹500 off)"
+                        value="{{ form.max_discount_amount.value|default:'' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                    <p class="text-xs text-gray-500 mt-1">Set a maximum cap for percentage discounts</p>
+                    {% if form.max_discount_amount.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.max_discount_amount.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Min Cart Value -->
                 <div>
-                    <label for="{{ form.expire_at.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                    <input type="date" id="{{ form.expire_at.id_for_label }}" name="{{ form.expire_at.name }}" 
-                           value="{{ form.expire_at.value|date:'Y-m-d'|default:'' }}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    <label for="min_cart_value" class="block text-sm font-medium text-gray-700 mb-1">Minimum Cart Value</label>
+                    <input type="number" step="0.01" id="min_cart_value" name="min_cart_value" placeholder="e.g., 500"
+                        value="{{ form.min_cart_value.value|default:'' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    {% if form.min_cart_value.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.min_cart_value.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Expire At -->
+                <div>
+                    <label for="expire_at" class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                    <input type="date" id="expire_at" name="expire_at" 
+                        value="{{ form.expire_at.value|date:'Y-m-d'|default:'' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
                     {% if form.expire_at.errors %}
                         <p class="text-red-500 text-xs mt-1">{{ form.expire_at.errors.0 }}</p>
                     {% endif %}
                 </div>
 
+                <!-- Use Limit Per User -->
                 <div>
-                    <label for="{{ form.use_limit_per_user.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Use Limit Per User</label>
-                    <input type="number" id="{{ form.use_limit_per_user.id_for_label }}" name="{{ form.use_limit_per_user.name }}" 
-                           value="{{ form.use_limit_per_user.value|default:'1' }}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
+                    <label for="use_limit_per_user" class="block text-sm font-medium text-gray-700 mb-1">Usage Limit Per User</label>
+                    <input type="number" id="use_limit_per_user" name="use_limit_per_user" placeholder="How many times each user can use"
+                        value="{{ form.use_limit_per_user.value|default:'1' }}" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required>
                     {% if form.use_limit_per_user.errors %}
                         <p class="text-red-500 text-xs mt-1">{{ form.use_limit_per_user.errors.0 }}</p>
                     {% endif %}
                 </div>
 
-                <div class="flex items-center space-x-2">
-                    <input type="checkbox" id="{{ form.active.id_for_label }}" name="{{ form.active.name }}" 
+                <!-- Active Status -->
+                <div class="flex items-center space-x-2 pt-2">
+                    <input type="checkbox" id="id_active" name="active"
                         {% if form.active.value %}checked{% endif %}
                         class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
-                    <label for="{{ form.active.id_for_label }}" class="text-sm font-medium text-gray-700">Active</label>
+                    <label for="id_active" class="text-sm font-medium text-gray-700">Active (visible to users)</label>
                 </div>
 
-                <button type="submit" class="w-full mt-6 py-3 text-white font-semibold bg-red-500 rounded-lg shadow-lg hover:bg-red-600 transition-colors duration-200 transform active:scale-[0.98]">
-                    UPDATE COUPON
-                </button>
+                <!-- Action Buttons -->
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit"
+                        class="flex-1 py-3 text-white font-semibold bg-red-500 rounded-lg shadow-lg hover:bg-red-600 transition-colors duration-200 transform active:scale-[0.98] flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        UPDATE COUPON
+                    </button>
+                </div>
             </form>
+        </div>
+
+        <!-- Coupon Details Preview (Right Column) -->
+        <div class="lg:col-span-2 bg-white p-6 shadow-xl rounded-xl">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-3">Current Coupon Details</h3>
+            
+            <div class="space-y-4">
+                <!-- Coupon Code Display -->
+                <div class="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-lg border-2 border-dashed border-red-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Coupon Code</p>
+                            <p class="text-3xl font-bold text-red-600">{{ coupon.coupon_code }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600 mb-1">Discount</p>
+                            <p class="text-2xl font-bold text-gray-800">
+                                {% if coupon.discount_type == 'percentage' %}
+                                    {{ coupon.discount_value }}% OFF
+                                {% else %}
+                                    ₹{{ coupon.discount_value }} OFF
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coupon Information -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Status</p>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
+                            {% if coupon.active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ coupon.active|yesno:"Active,Inactive" }}
+                        </span>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Discount Type</p>
+                        <p class="text-sm font-semibold text-gray-900">
+                            {% if coupon.discount_type == 'percentage' %}
+                                Percentage
+                            {% else %}
+                                Fixed Amount
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Min Cart Value</p>
+                        <p class="text-sm font-semibold text-gray-900">₹{{ coupon.min_cart_value }}</p>
+                    </div>
+
+                    {% if coupon.max_discount_amount %}
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Max Discount</p>
+                        <p class="text-sm font-semibold text-gray-900">₹{{ coupon.max_discount_amount }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Expiry Date</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ coupon.expire_at|date:"d M, Y" }}</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Use Limit Per User</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ coupon.use_limit_per_user }} time(s)</p>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                {% if coupon.description %}
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <p class="text-xs text-blue-600 font-medium mb-2">DESCRIPTION</p>
+                    <p class="text-sm text-gray-700">{{ coupon.description }}</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </main>

@@ -4,8 +4,8 @@
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-<body class="bg-gray-100 p-6 mt-5">
-    <div class="max-w-7xl mx-auto mt-8">
+<body class="bg-gray-100 p-6 mt-5 ">
+    <div class="max-w-7xl mx-auto mt-8 mb-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             
             <!-- LEFT SIDE: Delivery Address & Coupon -->
@@ -37,6 +37,27 @@
                             <p class="text-yellow-800">No delivery addresses found. Please <a href="{% url 'add_order_address' %}" class="font-semibold underline">add an address</a> to continue.</p>
                         </div>
                     {% endif %}
+
+                        <!-- Pagination -->
+            <div class="flex justify-center space-x-2 mt-8">
+                {% if addresses.has_previous %}
+                <a href="?page={{ addresses.previous_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&lt;</a>
+                {% endif %}
+
+                {% for i in addresses.paginator.page_range %}
+                <a href="?page={{ i }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">{{ i }}</a>
+                {% endfor %}
+
+                {% if addresses.has_next %}
+                <a href="?page={{ addresses.next_page_number }}" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">&gt;</a>
+                {% endif %}
+            </div>
+
+
+
+
+
+
                 </div>
 
                 <!-- Coupon Section - SEPARATE FORM -->
@@ -114,7 +135,70 @@
                     </form>
                     {% endif %}
 
-                    <a href="{% url 'user_coupon_list' %}" class="block text-right text-sm text-gray-600 hover:underline mt-2">View Coupons</a>
+<div class="space-y-4">
+    {% if coupon %} 
+    
+        {% if coupon.can_use %}
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-5 
+                    bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-xl 
+                    shadow-sm border-l-4 border-red-500 transition hover:shadow-md hover:bg-gray-50">
+            
+            <div class="flex flex-col space-y-1 mb-3 md:mb-0">
+                <h3 class="text-lg font-bold text-gray-800">{{ coupon.coupon_code }}</h3>
+                <p class="text-sm text-gray-600">Description: {{ coupon.description }}</p>
+                <p class="text-sm text-gray-500">Min Cart Value: ₹{{ coupon.min_cart_value }}</p>
+                
+                {# USE the model method for human-readable display #}
+                <p class="text-sm text-gray-500">Discount: {{ coupon.get_discount_display }}</p>
+                
+                {% if request.user.is_authenticated %}
+                    <p class="text-xs text-gray-500 font-medium mt-1">
+                        {# USE the model method to get remaining uses for the current user #}
+                        Remaining uses: <span class="text-red-600 font-bold">{{ coupon.remaining_uses }}</span>
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col items-start md:items-end text-sm space-y-2">
+                <span class="text-gray-600 font-medium">
+                    Valid till: {{ coupon.expire_at|date:"d M, Y" }}
+                </span>
+
+                <button onclick="copyCoupon('{{ coupon.coupon_code }}')" 
+                        class="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 focus:outline-none transform active:scale-[0.98]">
+                    Copy Code
+                </button>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-5 
+                    bg-gray-100 border border-gray-200 rounded-xl shadow-sm border-l-4 border-gray-400 opacity-70">
+            
+            <div class="flex flex-col space-y-1 mb-3 md:mb-0">
+                <h3 class="text-lg font-bold text-gray-500">{{ coupon.coupon_code }} (Used Up)</h3>
+                <p class="text-sm text-gray-500">Description : {{ coupon.description }}</p>
+                <p class="text-sm text-gray-400">Min Cart Value: ₹{{ coupon.min_cart_value }}</p>
+                <p class="text-sm text-gray-400">Discount: {{ coupon.get_discount_display }}</p>
+            </div>
+
+            <div class="flex flex-col items-start md:items-end text-sm">
+                <span class="text-red-500 font-medium">
+                    Limit Reached
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+    <div class="p-6 text-center text-gray-600 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <i class="fa-solid fa-tags text-2xl mb-2"></i>
+        <p>No exciting coupons available for you at the moment.</p>
+    </div>
+    {% endif %}
+</div>
+
+                    <a href="{% url 'user_coupon_list' %}" class="block text-right text-sm text-gray-600 hover:underline mt-2">View More Coupons</a>
                 </div>
             </div>
 
@@ -312,6 +396,21 @@ document.getElementById('razorpay-button')?.addEventListener('click', function(e
     const rzp = new Razorpay(options);
     rzp.open();
 });
+
+function copyCoupon(code) {
+    navigator.clipboard.writeText(code)
+        .then(() => {
+            const alert = document.createElement('div');
+            alert.textContent = `Coupon "${code}" copied!`;
+            alert.className = "fixed top-6 right-6 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transition-all duration-300 z-50";
+            document.body.appendChild(alert);
+            setTimeout(() => alert.remove(), 2000);
+        })
+        .catch(err => {
+            alert('Failed to copy coupon code. Please copy manually.');
+        });
+}
+
 </script>
 </body>
 {% endblock %}

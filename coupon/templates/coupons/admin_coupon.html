@@ -238,18 +238,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-500">
-                                {% if item.coupon.discount_type == 'percentage' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        {{ item.coupon.discount_value }}% OFF
-                                    </span>
-                                    {% if item.coupon.max_discount_amount %}
-                                        <span class="text-xs text-gray-500 block mt-1">Max: ₹{{ item.coupon.max_discount_amount }}</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        ₹{{ item.coupon.discount_value }} OFF
-                                    </span>
-                                {% endif %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
+                            {% if item.coupon.active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ item.coupon.active|yesno:"Active,Inactive" }}
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
                                 <!-- Edit -->

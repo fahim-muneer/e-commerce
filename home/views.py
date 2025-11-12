@@ -720,8 +720,15 @@ class CheckoutList(MyLoginRequiredMixin, View):
         """Builds the common context dictionary."""
         wallet, created = Wallet.objects.get_or_create(user=user)
         addresses_queryset = OrderAddress.objects.filter(user=request.user).order_by('-id')
+        coupon= Coupons.objects.order_by('-use_limit_per_user').first()
+        if coupon:
+                is_valid, _ = coupon.is_valid(request.user)
+                remaining_uses = coupon.get_remaining_uses(request.user)
         
-        paginator = Paginator(addresses_queryset, 3)
+        coupon.can_use = is_valid
+        coupon.remaining_uses = remaining_uses
+        
+        paginator = Paginator(addresses_queryset, 2)
         page = request.GET.get('page', 1)
         addresses = paginator.get_page(page)
 
@@ -735,6 +742,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
             'wallet': wallet,
             'applied_coupon': cart.coupon_code,
             'currency': 'INR',
+            'coupon':coupon,
         }
 
     def _initialize_razorpay(self, context, total_price):
