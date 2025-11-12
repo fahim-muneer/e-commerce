@@ -28,6 +28,42 @@
             </a>
         </div>
 
+        <!-- Coupon Applied Banner (if coupon was used) -->
+        {% if order.coupon_code %}
+        <div class="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-sm font-bold text-green-800 mb-1">
+                        🎉 Coupon Applied Successfully!
+                    </h3>
+                    <div class="text-sm text-green-700 space-y-1">
+                        <p>
+                            <span class="font-semibold">Code:</span> 
+                            <span class="px-2 py-1 bg-white rounded border border-green-300 font-mono text-xs">
+                                {{ order.coupon_code.coupon_code }}
+                            </span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Discount:</span> 
+                            <span class="text-green-600 font-bold">₹{{ coupon_discount|floatformat:2 }}</span>
+                            <span class="text-xs text-gray-600 ml-1">({{ order.coupon_code.discount_value }}% off)</span>
+                        </p>
+                        {% if order.coupon_code.description %}
+                        <p class="text-xs text-green-600 italic mt-1">
+                            {{ order.coupon_code.description }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Order Status Timeline -->
         <div class="flex justify-between items-center mb-6 text-xs text-gray-500">
             <div class="text-center w-1/4">
@@ -80,7 +116,7 @@
             <div class="flex-1">
                 <h3 class="text-lg font-medium text-gray-800">{{ item.product.name }}</h3>
                 {% if item.variant %}
-                <p class="text-xs text-gray-500">Variant: {{ item.variant.name }}</p>
+                <p class="text-xs text-gray-500">Variant: {{ item.variant.variant.name }}</p>
                 {% endif %}
                 <div class="text-sm font-semibold text-gray-600 mt-1">
                     ₹{{ item.unit_price|floatformat:2 }} × {{ item.quantity }}
@@ -111,7 +147,6 @@
                 <span class="text-purple-600 font-bold text-sm">Returned</span>
                 {% endif %}
                 
-                <!-- Show return reason if exists -->
                 {% if item.return_reason %}
                 <p class="text-xs text-gray-500 mt-1">Reason: {{ item.return_reason|truncatewords:5 }}</p>
                 {% endif %}
@@ -119,7 +154,6 @@
 
             <!-- Item-Level Action Buttons -->
             <div class="min-w-[100px]">
-                <!-- CANCEL: Only for Confirmed/Processing items -->
                 {% if item.order_status == 1 or item.order_status == 2 %}
                 <form method="post" action="{% url 'cancel_item' oid=order.id pid=item.id %}" class="inline">
                     {% csrf_token %}
@@ -130,19 +164,13 @@
                     </button>
                 </form>
                 
-                <!-- RETURN: Only for Delivered items within return window -->
                 {% elif item.order_status == 3 %}
-                    {% comment %} {% if item.can_return %} {% endcomment %}
                     <a href="{% url 'return_item' order_id=order.id item_id=item.id %}"
                        class="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded hover:bg-orange-600 transition-colors inline-block">
                         Request Return
                     </a>
                     <p class="text-xs text-gray-500 mt-1">{{ item.days_left_for_return }} day(s) left</p>
-                    {% comment %} {% else %}
-                    <span class="text-xs text-gray-400">Return window closed</span>
-                    {% endif %} {% endcomment %}
                 
-                <!-- CANCEL RETURN REQUEST: For items with return requested -->
                 {% elif item.order_status == 5 %}
                 <form method="post" action="{% url 'cancel_return_request' order_id=order.id item_id=item.id %}" class="inline">
                     {% csrf_token %}
@@ -153,7 +181,6 @@
                     </button>
                 </form>
                 
-                <!-- RETURN APPROVED/RETURNED: Show status only -->
                 {% elif item.order_status == 6 %}
                 <span class="text-xs text-blue-600 font-medium">Awaiting Pickup</span>
                 {% elif item.order_status == 7 %}
@@ -191,10 +218,11 @@
             </div>
         </div>
 
-        <!-- Order Summary -->
+        <!-- Order Summary with Enhanced Coupon Display -->
         <div class="mt-8 border-t border-gray-200 pt-6">
             <h4 class="font-bold text-lg text-gray-800 mb-3">Order Summary</h4>
             <div class="space-y-2 text-sm text-gray-600">
+                <!-- Show original calculations if items cancelled/returned -->
                 {% if cancelled_returned_total > 0 %}
                 <div class="flex justify-between">
                     <span>Original Total</span>
@@ -213,7 +241,24 @@
                 {% else %}
                 <div class="flex justify-between">
                     <span>Subtotal</span>
-                    <span class="font-semibold text-gray-800">₹{{ order.total_amount|floatformat:2 }}</span>
+                    <span class="font-semibold text-gray-800">₹{{ subtotal_before_discount|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                
+                <!-- Coupon Discount Row (highlighted) -->
+                {% if order.coupon_code %}
+                <div class="flex justify-between items-center py-2 px-3 bg-green-50 rounded-lg border border-green-200">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
+                            <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-green-700 font-medium">
+                            Coupon Discount
+                            <span class="text-xs font-normal text-green-600">({{ order.coupon_code.coupon_code }})</span>
+                        </span>
+                    </div>
+                    <span class="font-bold text-green-700">-₹{{ coupon_discount|floatformat:2 }}</span>
                 </div>
                 {% endif %}
                 
@@ -222,10 +267,21 @@
                     <span class="font-semibold text-green-600">FREE</span>
                 </div>
             </div>
+            
             <div class="flex justify-between items-center font-bold text-lg text-gray-800 border-t border-gray-300 mt-4 pt-4">
                 <span>Order Total</span>
                 <span class="text-green-600">₹{{ order.total_amount|floatformat:2 }}</span>
             </div>
+            
+            <!-- Savings Summary (if coupon was used) -->
+            {% if order.coupon_code %}
+            <div class="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-sm">
+                <p class="text-blue-800">
+                    <strong>💰 You saved ₹{{ coupon_discount|floatformat:2 }}</strong> on this order using coupon 
+                    <span class="font-mono font-bold">{{ order.coupon_code.coupon_code }}</span>!
+                </p>
+            </div>
+            {% endif %}
             
             {% if cancelled_returned_total > 0 %}
             <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded text-sm">
@@ -241,16 +297,13 @@
 
         <!-- Order-Level Actions -->
         <div class="mt-6 flex justify-start gap-4">
-            <!-- CANCEL ENTIRE ORDER: Only if all items are cancellable -->
             {% if order.order_status == 1 or order.order_status == 2 %}
             <a href="{% url 'cancel_order_reason' oid=order.id %}"
                class="px-6 py-3 bg-red-500 text-white font-semibold rounded-md shadow-md hover:bg-red-600 transition-colors duration-200">
                 Cancel Entire Order
             </a>
             
-            <!-- RETURN ENTIRE ORDER: Only if delivered and within window -->
             {% elif order.order_status == 3 %}
-                <!-- This block still checks order.can_return, which correctly aggregates all item statuses -->
                 {% if order.can_return %}
                 <a href="{% url 'return_order_reason' uid=order.id %}"
                    class="px-6 py-3 bg-orange-500 text-white font-semibold rounded-md shadow-md hover:bg-orange-600 transition-colors duration-200">
@@ -259,14 +312,12 @@
                 <p class="text-sm text-gray-500 self-center">{{ order.days_left_for_return }} day(s) left to return</p>
                 {% endif %}
             
-            <!-- CANCELLED: Show option to reorder -->
             {% elif order.order_status == 4 %}
             <a href="{% url 'home' %}"
                class="px-6 py-3 bg-green-500 text-white font-semibold rounded-md shadow-md hover:bg-green-600 transition-colors duration-200">
                 Continue Shopping
             </a>
             
-            <!-- RETURN REQUESTED: Show cancel option -->
             {% elif order.order_status == 5 %}
             <form method="post" action="{% url 'cancel_return_request_order' uid=order.id %}" class="inline">
                 {% csrf_token %}
@@ -278,11 +329,9 @@
             </form>
             <p class="text-sm text-orange-600 self-center font-medium">Awaiting admin approval</p>
             
-            <!-- RETURN APPROVED -->
             {% elif order.order_status == 6 %}
             <p class="text-sm text-blue-600 font-medium self-center">Return approved. Product pickup scheduled.</p>
             
-            <!-- RETURNED -->
             {% elif order.order_status == 7 %}
             <p class="text-sm text-purple-600 font-medium self-center">Return completed. Refund processed.</p>
             {% endif %}

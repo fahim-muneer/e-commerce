@@ -230,16 +230,17 @@ class Orders(models.Model):
     razorpay_order_id = models.CharField(max_length=100, null=True, blank=True, help_text="Razorpay Order ID")
     razorpay_payment_id = models.CharField(max_length=100, null=True, blank=True, help_text="Razorpay Payment ID")
     razorpay_signature = models.CharField(max_length=255, null=True, blank=True, help_text="Razorpay Signature for verification")
-    
-    # paypal_order_id = models.CharField(max_length=100, null=True, blank=True, help_text="PayPal Order ID for tracking")
-    # paypal_payer_id = models.CharField(max_length=100, null=True, blank=True, help_text="PayPal Payer ID")
-    # paypal_capture_id = models.CharField(max_length=100, null=True, blank=True, help_text="PayPal Capture ID")
-    
+       
     return_reason = models.TextField(max_length=500, null=True, blank=True)
     order_Id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     product_return_reason = models.TextField(max_length=500, null=True, blank=True)
     
     return_requested_at = models.DateTimeField(null=True, blank=True)
+    expected_delivery_date = models.DateField(
+        null=True, 
+        blank=True,
+        help_text="The estimated date when the order is expected to be delivered."
+    )
     delivered_at = models.DateTimeField(null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)  # Set in code via mark_as_paid()
     
@@ -299,7 +300,6 @@ class Orders(models.Model):
         """
         from django.db.models import Sum, Q
         
-        # Calculate total from items that are NOT cancelled (4) or returned (7)
         total = self.items.exclude(
             order_status__in=[self.STATUS_REJECTED, self.STATUS_RETURNED]
         ).aggregate(
@@ -367,7 +367,13 @@ class Orders(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - {self.user} - {self.get_payment_status_display()}"
-
+    @property
+    def get_delivary_date(self):
+        if self.delivered_at:
+            return self.delivered_at.date()  
+            
+        return self.expected_delivery_date
+        
     @property
     def is_payment_complete(self):
         """Check if payment is complete"""
@@ -378,7 +384,6 @@ class Orders(models.Model):
         """Check if order can proceed (paid online or COD pending)"""
         if self.payment_method == self.ONLINE_PAYMENT:
             return self.payment_status == self.PAYMENT_PAID
-        # For COD/Wallet, assume it can proceed
         return True
     def get_item_discount_share(self, item):
         """
@@ -388,16 +393,13 @@ class Orders(models.Model):
         if not self.coupon_code or not self.total_amount:
             return Decimal('0.00')
 
-        # Total before discount
         total_before_discount = sum(
             i.total_price for i in self.items.all()
         )
 
-        # Avoid division by zero
         if total_before_discount == 0:
             return Decimal('0.00')
 
-        # Proportion of item in total
         item_ratio = item.total_price / total_before_discount
         total_discount = getattr(self, "discount_value", Decimal('0.00'))
 

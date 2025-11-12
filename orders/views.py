@@ -333,8 +333,17 @@ class UserOrderDetailView(MyLoginRequiredMixin, DetailView):
         context['cancelled_returned_total'] = cancelled_returned_total
         context['original_total'] = active_total + cancelled_returned_total
         
-        return context
-    
+        coupon_discount = Decimal('0.00')
+        subtotal_before_discount = order.total_amount
+        
+        if order.coupon_code:
+            coupon_discount = Decimal(str(order.coupon_code.discount_value))
+            subtotal_before_discount = order.total_amount + coupon_discount
+        
+        context['coupon_discount'] = coupon_discount
+        context['subtotal_before_discount'] = subtotal_before_discount
+        
+        return context   
     
 
 @method_decorator(never_cache, name='dispatch')

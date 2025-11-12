@@ -15,14 +15,14 @@ User = get_user_model()
 from django.urls import reverse
 from .forms import VarientSelectforms
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from customer.views import MyLoginRequiredMixin
 from decimal import Decimal
 from products.models import ProductVariants,Review
 from django.views.decorators.http import require_POST
 from customer.utils import mark_referral_first_purchase
 from django.conf import settings
-from django.utils import timezone
+from django.utils import timezone    
+from datetime import timedelta
 import logging
 import razorpay
 from decimal import Decimal
@@ -566,7 +566,6 @@ def _finalize_order(
         
         coupon_code = coupon.coupon_code
         coupon_obj = coupon
-    
     order = Orders.objects.create(
         user=user,
         delivery_address=delivery_address,
@@ -578,6 +577,7 @@ def _finalize_order(
         razorpay_payment_id=razorpay_payment_id,
         coupon_code=coupon_obj,
         paid_at=timezone.now() if payment_status == Orders.PAYMENT_PAID else None,
+        expected_delivery_date = timezone.now().date() + timedelta(days=5)
     )
     
     logger.info(
