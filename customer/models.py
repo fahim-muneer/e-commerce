@@ -16,9 +16,15 @@ alphanumeric_with_symbols = RegexValidator(
     'invalid_symbols'
 )
 city_state_validator = RegexValidator(
-    r'^[a-zA-Z\s]+$', # Only letters and spaces
+    r'^[a-zA-Z\s]+$', 
     'Please enter a valid name',
     'invalid_city_state'
+)
+full_name=RegexValidator(
+        r'^[a-zA-Z\s]+$', 
+        'Please enter a valid name',
+        'invalid name'
+        
 )
 
 
@@ -60,7 +66,7 @@ class MyAccountManager(BaseUserManager):
 
 
 class Register(AbstractBaseUser):
-    full_name = models.CharField(max_length=200)
+    full_name = models.CharField(max_length=200,validators=[full_name])
     first_name = models.CharField(max_length=100, blank=True)  
     last_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField(max_length=300, unique=True,validators=[validate_real_email])
@@ -181,11 +187,11 @@ class UserAddress(models.Model):
     
     address = models.CharField(
         max_length=500, 
-        validators=[alphanumeric_with_symbols] # Address needs more allowed symbols
+        validators=[alphanumeric_with_symbols] 
     )
     city = models.CharField(
         max_length=100, 
-        validators=[city_state_validator] # City/State generally only need letters and spaces
+        validators=[city_state_validator]
     )
     state = models.CharField(
         max_length=200,
