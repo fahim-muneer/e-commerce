@@ -720,7 +720,7 @@ class CheckoutList(MyLoginRequiredMixin, View):
         """Builds the common context dictionary."""
         wallet, created = Wallet.objects.get_or_create(user=user)
         addresses_queryset = OrderAddress.objects.filter(user=request.user).order_by('-id')
-        coupon= Coupons.objects.order_by('-use_limit_per_user').first()
+        coupon= Coupons.objects.order_by('-id').first()
         if coupon:
                 is_valid, _ = coupon.is_valid(request.user)
                 remaining_uses = coupon.get_remaining_uses(request.user)
