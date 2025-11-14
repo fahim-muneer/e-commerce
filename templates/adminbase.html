@@ -234,7 +234,7 @@
                     {% comment %} <i class="fas fa-bell text-xl"></i> {% endcomment %}
                 </button>
                 <div class="flex items-center gap-2">
-                    <a href="{% url 'admin_profile' %}"><img {% if request.user.profile_image %}src="{{request.user.profile_image.url}}"{% else %} src="https://placehold.co/40x40/cbd5e1/475569?text=FM" {% endif %} alt="User Profile" class="w-8 h-8 rounded-full object-cover"></a>
+                    {% comment %} <a href="{% url 'admin_profile' %}"><img {% if request.user.profile_image %}src="{{request.user.profile_image.url}}"{% else %} src="https://placehold.co/40x40/cbd5e1/475569?text=FM" {% endif %} alt="User Profile" class="w-8 h-8 rounded-full object-cover"></a> {% endcomment %}
                     {% comment %} <i class="fas fa-chevron-down text-gray-400 text-sm"></i> {% endcomment %}
                 </div>
             </div>
