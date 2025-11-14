@@ -50,8 +50,8 @@
                         </p>
                         <p>
                             <span class="font-semibold">Discount:</span> 
-                            <span class="text-green-600 font-bold">₹{{ coupon_discount|floatformat:2 }}</span>
-                            <span class="text-xs text-gray-600 ml-1">({{ order.coupon_code.discount_value }}% off)</span>
+                            <span class="text-green-600 font-bold">{{ coupon_discount|floatformat:0 }}</span>
+                            <span class="text-xs text-gray-600 ml-1">({{ order.coupon_code.discount_value }} off)</span>
                         </p>
                         {% if order.coupon_code.description %}
                         <p class="text-xs text-green-600 italic mt-1">
@@ -258,7 +258,7 @@
                             <span class="text-xs font-normal text-green-600">({{ order.coupon_code.coupon_code }})</span>
                         </span>
                     </div>
-                    <span class="font-bold text-green-700">-₹{{ coupon_discount|floatformat:2 }}</span>
+                    <span class="font-bold text-green-700">-{{ coupon_discount|floatformat:0 }}</span>
                 </div>
                 {% endif %}
                 
