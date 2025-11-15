@@ -52,7 +52,7 @@ class AddOffer(View):
                 
                 form.save_m2m()
                 
-                messages.success(request, f'Offer "{offer.name}" added successfully.')
+                messages.success(request, f'Offer "{offer.name}" added successfully.',extra_tags="offer-view")
                 return redirect('offer_view')
                 
             except ValidationError as e:
@@ -85,7 +85,7 @@ class UpdateOffer(UpdateView):
             messages.success(
                 self.request, 
                 f'Offer "{offer.name}" updated successfully.',
-                extra_tags='offer_update' 
+                extra_tags='offer-view' 
             )
             
             return redirect(self.success_url)
@@ -120,7 +120,7 @@ class DeleteOffer(DeleteView):
     
     def delete(self, request, *args, **kwargs):
         offer = self.get_object()
-        messages.success(request, f'Offer "{offer.name}" deleted successfully.')
+        messages.success(request, f'Offer "{offer.name}" deleted successfully.',extra_tags="offer-view")
         return super().delete(request, *args, **kwargs)
 
 

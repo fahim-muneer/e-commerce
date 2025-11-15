@@ -1,5 +1,6 @@
 {% extends "base_category.html" %}
 {% block context %}
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 <body class="bg-gray-100 min-h-screen py-8">
 
@@ -16,10 +17,10 @@
  {% if messages %}
 <div class="space-y-3 mb-4"> 
     {% for message in messages %}
-        {% if 'add-offer' in message.tags or 'otp-success' in message.tags %}
+        {% if 'add-offer' in message.tags  %}
             <div 
                 x-data="{ show: true }" 
-                x-init="setTimeout(() => { show = false }, 500)" 
+                x-init="setTimeout(() => { show = false }, 5000)" 
                 x-show="show" 
                 x-transition:enter="transition ease-out duration-300" 
                 x-transition:leave="transition ease-in duration-200" 
@@ -126,9 +127,10 @@
                         End Date & Time <span class="text-red-500">*</span>
                     </label>
                     {{ form.end_date }}
-                    {% if form.end_date.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.end_date.errors.0 }}</p>
-                    {% endif %}
+                {% comment %} {{ form.end_date.errors }} {% endcomment %}
+                    {% comment %} {% if form.end_date.errors %}
+                        <p class="mt-1 text-sm text-red-600"></p>
+                    {% endif %} {% endcomment %}
                 </div>
             </div>
 
