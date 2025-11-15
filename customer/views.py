@@ -347,7 +347,7 @@ class OtpVerification(View):
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     otp_instance.delete()
                     messages.success(request, 'Account verified successfully!')
-                    return redirect('home')
+                    return redirect('index')
                 else:
                     messages.error(request, 'Invalid or expired OTP.',extra_tags='otp-verification')
             except User.DoesNotExist:
